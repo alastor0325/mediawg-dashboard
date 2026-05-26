@@ -3,47 +3,58 @@ specs:
     title: Audio Session
     repo: w3c/audio-session
     tr: https://www.w3.org/TR/audio-session/
+    wpt_path: /audio-session/
 
   - shortname: autoplay
     title: Autoplay Policy Detection
     repo: w3c/autoplay
     w3c_shortname: autoplay-detection
     tr: https://www.w3.org/TR/autoplay-detection/
+    # No dedicated WPT directory yet.
+    wpt_path: null
 
   - shortname: encrypted-media
     title: Encrypted Media Extensions
     repo: w3c/encrypted-media
     w3c_shortname: encrypted-media-2
     tr: https://www.w3.org/TR/encrypted-media-2/
+    wpt_path: /encrypted-media/
 
   - shortname: media-capabilities
     title: Media Capabilities
     repo: w3c/media-capabilities
     tr: https://www.w3.org/TR/media-capabilities/
+    wpt_path: /media-capabilities/
 
   - shortname: media-playback-quality
     title: Media Playback Quality
     repo: w3c/media-playback-quality
     # No /TR/ publication yet — Editor's Draft only.
     tr: null
+    # No dedicated WPT directory yet.
+    wpt_path: null
 
   - shortname: mediasession
     title: Media Session
     repo: w3c/mediasession
     tr: https://www.w3.org/TR/mediasession/
+    wpt_path: /mediasession/
 
   - shortname: media-source
     title: Media Source Extensions
     repo: w3c/media-source
     w3c_shortname: media-source-2
     tr: https://www.w3.org/TR/media-source-2/
+    wpt_path: /media-source/
 
   - shortname: picture-in-picture
     title: Picture-in-Picture
     repo: w3c/picture-in-picture
     tr: https://www.w3.org/TR/picture-in-picture/
+    wpt_path: /picture-in-picture/
 
   - shortname: webcodecs
     title: WebCodecs
     repo: w3c/webcodecs
     tr: https://www.w3.org/TR/webcodecs/
+    wpt_path: /webcodecs/

@@ -3,9 +3,11 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from mediawg_dashboard.model import Spec
+from mediawg_dashboard.model import STAGE_DESCRIPTIONS, Spec
 
 TEMPLATES_DIR = Path(__file__).resolve().parent.parent.parent / "templates"
+
+WPT_FYI_BASE = "https://wpt.fyi/results"
 
 
 def _env() -> Environment:
@@ -23,4 +25,6 @@ def render_index(specs: list[Spec], refreshed_at: datetime | None = None) -> str
     return template.render(
         specs=specs,
         refreshed_at=refreshed_at.strftime("%Y-%m-%d %H:%M UTC"),
+        stage_descriptions=STAGE_DESCRIPTIONS,
+        wpt_fyi_base=WPT_FYI_BASE,
     )

@@ -4,7 +4,11 @@ from mediawg_dashboard.model import RepoStats, Spec, SpecMeta, SpecStatus
 from mediawg_dashboard.render import render_index
 
 
-def _spec(shortname: str = "webcodecs", stage: str = "WD") -> Spec:
+def _spec(
+    shortname: str = "webcodecs",
+    stage: str = "WD",
+    wpt_path: str | None = "/webcodecs/",
+) -> Spec:
     return Spec(
         meta=SpecMeta(
             shortname=shortname,
@@ -12,6 +16,7 @@ def _spec(shortname: str = "webcodecs", stage: str = "WD") -> Spec:
             repo=f"w3c/{shortname}",
             w3c_shortname=shortname,
             tr_url=f"https://www.w3.org/TR/{shortname}/",
+            wpt_path=wpt_path,
         ),
         status=SpecStatus(
             stage=stage,
@@ -61,3 +66,47 @@ def test_render_links_to_repo():
 def test_render_links_to_tr():
     html = render_index([_spec("webcodecs")])
     assert "https://www.w3.org/TR/webcodecs/" in html
+
+
+def test_render_stage_has_tooltip_with_description():
+    html = render_index([_spec(stage="WD")])
+    # The WD stage cell should carry a title attribute with the human-readable
+    # description so hovering reveals what "WD" means.
+    assert 'title="Working Draft' in html
+
+
+def test_render_stage_tooltip_for_rec():
+    html = render_index([_spec(stage="REC")])
+    assert 'title="Recommendation' in html
+
+
+def test_render_stage_tooltip_for_ed_with_no_tr():
+    html = render_index([_spec(stage="ED", wpt_path=None)])
+    assert 'title="Editor' in html  # "Editor's Draft — ..."
+
+
+def test_render_open_issues_count_is_a_link():
+    html = render_index([_spec("webcodecs")])
+    assert 'href="https://github.com/w3c/webcodecs/issues"' in html
+
+
+def test_render_open_prs_count_is_a_link():
+    html = render_index([_spec("webcodecs")])
+    assert 'href="https://github.com/w3c/webcodecs/pulls"' in html
+
+
+def test_render_wpt_column_links_to_wpt_fyi_when_path_set():
+    html = render_index([_spec("webcodecs", wpt_path="/webcodecs/")])
+    assert "wpt.fyi/results/webcodecs" in html or "wpt.fyi/results//webcodecs" in html
+
+
+def test_render_wpt_column_shows_dash_when_path_not_set():
+    html = render_index([_spec("media-playback-quality", wpt_path=None)])
+    # Don't link to wpt.fyi for this spec's row.
+    # Use a structural assertion: no /results/ link for this spec.
+    assert "wpt.fyi/results" not in html
+
+
+def test_render_includes_wpt_header():
+    html = render_index([_spec()])
+    assert ">WPT</" in html or "WPT" in html  # header should mention WPT

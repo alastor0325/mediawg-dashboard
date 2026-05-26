@@ -4,31 +4,111 @@
 <meta charset="utf-8">
 <title>MediaWG Dashboard</title>
 <style>
-  :root { color-scheme: light dark; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; max-width: 1100px; margin: 2rem auto; padding: 0 1rem; }
-  header { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid #ccc; padding-bottom: 0.5rem; margin-bottom: 1rem; }
-  h1 { margin: 0; font-size: 1.5rem; }
-  .meta { color: #666; font-size: 0.85rem; }
-  table { width: 100%; border-collapse: collapse; }
-  th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid #e0e0e0; }
-  th { font-weight: 600; cursor: pointer; user-select: none; background: #f6f6f6; position: sticky; top: 0; }
-  th:hover { background: #ececec; }
-  tbody tr:hover { background: #fafafa; }
-  td.num { text-align: right; font-variant-numeric: tabular-nums; }
-  td.stage { font-weight: 600; }
-  td.age-warn { color: #c00; }
-  a { color: #0366d6; text-decoration: none; }
-  a:hover { text-decoration: underline; }
-  footer { margin-top: 2rem; color: #888; font-size: 0.8rem; }
-  @media (prefers-color-scheme: dark) {
-    body { background: #111; color: #eee; }
-    th { background: #1a1a1a; }
-    th:hover { background: #222; }
-    tbody tr:hover { background: #181818; }
-    th, td { border-bottom-color: #2a2a2a; }
-    .meta, footer { color: #888; }
-    a { color: #58a6ff; }
+  :root {
+    color-scheme: light dark;
+    --bg: #fff;
+    --fg: #1a1a1a;
+    --muted: #666;
+    --border: #e2e2e2;
+    --row-hover: #f6f8fa;
+    --th-bg: #f6f8fa;
+    --th-hover: #ececef;
+    --link: #0366d6;
+    --warn: #c00;
+    --stage-rec: #1f883d;
+    --stage-pr: #218bff;
+    --stage-cr: #0969da;
+    --stage-wd: #9a6700;
+    --stage-fpwd: #d18616;
+    --stage-ed: #6e7781;
+    --stage-note: #6e7781;
+    --stage-disc: #8250df;
+    --stage-unk: #6e7781;
   }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117;
+      --fg: #e6edf3;
+      --muted: #8b949e;
+      --border: #21262d;
+      --row-hover: #161b22;
+      --th-bg: #161b22;
+      --th-hover: #21262d;
+      --link: #58a6ff;
+      --warn: #ff7b72;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1.25rem;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.5;
+  }
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.25rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  h1 { margin: 0; font-size: 1.5rem; }
+  .meta { color: var(--muted); font-size: 0.85rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 0.55rem 0.7rem; border-bottom: 1px solid var(--border); }
+  th {
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    background: var(--th-bg);
+    position: sticky;
+    top: 0;
+    white-space: nowrap;
+  }
+  th:hover { background: var(--th-hover); }
+  th::after { content: " ⇅"; color: var(--muted); font-weight: 400; }
+  tbody tr:hover { background: var(--row-hover); }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.age-warn { color: var(--warn); }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .count-link {
+    display: inline-block;
+    min-width: 2ch;
+    padding: 0.05rem 0.4rem;
+    border-radius: 3px;
+  }
+  .count-link:hover { background: var(--row-hover); }
+  .stage {
+    display: inline-block;
+    padding: 0.1rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #fff;
+    cursor: help;
+    white-space: nowrap;
+  }
+  .stage-REC          { background: var(--stage-rec); }
+  .stage-PR           { background: var(--stage-pr); }
+  .stage-CR           { background: var(--stage-cr); }
+  .stage-CR-snapshot  { background: var(--stage-cr); }
+  .stage-CR-draft     { background: var(--stage-cr); }
+  .stage-WD           { background: var(--stage-wd); }
+  .stage-FPWD         { background: var(--stage-fpwd); }
+  .stage-ED           { background: var(--stage-ed); }
+  .stage-NOTE         { background: var(--stage-note); }
+  .stage-Discontinued { background: var(--stage-disc); }
+  .stage-unknown      { background: var(--stage-unk); }
+  .dash { color: var(--muted); }
+  footer { margin-top: 2rem; color: var(--muted); font-size: 0.8rem; }
+  footer a { color: var(--muted); text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -40,34 +120,56 @@
 <table id="specs">
 <thead>
 <tr>
-  <th data-sort="title">Spec</th>
-  <th data-sort="stage">Stage</th>
-  <th data-sort="last">Last TR</th>
-  <th data-sort="issues" class="num">Open issues</th>
-  <th data-sort="prs" class="num">Open PRs</th>
-  <th data-sort="age" class="num">Oldest issue (days)</th>
+  <th>Spec</th>
+  <th>Stage</th>
+  <th>Last TR</th>
+  <th class="num">Open issues</th>
+  <th class="num">Open PRs</th>
+  <th class="num">Oldest issue (days)</th>
+  <th>WPT</th>
   <th>Repo</th>
 </tr>
 </thead>
 <tbody>
 {% for spec in specs %}
 <tr>
-  <td>{% if spec.status.ed_url %}<a href="{{ spec.status.ed_url }}">{{ spec.meta.title }}</a>{% else %}{{ spec.meta.title }}{% endif %}</td>
-  <td class="stage">{{ spec.status.stage }}</td>
-  <td>{{ spec.status.last_tr_publication or "—" }}</td>
-  <td class="num">{{ spec.stats.open_issues_count }}</td>
-  <td class="num">{{ spec.stats.open_prs_count }}</td>
-  <td class="num{% if spec.stats.oldest_open_issue_age_days and spec.stats.oldest_open_issue_age_days > 365 %} age-warn{% endif %}">{{ spec.stats.oldest_open_issue_age_days if spec.stats.oldest_open_issue_age_days is not none else "—" }}</td>
-  <td><a href="https://github.com/{{ spec.meta.repo }}">{{ spec.meta.repo }}</a>{% if spec.meta.tr_url %} · <a href="{{ spec.meta.tr_url }}">TR</a>{% endif %}</td>
+  <td>
+    {% if spec.status.ed_url %}
+      <a href="{{ spec.status.ed_url }}">{{ spec.meta.title }}</a>
+    {% else %}
+      {{ spec.meta.title }}
+    {% endif %}
+  </td>
+  <td><span class="stage stage-{{ spec.status.stage }}" title="{{ stage_descriptions[spec.status.stage] }}">{{ spec.status.stage }}</span></td>
+  <td>{% if spec.status.last_tr_publication %}{{ spec.status.last_tr_publication }}{% else %}<span class="dash">—</span>{% endif %}</td>
+  <td class="num"><a class="count-link" href="https://github.com/{{ spec.meta.repo }}/issues">{{ spec.stats.open_issues_count }}</a></td>
+  <td class="num"><a class="count-link" href="https://github.com/{{ spec.meta.repo }}/pulls">{{ spec.stats.open_prs_count }}</a></td>
+  <td class="num{% if spec.stats.oldest_open_issue_age_days and spec.stats.oldest_open_issue_age_days > 365 %} age-warn{% endif %}">
+    {% if spec.stats.oldest_open_issue_age_days is not none %}{{ spec.stats.oldest_open_issue_age_days }}{% else %}<span class="dash">—</span>{% endif %}
+  </td>
+  <td>
+    {% if spec.meta.wpt_path %}
+      <a href="{{ wpt_fyi_base }}{{ spec.meta.wpt_path }}">wpt.fyi</a>
+    {% else %}
+      <span class="dash">—</span>
+    {% endif %}
+  </td>
+  <td>
+    <a href="https://github.com/{{ spec.meta.repo }}">{{ spec.meta.repo }}</a>
+    {% if spec.meta.tr_url %} · <a href="{{ spec.meta.tr_url }}">TR</a>{% endif %}
+  </td>
 </tr>
 {% else %}
-<tr><td colspan="7" style="text-align:center; color:#888;">No specs configured.</td></tr>
+<tr><td colspan="8" style="text-align:center; color:var(--muted);">No specs configured.</td></tr>
 {% endfor %}
 </tbody>
 </table>
 
 <footer>
-  Read-only summary of public data from <a href="https://api.w3.org/">api.w3.org</a> and <a href="https://api.github.com/">api.github.com</a>.
+  Read-only summary of public data from
+  <a href="https://api.w3.org/">api.w3.org</a> and
+  <a href="https://api.github.com/">api.github.com</a>.
+  Hover a stage badge for its definition. Click any column header to sort.
   Source: <a href="https://github.com/alastor0325/mediawg-dashboard">alastor0325/mediawg-dashboard</a>.
 </footer>
 
@@ -76,7 +178,7 @@
   const table = document.getElementById("specs");
   if (!table) return;
   const tbody = table.querySelector("tbody");
-  table.querySelectorAll("th[data-sort]").forEach((th, idx) => {
+  table.querySelectorAll("th").forEach((th, idx) => {
     let asc = true;
     th.addEventListener("click", () => {
       const rows = Array.from(tbody.querySelectorAll("tr"));

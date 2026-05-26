@@ -14,6 +14,7 @@ def load_specs(path: Path) -> list[SpecMeta]:
             repo=entry["repo"],
             w3c_shortname=entry.get("w3c_shortname") or entry["shortname"],
             tr_url=entry.get("tr"),
+            wpt_path=entry.get("wpt_path"),
         )
         for entry in data["specs"]
     ]

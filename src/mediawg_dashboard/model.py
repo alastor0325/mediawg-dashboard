@@ -18,12 +18,28 @@ Stage = Literal[
 ]
 
 
+STAGE_DESCRIPTIONS: dict[str, str] = {
+    "ED": "Editor's Draft — living document in GitHub; not yet published to /TR/.",
+    "FPWD": "First Public Working Draft — first /TR/ publication; triggers IPR commitments and horizontal review eligibility.",
+    "WD": "Working Draft — periodic /TR/ publications as the spec evolves.",
+    "CR": "Candidate Recommendation — feature-complete; calls for implementations.",
+    "CR-snapshot": "Candidate Recommendation Snapshot — formal publication that triggers wide review.",
+    "CR-draft": "Candidate Recommendation Draft — continuous publication between CR Snapshots.",
+    "PR": "Proposed Recommendation — implementations exist; AC reviewing for final approval.",
+    "REC": "Recommendation — final W3C standard.",
+    "NOTE": "Group Note — non-normative deliverable.",
+    "Discontinued": "Discontinued — work abandoned or superseded.",
+    "unknown": "Stage could not be determined from W3C API.",
+}
+
+
 class SpecMeta(BaseModel):
     shortname: str
     title: str
     repo: str
     w3c_shortname: str
     tr_url: str | None = None
+    wpt_path: str | None = None
 
 
 class SpecStatus(BaseModel):
