@@ -1,0 +1,45 @@
+specs:
+  - shortname: audio-session
+    title: Audio Session
+    repo: w3c/audio-session
+    tr: https://www.w3.org/TR/audio-session/
+
+  - shortname: autoplay
+    title: Autoplay Policy Detection
+    repo: w3c/autoplay
+    tr: https://www.w3.org/TR/autoplay-detection/
+
+  - shortname: encrypted-media
+    title: Encrypted Media Extensions
+    repo: w3c/encrypted-media
+    tr: https://www.w3.org/TR/encrypted-media-2/
+
+  - shortname: media-capabilities
+    title: Media Capabilities
+    repo: w3c/media-capabilities
+    tr: https://www.w3.org/TR/media-capabilities/
+
+  - shortname: media-playback-quality
+    title: Media Playback Quality
+    repo: w3c/media-playback-quality
+    tr: https://www.w3.org/TR/media-playback-quality/
+
+  - shortname: mediasession
+    title: Media Session
+    repo: w3c/mediasession
+    tr: https://www.w3.org/TR/mediasession/
+
+  - shortname: media-source
+    title: Media Source Extensions
+    repo: w3c/media-source
+    tr: https://www.w3.org/TR/media-source-2/
+
+  - shortname: picture-in-picture
+    title: Picture-in-Picture
+    repo: w3c/picture-in-picture
+    tr: https://www.w3.org/TR/picture-in-picture/
+
+  - shortname: webcodecs
+    title: WebCodecs
+    repo: w3c/webcodecs
+    tr: https://www.w3.org/TR/webcodecs/
