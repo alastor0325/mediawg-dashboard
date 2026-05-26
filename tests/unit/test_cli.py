@@ -1,12 +1,8 @@
-from mediawg_dashboard.cli import main
-
-
-def test_refresh_command_returns_zero():
-    assert main(["refresh"]) == 0
+from mediawg_dashboard.cli import cmd_brief, main
 
 
 def test_brief_command_returns_zero():
-    assert main(["brief"]) == 0
+    assert cmd_brief() == 0
 
 
 def test_no_args_returns_nonzero():

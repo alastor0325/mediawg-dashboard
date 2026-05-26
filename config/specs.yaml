@@ -7,11 +7,13 @@ specs:
   - shortname: autoplay
     title: Autoplay Policy Detection
     repo: w3c/autoplay
+    w3c_shortname: autoplay-detection
     tr: https://www.w3.org/TR/autoplay-detection/
 
   - shortname: encrypted-media
     title: Encrypted Media Extensions
     repo: w3c/encrypted-media
+    w3c_shortname: encrypted-media-2
     tr: https://www.w3.org/TR/encrypted-media-2/
 
   - shortname: media-capabilities
@@ -22,7 +24,8 @@ specs:
   - shortname: media-playback-quality
     title: Media Playback Quality
     repo: w3c/media-playback-quality
-    tr: https://www.w3.org/TR/media-playback-quality/
+    # No /TR/ publication yet — Editor's Draft only.
+    tr: null
 
   - shortname: mediasession
     title: Media Session
@@ -32,6 +35,7 @@ specs:
   - shortname: media-source
     title: Media Source Extensions
     repo: w3c/media-source
+    w3c_shortname: media-source-2
     tr: https://www.w3.org/TR/media-source-2/
 
   - shortname: picture-in-picture

@@ -1,0 +1,30 @@
+from mediawg_dashboard.config import load_specs
+
+SAMPLE_YAML = """
+specs:
+  - shortname: webcodecs
+    title: WebCodecs
+    repo: w3c/webcodecs
+    tr: https://www.w3.org/TR/webcodecs/
+  - shortname: autoplay
+    title: Autoplay Policy Detection
+    repo: w3c/autoplay
+    w3c_shortname: autoplay-detection
+    tr: https://www.w3.org/TR/autoplay-detection/
+"""
+
+
+def test_load_specs_returns_list_of_meta(tmp_path):
+    cfg = tmp_path / "specs.yaml"
+    cfg.write_text(SAMPLE_YAML)
+    specs = load_specs(cfg)
+    assert len(specs) == 2
+    assert specs[0].shortname == "webcodecs"
+    assert specs[1].w3c_shortname == "autoplay-detection"
+
+
+def test_load_specs_w3c_shortname_defaults_to_shortname(tmp_path):
+    cfg = tmp_path / "specs.yaml"
+    cfg.write_text(SAMPLE_YAML)
+    specs = load_specs(cfg)
+    assert specs[0].w3c_shortname == "webcodecs"

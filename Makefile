@@ -9,17 +9,23 @@ help:
 	@echo "  clean    Remove generated output and caches"
 
 install:
-	uv venv
-	uv pip install -e ".[dev]"
+	@if command -v uv >/dev/null 2>&1; then \
+	  uv venv && uv pip install -e ".[dev]"; \
+	else \
+	  python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"; \
+	fi
+
+PYTHON ?= .venv/bin/python
+PYTEST ?= .venv/bin/pytest
 
 refresh:
-	@PYTHONPATH=src python -m mediawg_dashboard.cli refresh
+	@$(PYTHON) -m mediawg_dashboard.cli refresh
 
 brief:
-	@PYTHONPATH=src python -m mediawg_dashboard.cli brief
+	@$(PYTHON) -m mediawg_dashboard.cli brief
 
 test:
-	@PYTHONPATH=src pytest tests/unit/
+	@$(PYTEST) tests/unit/
 
 clean:
 	rm -rf output/ data/cache/ .pytest_cache/ src/*.egg-info/
