@@ -510,54 +510,57 @@
     .ledger tbody { display: block; }
     .ledger tbody tr {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 0.5rem 1rem;
-      padding: 1.2rem 0;
+      /* col 1: rownum · col 2: title · col 3: stage */
+      grid-template-columns: 2.2rem minmax(0, 1fr) auto;
+      column-gap: 0.85rem;
+      row-gap: 0.65rem;
+      padding: 1.4rem 0;
       border-bottom: 1px solid var(--rule);
       align-items: baseline;
     }
     .ledger tbody td {
       padding: 0;
       border: none;
-      font-size: 0.86rem;
+      font-size: 0.98rem;
+      min-width: 0;
     }
-    /* Title row: rownum on the left margin, title fills, stage on the right */
+    /* Title row: rownum in its own column, title in the next, stage on right */
     td.rownum {
       grid-column: 1;
       grid-row: 1;
+      width: auto;
       font-size: 0.7rem;
-      padding-right: 0.3rem;
       align-self: start;
-      padding-top: 0.5rem;
+      padding-top: 0.55rem;
+      text-align: right;
     }
     td.spec {
-      grid-column: 1;
+      grid-column: 2;
       grid-row: 1;
-      padding-left: 2.5rem;
-      min-width: 0;
     }
     .ledger tbody tr td:nth-child(3) {
-      grid-column: 2;
+      grid-column: 3;
       grid-row: 1;
       align-self: start;
       padding-top: 0.45rem;
     }
-    /* Below the title, lay out the remaining cells with inline labels */
+    /* Metadata rows: start where the title starts (column 2) so they
+       visually indent under the title rather than under the rownum. */
     .ledger tbody tr td:nth-child(n+4) {
-      grid-column: 1 / -1;
+      grid-column: 2 / -1;
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 1rem;
-      padding-left: 2.5rem;
     }
     .ledger tbody tr td:nth-child(n+4)::before {
       content: attr(data-label);
       font-family: "IBM Plex Mono", monospace;
-      font-size: 0.66rem;
+      font-size: 0.78rem;
+      font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.15em;
-      color: var(--muted);
+      letter-spacing: 0.14em;
+      color: var(--ink-soft);
       flex: none;
     }
     /* All right-side content lives inside .cell-value (or is a single child
@@ -571,16 +574,20 @@
       text-align: right;
     }
     .ledger .count-link {
-      padding: 0.1rem 0.4rem;
-      font-size: 1rem;
+      padding: 0.15rem 0.5rem;
+      font-size: 1.15rem;
     }
-    .spec-title { font-size: 1.2rem; }
+    .spec-title { font-size: 1.4rem; }
+    .spec-sub { font-size: 0.82rem; }
+    td.date { font-size: 0.98rem; }
+    td.age { font-size: 1.02rem; }
+    .stage { font-size: 0.86rem; }
     /* Keep the age bar but make it narrower so it stays right-aligned with
        the value on the same line */
-    .age-bar { width: 80px; margin-left: 0.5rem; }
+    .age-bar { width: 80px; margin-left: 0.55rem; height: 6px; }
   }
 
-  /* Tier: phone — stack masthead vertically, tighten paddings */
+  /* Tier: phone — tighter paddings + smaller type for narrow viewports */
   @media (max-width: 640px) {
     .frame { padding: 1.5rem 1rem 2rem; }
     .masthead {
@@ -589,6 +596,15 @@
     }
     .colophon { text-align: left; margin-top: 0.5rem; }
     h1.title { font-size: clamp(2.2rem, 11vw, 3.2rem); }
+    .ledger tbody tr { padding: 1.1rem 0; gap: 0.5rem 0.75rem; }
+    .ledger tbody td { font-size: 0.88rem; }
+    .ledger tbody tr td:nth-child(n+4)::before { font-size: 0.7rem; letter-spacing: 0.13em; }
+    .ledger .count-link { font-size: 1.02rem; padding: 0.1rem 0.4rem; }
+    .spec-title { font-size: 1.18rem; }
+    .spec-sub { font-size: 0.74rem; }
+    td.date { font-size: 0.88rem; }
+    td.age { font-size: 0.92rem; }
+    .stage { font-size: 0.78rem; }
     .age-bar { display: none; }
   }
 
