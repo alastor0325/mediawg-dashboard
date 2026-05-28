@@ -1,3 +1,4 @@
+import shutil
 import sys
 import time
 from pathlib import Path
@@ -12,7 +13,22 @@ from mediawg_dashboard.render import render_index
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 CONFIG_PATH = REPO_ROOT / "config" / "specs.yaml"
+STATIC_DIR = REPO_ROOT / "static"
 OUTPUT_PATH = REPO_ROOT / "output" / "index.html"
+
+
+def copy_static(static_dir: Path, output_dir: Path) -> list[Path]:
+    copied: list[Path] = []
+    if not static_dir.is_dir():
+        return copied
+    for src in static_dir.rglob("*"):
+        if not src.is_file():
+            continue
+        dst = output_dir / src.relative_to(static_dir)
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dst)
+        copied.append(dst)
+    return copied
 
 
 def _fetch_one(meta: SpecMeta, client: httpx.Client) -> Spec:
@@ -33,7 +49,8 @@ def cmd_refresh() -> int:
     html = render_index(specs)
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_PATH.write_text(html)
-    print(f"wrote {OUTPUT_PATH} ({len(specs)} specs)")
+    static_copied = copy_static(STATIC_DIR, OUTPUT_PATH.parent)
+    print(f"wrote {OUTPUT_PATH} ({len(specs)} specs, {len(static_copied)} static files)")
     return 0
 
 
