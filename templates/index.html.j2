@@ -465,13 +465,133 @@
   .pip.mute { background: var(--signal-mute); }
   .pip.rose { background: var(--signal-rose); }
 
-  /* Responsive */
+  /* ============ Responsive ============ */
+
+  /* Tier: laptop / small desktop — tighten paddings, drop the age bar */
+  @media (max-width: 1100px) {
+    .frame { padding: 2.5rem 1.5rem 3rem; }
+    table.ledger { font-size: 0.88rem; }
+    .ledger thead th, .ledger tbody td { padding-left: 0.6rem; padding-right: 0.6rem; }
+    .spec-title { font-size: 1.1rem; }
+    td.spec { min-width: 12rem; }
+    .age-bar { width: 40px; }
+  }
+
+  /* Tier: tablet portrait & phone — the 9-column ledger doesn't fit; stack
+     rows as labeled cards. Summary collapses to 2 cols. */
   @media (max-width: 900px) {
-    .frame { padding: 2rem 1rem 3rem; }
+    .frame { padding: 2rem 1.25rem 2.5rem; }
     .summary { grid-template-columns: repeat(2, 1fr); }
-    .stat { border-right: none; border-bottom: 1px solid var(--rule); }
-    table.ledger { font-size: 0.85rem; }
-    .spec-title { font-size: 1.05rem; }
+    .stat {
+      border-right: none;
+      border-bottom: 1px dotted var(--rule);
+      padding: 0.9rem 1rem;
+    }
+    .stat + .stat { padding-left: 1rem; }
+    .stat:nth-child(odd) { border-right: 1px dotted var(--rule); }
+    .stat:nth-last-child(-n+2) { border-bottom: none; }
+    .stat-num { font-size: 2rem; }
+    .section-head { flex-wrap: wrap; gap: 0.5rem; }
+    .section-meta { font-size: 0.66rem; }
+
+    /* Table → card layout */
+    table.ledger { border-collapse: separate; }
+    .ledger thead { display: none; }
+    .ledger tbody { display: block; }
+    .ledger tbody tr {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.5rem 1rem;
+      padding: 1.2rem 0;
+      border-bottom: 1px solid var(--rule);
+      align-items: baseline;
+    }
+    .ledger tbody td {
+      padding: 0;
+      border: none;
+      font-size: 0.86rem;
+    }
+    /* Title row: rownum on the left margin, title fills, stage on the right */
+    td.rownum {
+      grid-column: 1;
+      grid-row: 1;
+      font-size: 0.7rem;
+      padding-right: 0.3rem;
+      align-self: start;
+      padding-top: 0.5rem;
+    }
+    td.spec {
+      grid-column: 1;
+      grid-row: 1;
+      padding-left: 2.5rem;
+      min-width: 0;
+    }
+    .ledger tbody tr td:nth-child(3) {
+      grid-column: 2;
+      grid-row: 1;
+      align-self: start;
+      padding-top: 0.45rem;
+    }
+    /* Below the title, lay out the remaining cells with inline labels */
+    .ledger tbody tr td:nth-child(n+4) {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      padding-left: 2.5rem;
+    }
+    .ledger tbody tr td:nth-child(n+4)::before {
+      content: attr(data-label);
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.66rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      flex: none;
+    }
+    .ledger .count-link {
+      padding: 0.1rem 0.4rem;
+      font-size: 1rem;
+    }
+    .spec-title { font-size: 1.2rem; }
+    /* Keep the age bar but make it narrower so it stays right-aligned with
+       the value on the same line */
+    .age-bar { width: 80px; margin-left: 0.5rem; }
+  }
+
+  /* Tier: phone — stack masthead vertically, tighten paddings */
+  @media (max-width: 640px) {
+    .frame { padding: 1.5rem 1rem 2rem; }
+    .masthead {
+      grid-template-columns: 1fr;
+      align-items: start;
+    }
+    .colophon { text-align: left; margin-top: 0.5rem; }
+    h1.title { font-size: clamp(2.2rem, 11vw, 3.2rem); }
+    .age-bar { display: none; }
+  }
+
+  /* Tier: very narrow — collapse summary to single column */
+  @media (max-width: 420px) {
+    .summary { grid-template-columns: 1fr; }
+    .stat { border-right: none !important; }
+    .stat:not(:last-child) { border-bottom: 1px dotted var(--rule); }
+    .stat:last-child { border-bottom: none; }
+  }
+
+  /* Short viewport — compress masthead for landscape phones / split panes */
+  @media (max-height: 500px) {
+    .frame { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+    h1.title { font-size: clamp(1.8rem, 4vw, 2.6rem); }
+    .stat-num { font-size: 1.6rem; }
+    .summary .stat { padding: 0.6rem 1rem; }
+  }
+
+  /* Reduced motion — disable row-entry animation */
+  @media (prefers-reduced-motion: reduce) {
+    .ledger tbody tr { animation: none !important; }
+    * { transition: none !important; }
   }
 </style>
 </head>
@@ -543,8 +663,8 @@
     {% set age_w = ([100, (age or 0) // 50] | min) %}
     {% set warn = age and age > 730 %}
     <tr>
-      <td class="rownum">{{ "%02d" | format(loop.index) }}</td>
-      <td class="spec">
+      <td class="rownum" data-label="№">{{ "%02d" | format(loop.index) }}</td>
+      <td class="spec" data-label="Specification">
         {% if spec.status.ed_url %}
           <a class="spec-title" href="{{ spec.status.ed_url }}">{{ spec.meta.title }}</a>
         {% else %}
@@ -552,33 +672,33 @@
         {% endif %}
         <div class="spec-sub">{{ spec.meta.repo }}</div>
       </td>
-      <td>
+      <td data-label="Stage">
         <span class="stage {{ spec.status.stage }}" title="{{ stage_descriptions[spec.status.stage] }}">{{ spec.status.stage }}</span>
       </td>
-      <td class="date">
+      <td class="date" data-label="Last TR">
         {% if spec.status.last_tr_publication %}{{ spec.status.last_tr_publication }}{% else %}<span class="dash">—</span>{% endif %}
       </td>
-      <td class="count num">
+      <td class="count num" data-label="Open issues">
         <a class="count-link {% if spec.stats.open_issues_count == 0 %}count-zero{% endif %}" href="https://github.com/{{ spec.meta.repo }}/issues">{{ spec.stats.open_issues_count }}</a>
       </td>
-      <td class="count num">
+      <td class="count num" data-label="Open PRs">
         <a class="count-link {% if spec.stats.open_prs_count == 0 %}count-zero{% endif %}" href="https://github.com/{{ spec.meta.repo }}/pulls">{{ spec.stats.open_prs_count }}</a>
       </td>
-      <td class="age num">
+      <td class="age num" data-label="Oldest issue">
         {% if age is not none %}
           <span class="age-num {% if warn %}warn{% endif %}">{{ "{:,}".format(age) }}d</span><span class="age-bar {% if warn %}warn{% endif %}" style="--w: {{ age_w }}%;"></span>
         {% else %}
           <span class="dash">—</span>
         {% endif %}
       </td>
-      <td class="links">
+      <td class="links" data-label="Tests">
         {% if spec.meta.wpt_path %}
           <a href="{{ wpt_fyi_base }}{{ spec.meta.wpt_path }}">wpt.fyi ↗</a>
         {% else %}
           <span class="dash">—</span>
         {% endif %}
       </td>
-      <td class="links">
+      <td class="links" data-label="Source">
         <a href="https://github.com/{{ spec.meta.repo }}">repo ↗</a>
         {% if spec.meta.tr_url %}<span class="sep">·</span><a href="{{ spec.meta.tr_url }}">/TR/ ↗</a>{% endif %}
       </td>
