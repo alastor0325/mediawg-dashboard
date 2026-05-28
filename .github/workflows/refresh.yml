@@ -1,0 +1,59 @@
+name: Refresh dashboard
+
+on:
+  schedule:
+    # Daily at 03:00 UTC. Adjust as needed.
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+# Least-privilege: read-only on repo contents, write only what Pages requires.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one Pages deployment at a time. Don't cancel an in-flight deploy.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Render dashboard
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: PYTHONPATH=src python -m mediawg_dashboard.cli refresh
+
+      - name: Run unit tests
+        run: PYTHONPATH=src pytest tests/unit/ -q
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./output
+
+      - name: Deploy to Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
