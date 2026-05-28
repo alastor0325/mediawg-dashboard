@@ -10,8 +10,7 @@ specs:
     repo: w3c/autoplay
     w3c_shortname: autoplay-detection
     tr: https://www.w3.org/TR/autoplay-detection/
-    # No dedicated WPT directory yet.
-    wpt_path: null
+    wpt_path: /autoplay-policy-detection/
 
   - shortname: encrypted-media
     title: Encrypted Media Extensions
@@ -31,8 +30,7 @@ specs:
     repo: w3c/media-playback-quality
     # No /TR/ publication yet — Editor's Draft only.
     tr: null
-    # No dedicated WPT directory yet.
-    wpt_path: null
+    wpt_path: /media-playback-quality/
 
   - shortname: mediasession
     title: Media Session
