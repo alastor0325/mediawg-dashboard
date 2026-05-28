@@ -7,44 +7,44 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400,50;9..144,500,50;9..144,700,30;9..144,900,0&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400,50;9..144,500,50;9..144,700,30;9..144,900,0&family=Plus+Jakarta+Sans:wght@200..800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
   :root {
     color-scheme: light dark;
-    --paper:        #f5f1e8;
-    --paper-warm:   #efe9da;
-    --ink:          #1a1814;
-    --ink-soft:     #3a352c;
-    --muted:        #75706a;
-    --rule:         #d8d2c2;
-    --rule-strong:  #b8b0a0;
-    --accent:       #b8410c;
-    --accent-soft:  #c46e3e;
-    --signal-green: #4a6b2a;
-    --signal-blue:  #3a5a8c;
-    --signal-amber: #8a6308;
-    --signal-rose:  #9c2c3d;
-    --signal-mute:  #8a857a;
-    --grain-light:  rgba(26,24,20,0.018);
+    --paper:        #f8f5ec;
+    --paper-warm:   #f1ece0;
+    --ink:          #14130e;
+    --ink-soft:     #2a261e;
+    --muted:        #5a5650;
+    --rule:         #d0c9b6;
+    --rule-strong:  #a89f8a;
+    --accent:       #a83a08;
+    --accent-soft:  #c46436;
+    --signal-green: #3e5e1e;
+    --signal-blue:  #2e4d7e;
+    --signal-amber: #7a5400;
+    --signal-rose:  #8a1f30;
+    --signal-mute:  #6a655c;
+    --grain-light:  rgba(20,19,14,0.010);
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --paper:        #14130f;
-      --paper-warm:   #1a1814;
-      --ink:          #e8e3d6;
-      --ink-soft:     #c9c3b3;
-      --muted:        #8a857a;
-      --rule:         #2a2722;
-      --rule-strong:  #3e3a32;
-      --accent:       #e07a3a;
-      --accent-soft:  #b06038;
-      --signal-green: #98b070;
-      --signal-blue:  #7da3d4;
-      --signal-amber: #d9b15a;
-      --signal-rose:  #d68090;
-      --signal-mute:  #6e6a60;
-      --grain-light:  rgba(232,227,214,0.025);
+      --paper:        #0e0d0a;
+      --paper-warm:   #15140f;
+      --ink:          #f1ecdf;
+      --ink-soft:     #d6d0bc;
+      --muted:        #9c9686;
+      --rule:         #2e2b25;
+      --rule-strong:  #4a463c;
+      --accent:       #e88044;
+      --accent-soft:  #b86840;
+      --signal-green: #a2b878;
+      --signal-blue:  #88aedd;
+      --signal-amber: #e0b864;
+      --signal-rose:  #dc8898;
+      --signal-mute:  #807a6c;
+      --grain-light:  rgba(241,236,223,0.015);
     }
   }
 
@@ -56,11 +56,12 @@
     background-image:
       radial-gradient(var(--grain-light) 1px, transparent 1px),
       radial-gradient(var(--grain-light) 1px, transparent 1px);
-    background-size: 3px 3px, 5px 5px;
+    background-size: 4px 4px, 7px 7px;
     background-position: 0 0, 1px 2px;
     color: var(--ink);
     font-family: "Plus Jakarta Sans", system-ui, sans-serif;
     font-size: 15px;
+    font-weight: 450;
     line-height: 1.55;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
@@ -93,11 +94,11 @@
 
   .wordmark {
     font-family: "IBM Plex Mono", monospace;
-    font-size: 0.72rem;
+    font-size: 0.73rem;
     font-weight: 600;
     letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: var(--muted);
+    color: var(--ink-soft);
     margin-bottom: 0.4rem;
   }
   .wordmark .accent { color: var(--accent); }
@@ -120,22 +121,24 @@
 
   .colophon {
     font-family: "IBM Plex Mono", monospace;
-    font-size: 0.72rem;
+    font-size: 0.74rem;
+    font-weight: 500;
     text-align: right;
-    color: var(--muted);
-    line-height: 1.6;
+    color: var(--ink-soft);
+    line-height: 1.65;
   }
   .colophon .label {
     text-transform: uppercase;
     letter-spacing: 0.15em;
-    color: var(--ink-soft);
+    color: var(--muted);
+    font-weight: 600;
     display: block;
-    margin-bottom: 0.15rem;
+    margin-bottom: 0.2rem;
   }
   .colophon .ts {
-    font-size: 0.85rem;
+    font-size: 0.88rem;
     color: var(--ink);
-    font-weight: 500;
+    font-weight: 600;
   }
 
   /* ============ Summary strip ============ */
@@ -163,16 +166,18 @@
   }
   .stat-label {
     font-family: "IBM Plex Mono", monospace;
-    font-size: 0.7rem;
+    font-size: 0.72rem;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.15em;
-    color: var(--muted);
+    letter-spacing: 0.13em;
+    color: var(--ink-soft);
     margin-top: 0.55rem;
   }
   .stat-extra {
     font-family: "IBM Plex Mono", monospace;
-    font-size: 0.72rem;
-    color: var(--ink-soft);
+    font-size: 0.74rem;
+    font-weight: 500;
+    color: var(--ink);
     margin-top: 0.35rem;
   }
   .stat-extra .pip {
@@ -202,10 +207,11 @@
   }
   .section-label {
     font-family: "IBM Plex Mono", monospace;
-    font-size: 0.7rem;
+    font-size: 0.72rem;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.2em;
-    color: var(--muted);
+    letter-spacing: 0.18em;
+    color: var(--ink-soft);
     white-space: nowrap;
   }
   .section-rule { flex: 1; height: 1px; background: var(--rule); }
@@ -223,13 +229,13 @@
   }
   .ledger thead th {
     font-family: "IBM Plex Mono", monospace;
-    font-size: 0.68rem;
-    font-weight: 500;
+    font-size: 0.7rem;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.18em;
-    color: var(--muted);
+    letter-spacing: 0.15em;
+    color: var(--ink-soft);
     text-align: left;
-    padding: 0.6rem 0.85rem;
+    padding: 0.7rem 0.85rem;
     border-bottom: 1px solid var(--rule-strong);
     cursor: pointer;
     user-select: none;
@@ -289,26 +295,27 @@
   }
   .spec-sub {
     font-family: "IBM Plex Mono", monospace;
-    font-size: 0.71rem;
+    font-size: 0.74rem;
+    font-weight: 500;
     color: var(--muted);
-    margin-top: 0.25rem;
+    margin-top: 0.3rem;
     letter-spacing: 0.02em;
   }
 
   /* Stage as typographic mark */
   .stage {
     font-family: "IBM Plex Mono", monospace;
-    font-size: 0.74rem;
+    font-size: 0.78rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.13em;
+    letter-spacing: 0.12em;
     cursor: help;
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
-    color: var(--ink-soft);
+    gap: 0.5rem;
+    color: var(--ink);
     border-bottom: 1px dotted var(--rule-strong);
-    padding-bottom: 1px;
+    padding-bottom: 2px;
   }
   .stage::before {
     content: "";
@@ -329,8 +336,9 @@
   /* Date */
   td.date {
     font-family: "IBM Plex Mono", monospace;
-    font-size: 0.82rem;
-    color: var(--ink-soft);
+    font-size: 0.86rem;
+    font-weight: 500;
+    color: var(--ink);
     font-variant-numeric: tabular-nums;
   }
   td.date .relative {
@@ -367,8 +375,9 @@
   /* Age cell with horizontal weight bar */
   td.age {
     font-family: "IBM Plex Mono", monospace;
-    font-size: 0.86rem;
-    color: var(--ink-soft);
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--ink);
     font-variant-numeric: tabular-nums;
     min-width: 8rem;
   }
@@ -397,14 +406,15 @@
   /* Link cells */
   td.links {
     font-family: "IBM Plex Mono", monospace;
-    font-size: 0.78rem;
+    font-size: 0.82rem;
+    font-weight: 500;
     white-space: nowrap;
   }
   td.links a {
-    color: var(--ink-soft);
+    color: var(--ink);
     text-decoration: none;
     border-bottom: 1px dotted var(--rule-strong);
-    padding-bottom: 1px;
+    padding-bottom: 2px;
   }
   td.links a:hover {
     color: var(--accent);
