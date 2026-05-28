@@ -550,6 +550,16 @@
       color: var(--muted);
       flex: none;
     }
+    /* All right-side content lives inside .cell-value (or is a single child
+       like a text node or an <a>). The flex parent only sees [label]+[1 item]
+       so space-between gives a clean two-column row. */
+    .ledger tbody tr td:nth-child(n+4) > .cell-value {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex: 0 1 auto;
+      text-align: right;
+    }
     .ledger .count-link {
       padding: 0.1rem 0.4rem;
       font-size: 1rem;
@@ -686,7 +696,7 @@
       </td>
       <td class="age num" data-label="Oldest issue">
         {% if age is not none %}
-          <span class="age-num {% if warn %}warn{% endif %}">{{ "{:,}".format(age) }}d</span><span class="age-bar {% if warn %}warn{% endif %}" style="--w: {{ age_w }}%;"></span>
+          <span class="cell-value"><span class="age-num {% if warn %}warn{% endif %}">{{ "{:,}".format(age) }}d</span><span class="age-bar {% if warn %}warn{% endif %}" style="--w: {{ age_w }}%;"></span></span>
         {% else %}
           <span class="dash">—</span>
         {% endif %}
@@ -699,8 +709,7 @@
         {% endif %}
       </td>
       <td class="links" data-label="Source">
-        <a href="https://github.com/{{ spec.meta.repo }}">repo ↗</a>
-        {% if spec.meta.tr_url %}<span class="sep">·</span><a href="{{ spec.meta.tr_url }}">/TR/ ↗</a>{% endif %}
+        <span class="cell-value"><a href="https://github.com/{{ spec.meta.repo }}">repo ↗</a>{% if spec.meta.tr_url %}<span class="sep">·</span><a href="{{ spec.meta.tr_url }}">/TR/ ↗</a>{% endif %}</span>
       </td>
     </tr>
   {% else %}
