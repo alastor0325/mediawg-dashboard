@@ -1,3 +1,4 @@
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -19,12 +20,23 @@ def _env() -> Environment:
     )
 
 
+def summarize(specs: list[Spec]) -> dict:
+    return {
+        "total_specs": len(specs),
+        "total_issues": sum(s.stats.open_issues_count for s in specs),
+        "total_prs": sum(s.stats.open_prs_count for s in specs),
+        "by_stage": dict(Counter(s.status.stage for s in specs)),
+    }
+
+
 def render_index(specs: list[Spec], refreshed_at: datetime | None = None) -> str:
     refreshed_at = refreshed_at or datetime.now(timezone.utc)
     template = _env().get_template("index.html.j2")
     return template.render(
         specs=specs,
-        refreshed_at=refreshed_at.strftime("%Y-%m-%d %H:%M UTC"),
+        refreshed_at=refreshed_at,
+        refreshed_iso=refreshed_at.strftime("%Y-%m-%d %H:%M UTC"),
+        summary=summarize(specs),
         stage_descriptions=STAGE_DESCRIPTIONS,
         wpt_fyi_base=WPT_FYI_BASE,
     )

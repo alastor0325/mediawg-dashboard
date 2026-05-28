@@ -2,199 +2,632 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>MediaWG Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MediaWG · Ledger</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400,50;9..144,500,50;9..144,700,30;9..144,900,0&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
 <style>
   :root {
     color-scheme: light dark;
-    --bg: #fff;
-    --fg: #1a1a1a;
-    --muted: #666;
-    --border: #e2e2e2;
-    --row-hover: #f6f8fa;
-    --th-bg: #f6f8fa;
-    --th-hover: #ececef;
-    --link: #0366d6;
-    --warn: #c00;
-    --stage-rec: #1f883d;
-    --stage-pr: #218bff;
-    --stage-cr: #0969da;
-    --stage-wd: #9a6700;
-    --stage-fpwd: #d18616;
-    --stage-ed: #6e7781;
-    --stage-note: #6e7781;
-    --stage-disc: #8250df;
-    --stage-unk: #6e7781;
+    --paper:        #f5f1e8;
+    --paper-warm:   #efe9da;
+    --ink:          #1a1814;
+    --ink-soft:     #3a352c;
+    --muted:        #75706a;
+    --rule:         #d8d2c2;
+    --rule-strong:  #b8b0a0;
+    --accent:       #b8410c;
+    --accent-soft:  #c46e3e;
+    --signal-green: #4a6b2a;
+    --signal-blue:  #3a5a8c;
+    --signal-amber: #8a6308;
+    --signal-rose:  #9c2c3d;
+    --signal-mute:  #8a857a;
+    --grain-light:  rgba(26,24,20,0.018);
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #0d1117;
-      --fg: #e6edf3;
-      --muted: #8b949e;
-      --border: #21262d;
-      --row-hover: #161b22;
-      --th-bg: #161b22;
-      --th-hover: #21262d;
-      --link: #58a6ff;
-      --warn: #ff7b72;
+      --paper:        #14130f;
+      --paper-warm:   #1a1814;
+      --ink:          #e8e3d6;
+      --ink-soft:     #c9c3b3;
+      --muted:        #8a857a;
+      --rule:         #2a2722;
+      --rule-strong:  #3e3a32;
+      --accent:       #e07a3a;
+      --accent-soft:  #b06038;
+      --signal-green: #98b070;
+      --signal-blue:  #7da3d4;
+      --signal-amber: #d9b15a;
+      --signal-rose:  #d68090;
+      --signal-mute:  #6e6a60;
+      --grain-light:  rgba(232,227,214,0.025);
     }
   }
+
   * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    max-width: 1200px;
-    margin: 2rem auto;
-    padding: 0 1.25rem;
-    background: var(--bg);
-    color: var(--fg);
-    line-height: 1.5;
+    background: var(--paper);
+    background-image:
+      radial-gradient(var(--grain-light) 1px, transparent 1px),
+      radial-gradient(var(--grain-light) 1px, transparent 1px);
+    background-size: 3px 3px, 5px 5px;
+    background-position: 0 0, 1px 2px;
+    color: var(--ink);
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
-  header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 0.75rem;
-    margin-bottom: 1.25rem;
+
+  .frame {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 3rem 2rem 4rem;
+  }
+
+  /* ============ Masthead ============ */
+  .masthead {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
     gap: 1rem;
-    flex-wrap: wrap;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--rule-strong);
+    margin-bottom: 0;
+    position: relative;
   }
-  h1 { margin: 0; font-size: 1.5rem; }
-  .meta { color: var(--muted); font-size: 0.85rem; }
-  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
-  th, td { text-align: left; padding: 0.55rem 0.7rem; border-bottom: 1px solid var(--border); }
-  th {
+  .masthead::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: -4px;
+    height: 1px;
+    background: var(--rule-strong);
+  }
+
+  .wordmark {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
     font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+  }
+  .wordmark .accent { color: var(--accent); }
+
+  h1.title {
+    font-family: "Fraunces", Georgia, serif;
+    font-variation-settings: "opsz" 144, "SOFT" 30;
+    font-weight: 700;
+    font-size: clamp(2.8rem, 6vw, 4.4rem);
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin: 0;
+  }
+  h1.title em {
+    font-style: italic;
+    font-variation-settings: "opsz" 144, "SOFT" 50;
+    color: var(--accent);
+  }
+
+  .colophon {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    text-align: right;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .colophon .label {
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--ink-soft);
+    display: block;
+    margin-bottom: 0.15rem;
+  }
+  .colophon .ts {
+    font-size: 0.85rem;
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  /* ============ Summary strip ============ */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    margin-top: 2.25rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .stat {
+    padding: 1.1rem 0 1.2rem;
+    border-right: 1px solid var(--rule);
+    padding-right: 1.5rem;
+  }
+  .stat:last-child { border-right: none; }
+  .stat + .stat { padding-left: 1.5rem; }
+  .stat-num {
+    font-family: "Fraunces", Georgia, serif;
+    font-variation-settings: "opsz" 96, "SOFT" 30;
+    font-size: 2.4rem;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .stat-label {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    margin-top: 0.55rem;
+  }
+  .stat-extra {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    margin-top: 0.35rem;
+  }
+  .stat-extra .pip {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--signal-mute);
+    margin-right: 0.35rem;
+    vertical-align: 1px;
+  }
+  .stat-extra .stage-WD .pip,
+  .stat-extra .stage-FPWD .pip { background: var(--signal-amber); }
+  .stat-extra .stage-CR .pip,
+  .stat-extra .stage-CR-snapshot .pip,
+  .stat-extra .stage-CR-draft .pip { background: var(--signal-blue); }
+  .stat-extra .stage-REC .pip,
+  .stat-extra .stage-PR .pip { background: var(--signal-green); }
+  .stat-extra .stage-ED .pip { background: var(--signal-mute); }
+  .stat-extra .stage-Discontinued .pip { background: var(--signal-rose); }
+
+  /* ============ Section head ============ */
+  .section-head {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 2.5rem 0 1rem;
+  }
+  .section-label {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .section-rule { flex: 1; height: 1px; background: var(--rule); }
+  .section-meta {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  /* ============ The Ledger Table ============ */
+  table.ledger {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.93rem;
+  }
+  .ledger thead th {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.68rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    text-align: left;
+    padding: 0.6rem 0.85rem;
+    border-bottom: 1px solid var(--rule-strong);
     cursor: pointer;
     user-select: none;
-    background: var(--th-bg);
-    position: sticky;
-    top: 0;
+    background: transparent;
     white-space: nowrap;
   }
-  th:hover { background: var(--th-hover); }
-  th::after { content: " ⇅"; color: var(--muted); font-weight: 400; }
-  tbody tr:hover { background: var(--row-hover); }
-  td.num { text-align: right; font-variant-numeric: tabular-nums; }
-  td.age-warn { color: var(--warn); }
-  a { color: var(--link); text-decoration: none; }
-  a:hover { text-decoration: underline; }
-  .count-link {
-    display: inline-block;
-    min-width: 2ch;
-    padding: 0.05rem 0.4rem;
-    border-radius: 3px;
+  .ledger thead th:hover { color: var(--ink); }
+  .ledger thead th .sort-glyph {
+    color: var(--rule-strong);
+    margin-left: 0.3rem;
+    font-size: 0.7em;
   }
-  .count-link:hover { background: var(--row-hover); }
-  .stage {
-    display: inline-block;
-    padding: 0.1rem 0.55rem;
-    border-radius: 999px;
+  .ledger thead th.num,
+  .ledger tbody td.num { text-align: right; }
+  .ledger thead th.center,
+  .ledger tbody td.center { text-align: center; }
+
+  .ledger tbody tr {
+    border-bottom: 1px dotted var(--rule);
+    transition: background-color 120ms ease;
+  }
+  .ledger tbody tr:hover {
+    background: var(--paper-warm);
+  }
+  .ledger tbody td {
+    padding: 1.05rem 0.85rem;
+    vertical-align: middle;
+  }
+
+  /* Row number */
+  td.rownum {
+    font-family: "IBM Plex Mono", monospace;
     font-size: 0.78rem;
+    color: var(--muted);
+    width: 1ch;
+    padding-right: 0.4rem;
+  }
+
+  /* Spec title cell */
+  td.spec {
+    line-height: 1.25;
+    min-width: 14rem;
+  }
+  .spec-title {
+    font-family: "Fraunces", Georgia, serif;
+    font-variation-settings: "opsz" 36, "SOFT" 30;
+    font-size: 1.22rem;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    color: var(--ink);
+    text-decoration: none;
+    display: inline-block;
+  }
+  .spec-title:hover {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .spec-sub {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.71rem;
+    color: var(--muted);
+    margin-top: 0.25rem;
+    letter-spacing: 0.02em;
+  }
+
+  /* Stage as typographic mark */
+  .stage {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.74rem;
     font-weight: 600;
-    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.13em;
     cursor: help;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--ink-soft);
+    border-bottom: 1px dotted var(--rule-strong);
+    padding-bottom: 1px;
+  }
+  .stage::before {
+    content: "";
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--signal-mute);
+    flex: none;
+  }
+  .stage.WD::before, .stage.FPWD::before { background: var(--signal-amber); }
+  .stage.CR::before,
+  .stage.CR-snapshot::before,
+  .stage.CR-draft::before { background: var(--signal-blue); }
+  .stage.REC::before, .stage.PR::before { background: var(--signal-green); }
+  .stage.ED::before, .stage.NOTE::before { background: var(--signal-mute); }
+  .stage.Discontinued::before { background: var(--signal-rose); }
+
+  /* Date */
+  td.date {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+  }
+  td.date .relative {
+    display: block;
+    color: var(--muted);
+    font-size: 0.7rem;
+    margin-top: 0.15rem;
+  }
+
+  /* Numeric count cells */
+  td.count { padding: 1.05rem 0.85rem; }
+  .count-link {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--ink);
+    text-decoration: none;
+    font-variant-numeric: tabular-nums;
+    display: inline-block;
+    padding: 0.2rem 0.55rem;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    transition: all 100ms ease;
+    min-width: 2.5rem;
+    text-align: right;
+  }
+  .count-link:hover {
+    color: var(--accent);
+    border-color: var(--rule-strong);
+    background: var(--paper);
+  }
+  .count-zero { color: var(--muted); }
+
+  /* Age cell with horizontal weight bar */
+  td.age {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.86rem;
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+    min-width: 8rem;
+  }
+  .age-num { display: inline-block; min-width: 3.5rem; text-align: right; }
+  .age-bar {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 0.6rem;
+    height: 5px;
+    width: 60px;
+    background: var(--rule);
+    position: relative;
+    border-radius: 0;
+  }
+  .age-bar::after {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: var(--w, 0%);
+    background: var(--signal-amber);
+    transition: width 400ms ease;
+  }
+  .age-bar.warn::after { background: var(--accent); }
+  .age-num.warn { color: var(--accent); }
+
+  /* Link cells */
+  td.links {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.78rem;
     white-space: nowrap;
   }
-  .stage-REC          { background: var(--stage-rec); }
-  .stage-PR           { background: var(--stage-pr); }
-  .stage-CR           { background: var(--stage-cr); }
-  .stage-CR-snapshot  { background: var(--stage-cr); }
-  .stage-CR-draft     { background: var(--stage-cr); }
-  .stage-WD           { background: var(--stage-wd); }
-  .stage-FPWD         { background: var(--stage-fpwd); }
-  .stage-ED           { background: var(--stage-ed); }
-  .stage-NOTE         { background: var(--stage-note); }
-  .stage-Discontinued { background: var(--stage-disc); }
-  .stage-unknown      { background: var(--stage-unk); }
-  .dash { color: var(--muted); }
-  footer { margin-top: 2rem; color: var(--muted); font-size: 0.8rem; }
-  footer a { color: var(--muted); text-decoration: underline; }
+  td.links a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--rule-strong);
+    padding-bottom: 1px;
+  }
+  td.links a:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  td.links .sep {
+    color: var(--rule-strong);
+    margin: 0 0.4rem;
+  }
+  .dash { color: var(--rule-strong); }
+
+  /* Row entry animation */
+  @keyframes row-enter {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .ledger tbody tr {
+    animation: row-enter 420ms cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+  }
+  {% for i in range(specs|length) %}
+  .ledger tbody tr:nth-child({{ i + 1 }}) {
+    animation-delay: {{ 40 + i * 30 }}ms;
+  }
+  {% endfor %}
+
+  /* Footer */
+  footer {
+    margin-top: 3.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+  footer p { margin: 0 0 0.3rem; }
+  footer a { color: var(--ink-soft); border-bottom: 1px dotted var(--rule-strong); text-decoration: none; }
+  footer a:hover { color: var(--accent); border-color: var(--accent); }
+  footer .legend {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.8rem;
+  }
+  footer .legend .item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  footer .legend .pip {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+  }
+  .pip.green { background: var(--signal-green); }
+  .pip.blue { background: var(--signal-blue); }
+  .pip.amber { background: var(--signal-amber); }
+  .pip.mute { background: var(--signal-mute); }
+  .pip.rose { background: var(--signal-rose); }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .frame { padding: 2rem 1rem 3rem; }
+    .summary { grid-template-columns: repeat(2, 1fr); }
+    .stat { border-right: none; border-bottom: 1px solid var(--rule); }
+    table.ledger { font-size: 0.85rem; }
+    .spec-title { font-size: 1.05rem; }
+  }
 </style>
 </head>
 <body>
-<header>
-  <h1>MediaWG Dashboard</h1>
-  <span class="meta">Refreshed {{ refreshed_at }}</span>
-</header>
+<div class="frame">
 
-<table id="specs">
-<thead>
-<tr>
-  <th>Spec</th>
-  <th>Stage</th>
-  <th>Last TR</th>
-  <th class="num">Open issues</th>
-  <th class="num">Open PRs</th>
-  <th class="num">Oldest issue (days)</th>
-  <th>WPT</th>
-  <th>Repo</th>
-</tr>
-</thead>
-<tbody>
-{% for spec in specs %}
-<tr>
-  <td>
-    {% if spec.status.ed_url %}
-      <a href="{{ spec.status.ed_url }}">{{ spec.meta.title }}</a>
-    {% else %}
-      {{ spec.meta.title }}
-    {% endif %}
-  </td>
-  <td><span class="stage stage-{{ spec.status.stage }}" title="{{ stage_descriptions[spec.status.stage] }}">{{ spec.status.stage }}</span></td>
-  <td>{% if spec.status.last_tr_publication %}{{ spec.status.last_tr_publication }}{% else %}<span class="dash">—</span>{% endif %}</td>
-  <td class="num"><a class="count-link" href="https://github.com/{{ spec.meta.repo }}/issues">{{ spec.stats.open_issues_count }}</a></td>
-  <td class="num"><a class="count-link" href="https://github.com/{{ spec.meta.repo }}/pulls">{{ spec.stats.open_prs_count }}</a></td>
-  <td class="num{% if spec.stats.oldest_open_issue_age_days and spec.stats.oldest_open_issue_age_days > 365 %} age-warn{% endif %}">
-    {% if spec.stats.oldest_open_issue_age_days is not none %}{{ spec.stats.oldest_open_issue_age_days }}{% else %}<span class="dash">—</span>{% endif %}
-  </td>
-  <td>
-    {% if spec.meta.wpt_path %}
-      <a href="{{ wpt_fyi_base }}{{ spec.meta.wpt_path }}">wpt.fyi</a>
-    {% else %}
-      <span class="dash">—</span>
-    {% endif %}
-  </td>
-  <td>
-    <a href="https://github.com/{{ spec.meta.repo }}">{{ spec.meta.repo }}</a>
-    {% if spec.meta.tr_url %} · <a href="{{ spec.meta.tr_url }}">TR</a>{% endif %}
-  </td>
-</tr>
-{% else %}
-<tr><td colspan="8" style="text-align:center; color:var(--muted);">No specs configured.</td></tr>
-{% endfor %}
-</tbody>
-</table>
+  <header class="masthead">
+    <div>
+      <div class="wordmark">W3C Media Working Group · <span class="accent">Ledger</span></div>
+      <h1 class="title">Media<em>WG</em></h1>
+    </div>
+    <div class="colophon">
+      <span class="label">Last refreshed</span>
+      <span class="ts">{{ refreshed_iso }}</span>
+      <span style="display:block; margin-top:0.4rem;">№ {{ summary.total_specs }} specifications · daily</span>
+    </div>
+  </header>
 
-<footer>
-  Read-only summary of public data from
-  <a href="https://api.w3.org/">api.w3.org</a> and
-  <a href="https://api.github.com/">api.github.com</a>.
-  Hover a stage badge for its definition. Click any column header to sort.
-  Source: <a href="https://github.com/alastor0325/mediawg-dashboard">alastor0325/mediawg-dashboard</a>.
-</footer>
+  <section class="summary" aria-label="At-a-glance summary">
+    <div class="stat">
+      <div class="stat-num">{{ summary.total_specs }}</div>
+      <div class="stat-label">Specifications</div>
+      <div class="stat-extra">{{ summary.by_stage | length }} distinct stages</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">{{ summary.total_issues }}</div>
+      <div class="stat-label">Open issues · all repos</div>
+      <div class="stat-extra">across {{ summary.total_specs }} repositories</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">{{ summary.total_prs }}</div>
+      <div class="stat-label">Open pull requests</div>
+      <div class="stat-extra">awaiting review &amp; merge</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">{{ summary.by_stage.keys() | list | length }}</div>
+      <div class="stat-label">Stages represented</div>
+      <div class="stat-extra">
+      {% for stage, n in summary.by_stage.items() %}
+        <span class="stage-{{ stage }}"><span class="pip"></span>{{ stage }}&nbsp;{{ n }}</span>{% if not loop.last %} · {% endif %}
+      {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <div class="section-head">
+    <span class="section-label">— Status, by specification</span>
+    <span class="section-rule"></span>
+    <span class="section-meta">click any header to sort · hover a stage code for its definition</span>
+  </div>
+
+  <table class="ledger" id="specs">
+  <thead>
+    <tr>
+      <th aria-hidden="true"></th>
+      <th>Specification <span class="sort-glyph">⇅</span></th>
+      <th>Stage <span class="sort-glyph">⇅</span></th>
+      <th>Last TR <span class="sort-glyph">⇅</span></th>
+      <th class="num">Issues <span class="sort-glyph">⇅</span></th>
+      <th class="num">PRs <span class="sort-glyph">⇅</span></th>
+      <th class="num">Oldest <span class="sort-glyph">⇅</span></th>
+      <th>Tests</th>
+      <th>Source</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for spec in specs %}
+    {% set age = spec.stats.oldest_open_issue_age_days %}
+    {% set age_w = ([100, (age or 0) // 50] | min) %}
+    {% set warn = age and age > 730 %}
+    <tr>
+      <td class="rownum">{{ "%02d" | format(loop.index) }}</td>
+      <td class="spec">
+        {% if spec.status.ed_url %}
+          <a class="spec-title" href="{{ spec.status.ed_url }}">{{ spec.meta.title }}</a>
+        {% else %}
+          <span class="spec-title">{{ spec.meta.title }}</span>
+        {% endif %}
+        <div class="spec-sub">{{ spec.meta.repo }}</div>
+      </td>
+      <td>
+        <span class="stage {{ spec.status.stage }}" title="{{ stage_descriptions[spec.status.stage] }}">{{ spec.status.stage }}</span>
+      </td>
+      <td class="date">
+        {% if spec.status.last_tr_publication %}{{ spec.status.last_tr_publication }}{% else %}<span class="dash">—</span>{% endif %}
+      </td>
+      <td class="count num">
+        <a class="count-link {% if spec.stats.open_issues_count == 0 %}count-zero{% endif %}" href="https://github.com/{{ spec.meta.repo }}/issues">{{ spec.stats.open_issues_count }}</a>
+      </td>
+      <td class="count num">
+        <a class="count-link {% if spec.stats.open_prs_count == 0 %}count-zero{% endif %}" href="https://github.com/{{ spec.meta.repo }}/pulls">{{ spec.stats.open_prs_count }}</a>
+      </td>
+      <td class="age num">
+        {% if age is not none %}
+          <span class="age-num {% if warn %}warn{% endif %}">{{ "{:,}".format(age) }}d</span><span class="age-bar {% if warn %}warn{% endif %}" style="--w: {{ age_w }}%;"></span>
+        {% else %}
+          <span class="dash">—</span>
+        {% endif %}
+      </td>
+      <td class="links">
+        {% if spec.meta.wpt_path %}
+          <a href="{{ wpt_fyi_base }}{{ spec.meta.wpt_path }}">wpt.fyi ↗</a>
+        {% else %}
+          <span class="dash">—</span>
+        {% endif %}
+      </td>
+      <td class="links">
+        <a href="https://github.com/{{ spec.meta.repo }}">repo ↗</a>
+        {% if spec.meta.tr_url %}<span class="sep">·</span><a href="{{ spec.meta.tr_url }}">/TR/ ↗</a>{% endif %}
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="9" style="text-align:center; color:var(--muted); padding:2rem;">No specifications configured.</td></tr>
+  {% endfor %}
+  </tbody>
+  </table>
+
+  <footer>
+    <p>A read-only summary compiled from public sources: <a href="https://api.w3.org/">api.w3.org</a>, <a href="https://api.github.com/">api.github.com</a>, and <a href="https://wpt.fyi/">wpt.fyi</a>. Refreshes once daily via GitHub Actions.</p>
+    <p>Source &amp; commit history: <a href="https://github.com/alastor0325/mediawg-dashboard">github.com/alastor0325/mediawg-dashboard</a>.</p>
+    <div class="legend">
+      <span class="item"><span class="pip green"></span> REC · PR</span>
+      <span class="item"><span class="pip blue"></span> CR · CR-snapshot · CR-draft</span>
+      <span class="item"><span class="pip amber"></span> WD · FPWD</span>
+      <span class="item"><span class="pip mute"></span> ED · NOTE</span>
+      <span class="item"><span class="pip rose"></span> Discontinued</span>
+    </div>
+  </footer>
+
+</div>
 
 <script>
-(function() {
+(function () {
   const table = document.getElementById("specs");
   if (!table) return;
   const tbody = table.querySelector("tbody");
-  table.querySelectorAll("th").forEach((th, idx) => {
+  const headers = table.querySelectorAll("thead th");
+  headers.forEach((th, idx) => {
+    if (th.getAttribute("aria-hidden") === "true") return;
     let asc = true;
     th.addEventListener("click", () => {
       const rows = Array.from(tbody.querySelectorAll("tr"));
       rows.sort((a, b) => {
         const av = a.cells[idx].textContent.trim();
         const bv = b.cells[idx].textContent.trim();
-        const an = parseFloat(av);
-        const bn = parseFloat(bv);
+        const an = parseFloat(av.replace(/,/g, ""));
+        const bn = parseFloat(bv.replace(/,/g, ""));
         if (!isNaN(an) && !isNaN(bn)) return asc ? an - bn : bn - an;
         return asc ? av.localeCompare(bv) : bv.localeCompare(av);
       });
-      rows.forEach(r => tbody.appendChild(r));
+      rows.forEach(r => { r.style.animation = "none"; tbody.appendChild(r); });
       asc = !asc;
     });
   });
 })();
 </script>
+
 </body>
 </html>

@@ -107,6 +107,32 @@ def test_render_wpt_column_shows_dash_when_path_not_set():
     assert "wpt.fyi/results" not in html
 
 
-def test_render_includes_wpt_header():
+def test_render_includes_wpt_link_for_spec_with_path():
     html = render_index([_spec()])
-    assert ">WPT</" in html or "WPT" in html  # header should mention WPT
+    assert "wpt.fyi" in html
+
+
+def test_summarize_counts_specs_and_totals():
+    from mediawg_dashboard.render import summarize
+
+    specs = [_spec("a", "WD"), _spec("b", "REC"), _spec("c", "WD")]
+    s = summarize(specs)
+    assert s["total_specs"] == 3
+    assert s["total_issues"] == 42 * 3
+    assert s["total_prs"] == 5 * 3
+    assert s["by_stage"] == {"WD": 2, "REC": 1}
+
+
+def test_summarize_empty_list():
+    from mediawg_dashboard.render import summarize
+
+    s = summarize([])
+    assert s == {"total_specs": 0, "total_issues": 0, "total_prs": 0, "by_stage": {}}
+
+
+def test_render_summary_includes_totals():
+    html = render_index([_spec("a", "WD"), _spec("b", "REC")])
+    # Total open issues across two specs (42 + 42 = 84) should appear.
+    assert ">84<" in html
+    # Stage labels should appear in the summary strip.
+    assert "WD" in html and "REC" in html
