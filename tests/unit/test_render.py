@@ -189,6 +189,20 @@ def test_render_rows_are_expandable():
     assert 'id="panel-webcodecs"' in html
 
 
+def test_render_expand_affordance_is_discoverable():
+    html = render_index([_spec("webcodecs")])
+    # Keyboard-operable + a visible caret + a hint.
+    assert 'tabindex="0"' in html and 'aria-expanded="false"' in html
+    assert 'class="caret"' in html
+    assert "click a row to expand" in html
+
+
+def test_render_cr_blocking_before_horizontal():
+    # CR-blocking issues should render above Horizontal reviews in the checklist.
+    html = render_index([_spec("webcodecs", stage="WD")])
+    assert html.index("CR-blocking issues") < html.index("Horizontal reviews")
+
+
 def test_render_panel_has_three_groups():
     html = render_index([_spec("webcodecs")])
     assert "Standardization" in html

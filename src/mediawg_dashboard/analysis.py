@@ -202,7 +202,8 @@ def _ac_review_req(m: SpecMilestones) -> Blocker:
 
 GATE_REQUIREMENTS: dict[str, list[Requirement]] = {
     "FPWD": [],  # ED -> FPWD is a publication decision; no tracked process blockers.
-    "CR": [_wide_review_req, _horizontal_req, _cr_issues_req],
+    # Horizontal is last so its nested per-group chips sit at the bottom of the list.
+    "CR": [_wide_review_req, _cr_issues_req, _horizontal_req],
     "PR": [_impl_report_req],
     "REC": [_ac_review_req],
 }

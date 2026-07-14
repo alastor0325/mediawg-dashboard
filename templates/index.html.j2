@@ -391,12 +391,16 @@
   tr.spec-row { cursor: pointer; }
   .caret {
     display: inline-block;
-    color: var(--rule-strong);
-    font-size: 0.7em;
-    margin-right: 0.35rem;
-    transition: transform 140ms ease;
+    color: var(--muted);
+    font-size: 0.85em;
+    margin-right: 0.4rem;
+    transition: transform 140ms ease, color 140ms ease;
   }
+  /* Brighten the caret on row hover/focus so it reads as "click to expand". */
+  .ledger tbody tr.spec-row:hover .caret,
+  .ledger tbody tr.spec-row:focus-visible .caret { color: var(--accent); }
   tr.spec-row.open .caret { transform: rotate(90deg); color: var(--accent); }
+  tr.spec-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   tr.panel-row { animation: none !important; }
   tr.panel-row:hover { background: transparent; }
   tr.panel-row > td { padding: 0 0.85rem 1.4rem; border-bottom: 1px solid var(--rule); }
@@ -749,7 +753,7 @@
   <tbody>
   {% for row in rows %}
     {% set spec = row.spec %}
-    <tr class="spec-row" data-panel="panel-{{ spec.meta.shortname }}">
+    <tr class="spec-row" data-panel="panel-{{ spec.meta.shortname }}" tabindex="0" aria-expanded="false" aria-controls="panel-{{ spec.meta.shortname }}">
       <td class="rownum" data-label="№"><span class="caret" aria-hidden="true">▸</span>{{ "%02d" | format(loop.index) }}</td>
       <td class="spec" data-label="Specification">
         {% if spec.status.ed_url %}
@@ -862,18 +866,19 @@
   if (!table) return;
   const tbody = table.querySelector("tbody");
 
-  // Expand / collapse the detail panel for a spec row.
+  // Expand / collapse the detail panel for a spec row (click or keyboard).
   tbody.querySelectorAll("tr.spec-row").forEach(row => {
-    row.addEventListener("click", () => {
+    const toggle = () => {
       const panel = document.getElementById(row.dataset.panel);
       if (!panel) return;
-      if (panel.hasAttribute("hidden")) {
-        panel.removeAttribute("hidden");
-        row.classList.add("open");
-      } else {
-        panel.setAttribute("hidden", "");
-        row.classList.remove("open");
-      }
+      const willOpen = panel.hasAttribute("hidden");
+      if (willOpen) panel.removeAttribute("hidden"); else panel.setAttribute("hidden", "");
+      row.classList.toggle("open", willOpen);
+      row.setAttribute("aria-expanded", willOpen ? "true" : "false");
+    };
+    row.addEventListener("click", toggle);
+    row.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
     });
   });
 

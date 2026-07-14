@@ -57,6 +57,16 @@ logos, no "reference browser", no "outlier/laggard" language. (See the
   `max-content 1fr`) so labels/values line up wide (3-up) and narrow (stacked).
 - Show a signal only when it's meaningful (e.g. backlog trend needs ≥2 snapshots;
   "behind charter" only when overdue).
+- **Blocker order:** simple booleans first, then the one with a nested breakdown
+  (horizontal review) last, so its sub-chips sit at the bottom.
+
+## Affordance & interaction
+
+- **Expandable rows must look expandable:** a disclosure caret (`▸`) visible at
+  rest (muted), brightening to accent on hover/focus and rotating when open;
+  `cursor: pointer`; and a one-line hint in the section subtitle. Rows are
+  keyboard-operable: `tabindex=0`, visible focus ring, Enter/Space toggles, and
+  `aria-expanded` reflects state.
 
 ## Typography
 
