@@ -179,7 +179,7 @@ def test_render_summary_shows_shipping_count():
     html = render_index([
         _spec("a", interop=InteropStatus(chrome="shipped", firefox="shipped", safari="shipped"))
     ])
-    assert "1/1 shipping cross-engine" in html
+    assert "1 shipping cross-engine" in html
 
 
 def test_render_rows_are_expandable():

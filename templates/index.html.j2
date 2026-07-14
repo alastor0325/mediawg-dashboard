@@ -336,8 +336,7 @@
   .stage.ED::before, .stage.NOTE::before { background: var(--signal-mute); }
   .stage.Discontinued::before { background: var(--signal-rose); }
 
-  /* Shared status-dot primitive (next-gate + pulse read as colored dots;
-     interop keeps its ●◐○ glyph string so the two vocabularies never clash) */
+  /* Solid status-dot primitive — used by the Pulse mark (colour + reason text). */
   .hdot {
     display: inline-block;
     width: 8px; height: 8px;
@@ -347,19 +346,19 @@
     vertical-align: 0;
   }
 
-  /* Next-gate mark */
+  /* Next-gate mark — glyph (✓ ready / ✗ blocked / · unknown) + colour. */
   td.gate {
     font-family: "IBM Plex Mono", monospace;
     font-size: 0.82rem;
     white-space: nowrap;
   }
   .gate-name { color: var(--ink); font-weight: 600; letter-spacing: 0.04em; }
-  .gate-dot { margin-left: 0.45rem; }
-  .gate-dot.ready { background: var(--signal-green); }
-  .gate-dot.blocked { background: var(--signal-rose); }
-  .gate-dot.unknown { background: var(--signal-mute); }
+  .gate-mark { font-weight: 700; }
+  .gate-mark.gate-ready { color: var(--signal-green); }
+  .gate-mark.gate-blocked { color: var(--signal-rose); }
+  .gate-mark.gate-unknown { color: var(--signal-mute); }
 
-  /* Interop tri-dot + all-engines WPT */
+  /* Interop — per-engine support icons (colour + glyph). */
   td.interop {
     font-family: "IBM Plex Mono", monospace;
     font-size: 0.9rem;
@@ -707,7 +706,7 @@
     <div class="stat">
       <div class="stat-num">{{ summary.total_specs }}</div>
       <div class="stat-label">Specifications</div>
-      <div class="stat-extra">{{ summary.by_stage | length }} distinct stages</div>
+      <div class="stat-extra">{{ summary.shipping_cross_engine }} shipping cross-engine</div>
     </div>
     <div class="stat">
       <div class="stat-num">{{ summary.total_issues }}</div>
@@ -733,7 +732,7 @@
   <div class="section-head">
     <span class="section-label">— Status, by specification</span>
     <span class="section-rule"></span>
-    <span class="section-meta">{{ summary.shipping_cross_engine }}/{{ summary.total_specs }} shipping cross-engine · click any header to sort · hover a stage code for its definition</span>
+    <span class="section-meta">click any header to sort · click a row to expand · hover a stage code for its definition</span>
   </div>
 
   <table class="ledger" id="specs">
@@ -765,7 +764,7 @@
       </td>
       <td class="gate" data-label="Next gate">
         {% if row.next_gate %}
-          <span class="cell-value"><span class="gate-name">→{{ row.next_gate }}</span><span class="hdot gate-dot {{ row.readiness }}" title="{{ row.readiness }}"></span></span>
+          <span class="cell-value"><span class="gate-name">→{{ row.next_gate }}</span> <span class="gate-mark gate-{{ row.readiness }}" title="next gate {{ row.readiness }}">{{ row.readiness_glyph }}</span></span>
         {% else %}
           <span class="dash">—</span>
         {% endif %}

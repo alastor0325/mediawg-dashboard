@@ -162,6 +162,7 @@ class SpecView(BaseModel):
     spec: Spec
     next_gate: str | None
     readiness: str | None  # ready / blocked / unknown (None if terminal)
+    readiness_glyph: str | None  # colour+shape mark for the readiness
     blocker_rows: list[tuple[str, str, str | None, str, str]]  # (glyph, label, href, state, kind)
     horizontal_rows: list[tuple[str, str, str]]  # (name, state, href) — nested under the horizontal blocker
     engine_rows: list[EngineRow]

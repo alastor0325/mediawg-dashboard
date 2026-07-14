@@ -12,6 +12,7 @@ from mediawg_dashboard.analysis import (
     horizontal_summary,
     next_gate,
     parse_charter_target,
+    readiness_glyph,
     spec_view,
     support_glyph,
 )
@@ -225,6 +226,19 @@ def test_blocker_glyph_mapping():
     assert blocker_glyph("open") == "✘"
     assert blocker_glyph("partial") == "◐"
     assert blocker_glyph("unknown") == "·"
+
+
+def test_readiness_glyph_mapping():
+    assert readiness_glyph("ready") == "✓"
+    assert readiness_glyph("blocked") == "✗"
+    assert readiness_glyph("unknown") == "·"
+    assert readiness_glyph(None) is None  # terminal gate -> no mark
+
+
+def test_spec_view_sets_readiness_glyph():
+    v = spec_view(_spec(stage="WD"), date(2026, 7, 13))
+    assert v.readiness in {"ready", "blocked", "unknown"}
+    assert v.readiness_glyph in {"✓", "✗", "·"}
 
 
 # ---------------- charter targets ----------------

@@ -123,6 +123,14 @@ def blocker_glyph(state: str) -> str:
     return _BLOCKER_GLYPHS.get(state, "·")
 
 
+_READINESS_GLYPHS = {"ready": "✓", "blocked": "✗", "unknown": "·"}
+
+
+def readiness_glyph(readiness: str | None) -> str | None:
+    """Colour+shape mark for next-gate readiness (None if terminal)."""
+    return _READINESS_GLYPHS.get(readiness) if readiness else None
+
+
 def _bool_state(value: bool | None) -> str:
     if value is None:
         return "unknown"
@@ -330,6 +338,7 @@ def spec_view(spec: Spec, today: date) -> SpecView:
     stage = spec.status.stage
     gate = next_gate(stage)
     blockers = compute_blockers(stage, spec.milestones)
+    readiness = _readiness(gate, blockers)
     stage_age_days = compute_stage_age_days(spec.status.last_tr_publication, today)
     h = spec.health
     has_health = any(
@@ -351,7 +360,8 @@ def spec_view(spec: Spec, today: date) -> SpecView:
     return SpecView(
         spec=spec,
         next_gate=gate,
-        readiness=_readiness(gate, blockers),
+        readiness=readiness,
+        readiness_glyph=readiness_glyph(readiness),
         # All gate requirements (incl. horizontal review) are blockers; the
         # horizontal one carries the per-group chips as its sub-level (below).
         blocker_rows=[
