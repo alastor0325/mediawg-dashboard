@@ -302,6 +302,8 @@
     margin-top: 0.3rem;
     letter-spacing: 0.02em;
   }
+  .spec-sub a { color: inherit; text-decoration: none; border-bottom: 1px dotted var(--rule); }
+  .spec-sub a:hover { color: var(--accent); border-color: var(--accent); }
 
   /* Stage as typographic mark */
   .stage {
@@ -743,7 +745,7 @@
         {% else %}
           <span class="spec-title">{{ spec.meta.title }}</span>
         {% endif %}
-        <div class="spec-sub">{{ spec.meta.repo }}</div>
+        <div class="spec-sub"><a href="https://github.com/{{ spec.meta.repo }}" onclick="event.stopPropagation()">{{ spec.meta.repo }}</a></div>
       </td>
       <td data-label="Stage">
         <span class="stage {{ spec.status.stage }}" title="{{ stage_descriptions[spec.status.stage] }}">{{ spec.status.stage }}</span>
@@ -772,9 +774,8 @@
           <div class="panel-group">
             <div class="panel-h">Standardization &amp; next gate</div>
             <dl class="panel-kv">
-              <dt>Stage</dt><dd>{{ spec.status.stage }} · in stage {{ row.stage_age_label }}{% if spec.status.last_tr_publication %} · last /TR/ {{ spec.status.last_tr_publication }}{% endif %}</dd>
-              <dt>Next gate</dt><dd>{% if row.next_gate %}→ {{ row.next_gate }} <span class="tag tag-{{ row.readiness }}">{{ row.readiness }}</span>{% else %}terminal{% endif %}</dd>
-              <dt>Charter</dt><dd>{% if spec.health.charter_target %}<a href="{{ charter_url }}" title="W3C Media WG charter — deliverables (expected completion)">{{ spec.health.charter_target }}</a>{% else %}—{% endif %}{% if spec.health.charter_overdue %} <span class="tag tag-warn">behind</span>{% endif %}</dd>
+              <dt>Stage</dt><dd>{{ spec.status.stage }} · in stage {{ row.stage_age_label }}{% if spec.status.last_tr_publication %} · last /TR/ {% if spec.meta.tr_url %}<a href="{{ spec.meta.tr_url }}">{{ spec.status.last_tr_publication }}</a>{% else %}{{ spec.status.last_tr_publication }}{% endif %}{% endif %}</dd>
+              <dt>Next gate</dt><dd>{% if row.next_gate %}→ {{ row.next_gate }} <span class="tag tag-{{ row.readiness }}">{{ row.readiness }}</span>{% if spec.health.charter_overdue %} · <a class="tag tag-warn" href="{{ charter_url }}" title="charter target {{ spec.health.charter_target }} — overdue">behind charter</a>{% endif %}{% else %}terminal{% endif %}</dd>
             </dl>
             {% if row.blocker_rows %}
             <div class="panel-sub">Blockers to {{ row.next_gate }}</div>
@@ -796,32 +797,26 @@
               <dt>{{ e.name }}</dt><dd>{% if e.href %}<a href="{{ e.href }}" title="MDN browser compatibility">{{ e.glyph }} {{ e.state }}{% if e.version %} {{ e.version }}{% endif %}</a>{% else %}{{ e.glyph }} {{ e.state }}{% if e.version %} {{ e.version }}{% endif %}{% endif %}</dd>
               {% endfor %}
             </dl>
+            {% if row.wpt_href %}
             {% set wpt_rows = row.engine_rows | selectattr('wpt') | list %}
+            <div class="panel-sub">All-engines WPT · experimental · <a href="{{ row.wpt_href }}">wpt.fyi ↗</a></div>
             {% if wpt_rows %}
-            <div class="panel-sub">All-engines WPT · experimental{% if row.wpt_href %} · <a href="{{ row.wpt_href }}">wpt.fyi ↗</a>{% endif %}</div>
             <dl class="panel-kv">
               {% for e in wpt_rows %}
-              <dt>{{ e.name }}</dt><dd>{% if row.wpt_href %}<a href="{{ row.wpt_href }}" title="passing subtests / total (experimental channel, aligned run)">{{ e.wpt }}</a>{% else %}{{ e.wpt }}{% endif %}</dd>
+              <dt>{{ e.name }}</dt><dd><a href="{{ row.wpt_href }}" title="passing subtests / total (experimental channel, aligned run)">{{ e.wpt }}</a></dd>
               {% endfor %}
             </dl>
+            {% endif %}
             {% endif %}
           </div>
           <div class="panel-group">
             <div class="panel-h">Activity &amp; health</div>
             <dl class="panel-kv">
-              <dt>Pulse</dt><dd>{% if row.pulse %}<span class="tag tag-pulse-{{ row.pulse.tier }}">{{ row.pulse.tier }}</span> {{ row.pulse.reason }}{% else %}—{% endif %}</dd>
+              <dt>Pulse</dt><dd>{% if row.pulse %}{{ row.pulse.reason }} <span class="tag tag-pulse-{{ row.pulse.tier }}">{{ row.pulse.tier }}</span>{% else %}—{% endif %}</dd>
               <dt>Open issues</dt><dd><a href="https://github.com/{{ spec.meta.repo }}/issues">{{ spec.stats.open_issues_count }}</a>{% if spec.health.backlog_trend %} · backlog {{ spec.health.backlog_trend }}{% endif %}</dd>
               <dt>Open PRs</dt><dd><a href="https://github.com/{{ spec.meta.repo }}/pulls">{{ spec.stats.open_prs_count }}</a></dd>
-              <dt title="days since the oldest open *-needs-resolution issue was filed">Oldest blocking</dt><dd>{% if spec.health.oldest_blocking_issue_days is not none %}{{ spec.health.oldest_blocking_issue_days }}d{% else %}—{% endif %}</dd>
-              <dt title="distinct commit authors in the repo's recent history (bus-factor signal)">Recent authors</dt><dd>{% if spec.health.editor_count is not none %}{{ spec.health.editor_count }}{% else %}—{% endif %}</dd>
+              <dt title="age of the oldest open *-needs-resolution issue (horizontal blocker)">Oldest blocking</dt><dd>{% if spec.health.oldest_blocking_issue_days is not none %}<a href="{{ row.needs_resolution_href }}">{{ spec.health.oldest_blocking_issue_days }}d</a>{% else %}—{% endif %}</dd>
             </dl>
-            <div class="panel-sub">Links</div>
-            <div class="chips">
-              <a class="chip" href="https://github.com/{{ spec.meta.repo }}">repo</a>
-              {% if spec.meta.tr_url %}<a class="chip" href="{{ spec.meta.tr_url }}">/TR/</a>{% endif %}
-              {% if spec.status.ed_url %}<a class="chip" href="{{ spec.status.ed_url }}">ED</a>{% endif %}
-              {% if row.wpt_href %}<a class="chip" href="{{ row.wpt_href }}">wpt.fyi</a>{% endif %}
-            </div>
           </div>
         </div>
       </td>

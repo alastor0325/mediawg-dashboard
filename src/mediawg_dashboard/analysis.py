@@ -273,7 +273,7 @@ def _engine_rows(interop: InteropStatus) -> list[EngineRow]:
     """Per-engine interop lines: MDN support + version + nightly WPT + MDN link."""
     anchor = f"{interop.mdn_url}#browser_compatibility" if interop.mdn_url else None
     data = (
-        ("Chrome", interop.chrome, interop.chrome_version, interop.wpt_chrome),
+        ("Chromium", interop.chrome, interop.chrome_version, interop.wpt_chrome),
         ("Firefox", interop.firefox, interop.firefox_version, interop.wpt_firefox),
         ("Safari", interop.safari, interop.safari_version, interop.wpt_safari),
     )
@@ -313,7 +313,6 @@ def compute_pulse(
     oldest_blocker_days: int | None,
     charter_overdue: bool = False,
     stage_before_cr: bool = False,
-    single_editor: bool = False,
 ) -> Pulse:
     """Roll spec health into one tier + a short reason. None inputs skip a rule."""
     # at-risk (any)
@@ -327,8 +326,6 @@ def compute_pulse(
     # watch (any)
     if days_since_activity is not None and days_since_activity >= _STALE_WATCH_DAYS:
         return Pulse(tier="watch", reason=f"quiet {days_since_activity}d")
-    if single_editor:
-        return Pulse(tier="watch", reason="single recent author")
 
     return Pulse(tier="on-track", reason="active")
 
@@ -349,7 +346,6 @@ def spec_view(spec: Spec, today: date) -> SpecView:
             h.charter_overdue,
             h.days_since_activity is not None,
             h.oldest_blocking_issue_days is not None,
-            h.editor_count is not None,
         )
     )
     pulse = compute_pulse(
@@ -357,7 +353,6 @@ def spec_view(spec: Spec, today: date) -> SpecView:
         oldest_blocker_days=h.oldest_blocking_issue_days,
         charter_overdue=h.charter_overdue,
         stage_before_cr=stage in PRE_CR_STAGES,
-        single_editor=h.editor_count == 1,
     )
     interop = spec.interop
     repo = spec.meta.repo
@@ -366,13 +361,20 @@ def spec_view(spec: Spec, today: date) -> SpecView:
         spec=spec,
         next_gate=gate,
         readiness=_readiness(gate, blockers),
-        blocker_rows=[(blocker_glyph(b.state), b.label, _blocker_href(b.kind, spec.meta)) for b in blockers],
+        # Horizontal reviews render as their own chip row, so keep them out of the
+        # checklist to avoid duplication (they still count toward readiness).
+        blocker_rows=[
+            (blocker_glyph(b.state), b.label, _blocker_href(b.kind, spec.meta))
+            for b in blockers
+            if b.kind != "horizontal"
+        ],
         horizontal_rows=[
             (name, getattr(hz, attr), links.horizontal_group_url(repo, attr)) for name, attr in HORIZONTAL_FIELDS
         ],
         engine_rows=_engine_rows(interop),
         interop_label=interop_label(interop),
         wpt_href=links.wpt_url(spec.meta.wpt_path),
+        needs_resolution_href=links.needs_resolution_url(repo),
         stage_age_days=stage_age_days,
         stage_age_label=format_duration_days(stage_age_days),
         pulse=pulse if has_health else None,

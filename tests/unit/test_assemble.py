@@ -41,7 +41,6 @@ def test_build_spec_composes_all_layers():
     assert spec.milestones.cr_blocking_issues_open == 1
     assert spec.interop.all_engines_wpt == 74.0
     assert spec.interop.safari == "partial"
-    assert spec.health.editor_count == 2
     assert spec.health.days_since_activity == 2
     assert spec.health.charter_overdue is True  # CR Q1 2026 past, still WD
 
@@ -50,5 +49,4 @@ def test_build_spec_handles_empty_fetches():
     spec = build_spec(_meta(), SpecStatus(stage="unknown"), [], [], None, InteropStatus(), NOW)
     assert spec.stats.open_issues_count == 0
     assert spec.interop.all_engines_wpt is None
-    assert spec.health.editor_count is None
     assert spec.health.days_since_activity is None

@@ -101,15 +101,6 @@ def days_since_last_commit(commits: list[dict], now: datetime | None = None) -> 
     return (now - latest).days
 
 
-def distinct_commit_authors(commits: list[dict]) -> int:
-    """Number of distinct commit authors (a rough editor bus-factor signal)."""
-    authors: set[str] = set()
-    for c in commits:
-        login = (c.get("author") or {}).get("login")
-        authors.add(login or c["commit"]["author"]["name"])
-    return len(authors)
-
-
 def _auth_headers() -> dict[str, str]:
     headers = {"Accept": "application/vnd.github+json"}
     token = os.environ.get("GITHUB_TOKEN")

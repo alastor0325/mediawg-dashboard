@@ -127,7 +127,6 @@ class SpecHealth(BaseModel):
 
     days_since_activity: int | None = None
     oldest_blocking_issue_days: int | None = None
-    editor_count: int | None = None
     charter_target: str | None = None  # e.g. "CR Q1 2026"
     charter_overdue: bool = False
     backlog_trend: str | None = None  # rising / falling / flat (from snapshots)
@@ -168,6 +167,7 @@ class SpecView(BaseModel):
     engine_rows: list[EngineRow]
     interop_label: str
     wpt_href: str | None
+    needs_resolution_href: str  # open *-needs-resolution issues for the repo
     stage_age_days: int | None
     stage_age_label: str
     pulse: Pulse | None

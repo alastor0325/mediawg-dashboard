@@ -3,7 +3,6 @@ from datetime import datetime, timezone
 from mediawg_dashboard.fetch.github import (
     count_labeled,
     days_since_last_commit,
-    distinct_commit_authors,
     needs_resolution_stats,
     parse_horizontal_reviews,
 )
@@ -73,16 +72,6 @@ def test_days_since_last_commit():
 
 def test_days_since_last_commit_none():
     assert days_since_last_commit([], now=NOW) is None
-
-
-def test_distinct_commit_authors():
-    commits = [_commit("2026-07-11T00:00:00Z", login="a"), _commit("2026-07-10T00:00:00Z", login="b"), _commit("2026-07-09T00:00:00Z", login="a")]
-    assert distinct_commit_authors(commits) == 2
-
-
-def test_distinct_commit_authors_falls_back_to_name():
-    commits = [_commit("2026-07-11T00:00:00Z", login=None, name="Solo")]
-    assert distinct_commit_authors(commits) == 1
 
 
 # ---------- wpt scoring ----------

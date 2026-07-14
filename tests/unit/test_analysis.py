@@ -300,11 +300,6 @@ def test_pulse_watch_when_quiet_90d():
     assert p.tier == "watch"
 
 
-def test_pulse_watch_when_single_editor():
-    p = compute_pulse(days_since_activity=5, oldest_blocker_days=None, single_editor=True)
-    assert p.tier == "watch"
-
-
 def test_pulse_on_track_default():
     p = compute_pulse(days_since_activity=5, oldest_blocker_days=10)
     assert p.tier == "on-track"
@@ -387,12 +382,12 @@ def test_spec_view_engine_rows_alphabetical_with_glyph_version_wpt():
         )),
         date(2026, 7, 13),
     )
-    assert [e.name for e in v.engine_rows] == ["Chrome", "Firefox", "Safari"]
-    chrome = v.engine_rows[0]
-    assert chrome.state == "shipped" and chrome.glyph == "●"
-    assert chrome.version == "94"
-    assert chrome.wpt == "38/40"
-    assert chrome.href.endswith("#browser_compatibility")
+    assert [e.name for e in v.engine_rows] == ["Chromium", "Firefox", "Safari"]
+    chromium = v.engine_rows[0]
+    assert chromium.state == "shipped" and chromium.glyph == "●"
+    assert chromium.version == "94"
+    assert chromium.wpt == "38/40"
+    assert chromium.href.endswith("#browser_compatibility")
 
 
 def test_spec_view_engine_rows_no_mdn_url_has_no_link():
@@ -408,14 +403,13 @@ def test_spec_view_horizontal_rows_ordered_and_linked():
     assert "w3c/x/issues" in href and "a11y-needs-resolution" in href
 
 
-def test_spec_view_blocker_rows_link_to_the_right_venue():
+def test_spec_view_blocker_rows_exclude_horizontal_and_link_venues():
     v = spec_view(_spec(stage="WD"), date(2026, 7, 13))
     by_label = {label: href for _, label, href in v.blocker_rows}
+    # Horizontal reviews are shown as chips, not in the blocker checklist.
+    assert not any(lbl.startswith("Horizontal reviews") for lbl in by_label)
     # Wide review -> the repo's issues (community/wide review venue).
     assert by_label["Wide review complete"].endswith("/w3c/x/issues")
-    # Horizontal reviews -> the cross-group horizontal-issue-tracker view.
-    hz = next(h for lbl, h in by_label.items() if lbl.startswith("Horizontal reviews"))
-    assert "review.html?shortname=" in hz
     # CR-blocking issues -> the open needs-resolution filter.
     cr = next(h for lbl, h in by_label.items() if lbl.startswith("CR-blocking"))
     assert cr is not None and "needs-resolution" in cr

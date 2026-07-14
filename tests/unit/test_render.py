@@ -195,17 +195,28 @@ def test_render_panel_has_three_groups():
 
 def test_render_panel_lists_engines():
     html = render_index([_spec("webcodecs")])
-    assert "Chrome" in html and "Firefox" in html and "Safari" in html
+    assert "Chromium" in html and "Firefox" in html and "Safari" in html
 
 
-def test_render_charter_target_links_to_charter():
+def test_render_charter_behind_tag_links_to_charter_when_overdue():
     from mediawg_dashboard.model import SpecHealth
 
     spec = _spec("webcodecs")
-    spec.health = SpecHealth(charter_target="CR Q1 2026")
+    spec.health = SpecHealth(charter_target="CR Q1 2026", charter_overdue=True)
     html = render_index([spec])
-    assert "CR Q1 2026" in html
+    assert "behind charter" in html
     assert "media-wg-charter.html#deliverables" in html
+    assert "CR Q1 2026" in html  # in the tooltip
+
+
+def test_render_no_charter_row_when_on_track():
+    from mediawg_dashboard.model import SpecHealth
+
+    spec = _spec("webcodecs")
+    spec.health = SpecHealth(charter_target="CR Q1 2026", charter_overdue=False)
+    html = render_index([spec])
+    # On-track: no standalone charter clutter.
+    assert "behind charter" not in html
 
 
 def test_render_panel_shows_blocker_checklist():

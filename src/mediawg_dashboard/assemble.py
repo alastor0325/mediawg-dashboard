@@ -9,7 +9,6 @@ from mediawg_dashboard.analysis import charter_overdue
 from mediawg_dashboard.fetch.github import (
     compute_repo_stats,
     days_since_last_commit,
-    distinct_commit_authors,
     needs_resolution_stats,
     parse_horizontal_reviews,
 )
@@ -51,11 +50,9 @@ def build_spec(
         "wpt_safari": per.get("safari"),
     })
 
-    editors = distinct_commit_authors(commits) if commits else None
     health = SpecHealth(
         days_since_activity=days_since_last_commit(commits, now=now),
         oldest_blocking_issue_days=nr_oldest,
-        editor_count=editors,
         charter_target=meta.charter_target,
         charter_overdue=charter_overdue(meta.charter_target, now.date(), status.stage),
     )
