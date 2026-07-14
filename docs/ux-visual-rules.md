@@ -33,8 +33,11 @@ colour-blindness and greyscale.
 - **Support tri-dot** (first level + panel): three engines, always **alphabetical
   Chromium / Firefox / Safari**, equal weight, each a coloured glyph + the engine
   initial (C/F/S). Read the column vertically = the WG's interop landscape.
-- **Pulse / gate readiness**: a solid coloured dot (`.hdot`) + a trailing text tag
-  in the same colour family.
+- **Pulse**: a solid coloured dot (`.hdot`, colour = tier) + the reason text
+  (which differs per tier, e.g. "no activity 327d"). No tier word — the dot
+  colour + reason already carry severity + cause.
+- **Gate readiness**: a colour+glyph mark (✓/✗/·) at first level; a coloured
+  text tag (ready/blocked) in the panel.
 - Tags (`ready` / `blocked` / `behind charter` / pulse tiers) are coloured text
   per the table above.
 

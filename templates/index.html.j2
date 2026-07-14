@@ -498,10 +498,8 @@
   .chip-resolved { color: var(--signal-green); }
   .chip-unknown, .chip-na { color: var(--muted); }
   .tag { font-family: "IBM Plex Mono", monospace; font-size: 0.68rem; font-weight: 600; }
-  .tag-ready, .tag-pulse-on-track { color: var(--signal-green); }
+  .tag-ready { color: var(--signal-green); }
   .tag-blocked, .tag-warn { color: var(--signal-rose); }
-  .tag-pulse-at-risk { color: var(--signal-rose); }
-  .tag-pulse-watch { color: var(--signal-amber); }
   .tag-unknown { color: var(--muted); }
   @media (max-width: 900px) {
     /* Specificity must beat `.ledger tbody tr { display: grid }` below. */
@@ -852,7 +850,7 @@
           <div class="panel-group">
             <div class="panel-h">Activity &amp; health</div>
             <dl class="panel-kv">
-              <dt>Pulse</dt><dd>{% if row.pulse %}{{ row.pulse.reason }} <span class="tag tag-pulse-{{ row.pulse.tier }}">{{ row.pulse.tier }}</span>{% else %}—{% endif %}</dd>
+              <dt>Pulse</dt><dd>{% if row.pulse %}<span class="pulse-{{ row.pulse.tier }}"><span class="hdot pulse-dot"></span>{{ row.pulse.reason }}</span>{% else %}—{% endif %}</dd>
               <dt>Open issues</dt><dd><a href="https://github.com/{{ spec.meta.repo }}/issues">{{ spec.stats.open_issues_count }}</a>{% if spec.health.backlog_trend %} · backlog {{ spec.health.backlog_trend }}{% endif %}</dd>
               <dt>Open PRs</dt><dd><a href="https://github.com/{{ spec.meta.repo }}/pulls">{{ spec.stats.open_prs_count }}</a></dd>
               <dt title="age of the oldest open *-needs-resolution issue (horizontal blocker)">Oldest blocking</dt><dd>{% if spec.health.oldest_blocking_issue_days is not none %}<a href="{{ row.needs_resolution_href }}">{{ spec.health.oldest_blocking_issue_days }}d</a>{% else %}—{% endif %}</dd>
