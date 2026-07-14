@@ -13,6 +13,7 @@ from datetime import date
 from mediawg_dashboard import links
 from mediawg_dashboard.model import (
     Blocker,
+    EngineRow,
     HorizontalReviews,
     InteropStatus,
     Pulse,
@@ -259,6 +260,27 @@ def interop_label(interop: InteropStatus) -> str:
     )
 
 
+def _engine_rows(interop: InteropStatus) -> list[EngineRow]:
+    """Per-engine interop lines: MDN support + version + nightly WPT + MDN link."""
+    anchor = f"{interop.mdn_url}#browser_compatibility" if interop.mdn_url else None
+    data = (
+        ("Chrome", interop.chrome, interop.chrome_version, interop.wpt_chrome),
+        ("Firefox", interop.firefox, interop.firefox_version, interop.wpt_firefox),
+        ("Safari", interop.safari, interop.safari_version, interop.wpt_safari),
+    )
+    return [
+        EngineRow(
+            name=name,
+            state=state,
+            glyph=support_glyph(state),
+            version=version,
+            wpt=f"{wpt[0]}/{wpt[1]}" if wpt else None,
+            href=anchor,
+        )
+        for name, state, version, wpt in data
+    ]
+
+
 def shipping_cross_engine(specs: list[Spec]) -> int:
     """Count specs shipped in all three engines (the neutral interop headline)."""
     return sum(
@@ -330,9 +352,7 @@ def spec_view(spec: Spec, today: date) -> SpecView:
     )
     interop = spec.interop
     repo = spec.meta.repo
-    engines = (("Chrome", interop.chrome), ("Firefox", interop.firefox), ("Safari", interop.safari))
     hz = spec.milestones.horizontal
-    ws_url = links.webstatus_url(spec.meta.webstatus_id)
     return SpecView(
         spec=spec,
         next_gate=gate,
@@ -341,7 +361,7 @@ def spec_view(spec: Spec, today: date) -> SpecView:
         horizontal_rows=[
             (name, getattr(hz, attr), links.horizontal_group_url(repo, attr)) for name, attr in HORIZONTAL_FIELDS
         ],
-        engine_rows=[(name, st, support_glyph(st), ws_url) for name, st in engines],
+        engine_rows=_engine_rows(interop),
         interop_label=interop_label(interop),
         wpt_pct=interop.all_engines_wpt,
         wpt_href=links.wpt_url(spec.meta.wpt_path),

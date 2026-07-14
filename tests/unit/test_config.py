@@ -11,7 +11,7 @@ specs:
     repo: w3c/webcodecs
     tr: https://www.w3.org/TR/webcodecs/
     charter_target: CR Q1 2026
-    webstatus_id: webcodecs
+    bcd_path: api.VideoDecoder
   - shortname: autoplay
     title: Autoplay Policy Detection
     repo: w3c/autoplay
@@ -43,12 +43,12 @@ def test_repo_specs_yaml_parses():
     assert all(s.shortname and s.repo for s in specs)
 
 
-def test_load_specs_parses_charter_and_webstatus(tmp_path):
+def test_load_specs_parses_charter_and_bcd(tmp_path):
     cfg = tmp_path / "specs.yaml"
     cfg.write_text(SAMPLE_YAML)
     specs = load_specs(cfg)
     assert specs[0].charter_target == "CR Q1 2026"
-    assert specs[0].webstatus_id == "webcodecs"
+    assert specs[0].bcd_path == "api.VideoDecoder"
     # Absent fields default to None.
     assert specs[1].charter_target is None
-    assert specs[1].webstatus_id is None
+    assert specs[1].bcd_path is None

@@ -16,7 +16,7 @@ def load_specs(path: Path) -> list[SpecMeta]:
             tr_url=entry.get("tr"),
             wpt_path=entry.get("wpt_path"),
             charter_target=entry.get("charter_target"),
-            webstatus_id=entry.get("webstatus_id"),
+            bcd_path=entry.get("bcd_path"),
         )
         for entry in data["specs"]
     ]

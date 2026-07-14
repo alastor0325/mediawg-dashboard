@@ -4,7 +4,7 @@ specs:
     repo: w3c/audio-session
     tr: https://www.w3.org/TR/audio-session/
     wpt_path: /audio-session/
-    webstatus_id: audio-session
+    bcd_path: api.AudioSession
     charter_target: CR Q4 2026
 
   - shortname: autoplay
@@ -13,6 +13,7 @@ specs:
     w3c_shortname: autoplay-detection
     tr: https://www.w3.org/TR/autoplay-detection/
     wpt_path: /autoplay-policy-detection/
+    bcd_path: api.Navigator.getAutoplayPolicy
     charter_target: CR Q2 2026
 
   - shortname: encrypted-media
@@ -21,7 +22,7 @@ specs:
     w3c_shortname: encrypted-media-2
     tr: https://www.w3.org/TR/encrypted-media-2/
     wpt_path: /encrypted-media/
-    webstatus_id: encrypted-media-extensions
+    bcd_path: api.MediaKeys
     charter_target: CR Q4 2026
 
   - shortname: media-capabilities
@@ -29,7 +30,7 @@ specs:
     repo: w3c/media-capabilities
     tr: https://www.w3.org/TR/media-capabilities/
     wpt_path: /media-capabilities/
-    webstatus_id: media-capabilities
+    bcd_path: api.MediaCapabilities
     charter_target: CR Q4 2025
 
   - shortname: media-playback-quality
@@ -39,14 +40,14 @@ specs:
     # Note (fold into HTML), so it has no Rec-track target.
     tr: null
     wpt_path: /media-playback-quality/
-    webstatus_id: media-playback-quality
+    bcd_path: api.VideoPlaybackQuality
 
   - shortname: mediasession
     title: Media Session
     repo: w3c/mediasession
     tr: https://www.w3.org/TR/mediasession/
     wpt_path: /mediasession/
-    webstatus_id: media-session
+    bcd_path: api.MediaSession
     charter_target: CR Q4 2026
 
   - shortname: media-source
@@ -55,7 +56,7 @@ specs:
     w3c_shortname: media-source-2
     tr: https://www.w3.org/TR/media-source-2/
     wpt_path: /media-source/
-    webstatus_id: media-source
+    bcd_path: api.MediaSource
     charter_target: CR Q4 2026
 
   - shortname: picture-in-picture
@@ -63,7 +64,7 @@ specs:
     repo: w3c/picture-in-picture
     tr: https://www.w3.org/TR/picture-in-picture/
     wpt_path: /picture-in-picture/
-    webstatus_id: picture-in-picture
+    bcd_path: api.PictureInPictureWindow
     charter_target: CR Q2 2026
 
   - shortname: webcodecs
@@ -71,5 +72,5 @@ specs:
     repo: w3c/webcodecs
     tr: https://www.w3.org/TR/webcodecs/
     wpt_path: /webcodecs/
-    webstatus_id: webcodecs
+    bcd_path: api.VideoDecoder
     charter_target: CR Q1 2026

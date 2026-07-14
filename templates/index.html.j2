@@ -798,11 +798,10 @@
           <div class="panel-group">
             <div class="panel-h">Interoperability</div>
             <dl class="panel-kv">
-              {% for engine, st, glyph, href in row.engine_rows %}
-              <dt>{{ engine }}</dt><dd>{% if href %}<a href="{{ href }}">{{ glyph }} {{ st }}</a>{% else %}{{ glyph }} {{ st }}{% endif %}</dd>
+              {% for e in row.engine_rows %}
+              <dt>{% if e.href %}<a href="{{ e.href }}">{{ e.name }}</a>{% else %}{{ e.name }}{% endif %}</dt><dd>{{ e.glyph }} {{ e.state }}{% if e.version %} {{ e.version }}{% endif %}{% if e.wpt %} · WPT {{ e.wpt }}{% endif %}</dd>
               {% endfor %}
-              <dt>All-engines WPT</dt><dd>{% if row.wpt_pct is not none %}{% if row.wpt_href %}<a href="{{ row.wpt_href }}">{{ row.wpt_pct | round | int }}%</a>{% else %}{{ row.wpt_pct | round | int }}%{% endif %}{% else %}—{% endif %}{% if spec.interop.wpt_test_count is not none %} · {{ spec.interop.wpt_test_count }} tests{% endif %}</dd>
-              <dt>Interop focus</dt><dd>{{ spec.interop.interop_focus_year or '—' }}</dd>
+              <dt>All-engines WPT</dt><dd>{% if row.wpt_pct is not none %}{% if row.wpt_href %}<a href="{{ row.wpt_href }}">{{ row.wpt_pct | round | int }}%</a>{% else %}{{ row.wpt_pct | round | int }}%{% endif %}{% else %}—{% endif %}{% if spec.interop.wpt_test_count is not none %} · {{ spec.interop.wpt_test_count }} tests{% endif %} · nightly</dd>
             </dl>
           </div>
           <div class="panel-group">

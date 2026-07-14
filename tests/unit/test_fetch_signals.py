@@ -7,7 +7,7 @@ from mediawg_dashboard.fetch.github import (
     needs_resolution_stats,
     parse_horizontal_reviews,
 )
-from mediawg_dashboard.fetch.support import parse_support
+from mediawg_dashboard.fetch.support import bcd_file_url, parse_bcd_support
 from mediawg_dashboard.fetch.wpt import parse_wpt_scores
 
 NOW = datetime(2026, 7, 13, tzinfo=timezone.utc)
@@ -88,7 +88,7 @@ def test_distinct_commit_authors_falls_back_to_name():
 # ---------- wpt scoring ----------
 
 
-def test_parse_wpt_scores_all_pass():
+def test_parse_wpt_scores_per_engine_counts():
     payload = {
         "runs": [{"browser_name": "chrome"}, {"browser_name": "firefox"}, {"browser_name": "safari"}],
         "results": [
@@ -100,8 +100,9 @@ def test_parse_wpt_scores_all_pass():
     assert out["wpt_test_count"] == 2
     # Only 1 of 2 tests passes fully in all engines.
     assert out["all_engines_wpt"] == 50.0
-    assert out["per_engine"]["chrome"] == 90.0  # 9/10
-    assert out["per_engine"]["firefox"] == 100.0
+    # per-engine is now (passes, total).
+    assert out["per_engine"]["chrome"] == (9, 10)
+    assert out["per_engine"]["firefox"] == (10, 10)
 
 
 def test_parse_wpt_scores_empty():
@@ -110,26 +111,40 @@ def test_parse_wpt_scores_empty():
     assert out["wpt_test_count"] == 0
 
 
-# ---------- browser support mapping ----------
+# ---------- browser support from MDN BCD ----------
 
 
-def test_parse_support_maps_statuses():
-    payload = {"browser_implementations": {"chrome": {"status": "available"}, "firefox": {"status": "available"}, "safari": {"status": "unavailable"}}}
-    interop = parse_support(payload)
-    assert interop.chrome == "shipped"
-    assert interop.firefox == "shipped"
-    assert interop.safari == "none"
+def test_bcd_file_url():
+    assert bcd_file_url("api.Navigator.getAutoplayPolicy").endswith("/api/Navigator.json")
+    assert bcd_file_url("api.MediaSource").endswith("/api/MediaSource.json")
 
 
-def test_parse_support_missing_engine_is_unknown():
-    interop = parse_support({"browser_implementations": {"chrome": {"status": "available"}}})
-    assert interop.chrome == "shipped"
+def _bcd(chrome, firefox, safari, path="api.Feature"):
+    return {"api": {"Feature": {"__compat": {
+        "mdn_url": "https://developer.mozilla.org/docs/Web/API/Feature",
+        "support": {"chrome": chrome, "firefox": firefox, "safari": safari},
+    }}}}
+
+
+def test_parse_bcd_support_versions_and_states():
+    data = _bcd({"version_added": "94"}, {"version_added": False}, {"version_added": True})
+    interop = parse_bcd_support(data, "api.Feature")
+    assert interop.chrome == "shipped" and interop.chrome_version == "94"
+    assert interop.firefox == "none"
+    assert interop.safari == "shipped" and interop.safari_version is None
+    assert interop.mdn_url.endswith("/Feature")
+
+
+def test_parse_bcd_support_handles_list_flags_and_null():
+    data = _bcd(
+        [{"version_added": "31"}, {"prefix": "webkit", "version_added": "23"}],
+        {"version_added": "63", "flags": [{"name": "x"}]},
+        {"version_added": None},
+    )
+    interop = parse_bcd_support(data, "api.Feature")
+    assert interop.chrome == "shipped" and interop.chrome_version == "31"  # first range
+    assert interop.firefox == "partial"  # behind a flag
     assert interop.safari == "unknown"
-
-
-def test_parse_support_empty():
-    interop = parse_support({})
-    assert interop.chrome == "unknown"
 
 
 # ---------- wpt fetch (query regression) ----------

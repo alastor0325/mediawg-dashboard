@@ -378,14 +378,26 @@ def test_spec_view_interop_label_reflects_support():
     assert v.interop_label == "C● F● S◐"
 
 
-def test_spec_view_engine_rows_alphabetical_with_glyph_and_link():
+def test_spec_view_engine_rows_alphabetical_with_glyph_version_wpt():
     v = spec_view(
-        _spec(interop=InteropStatus(chrome="shipped", firefox="none", safari="partial")),
+        _spec(interop=InteropStatus(
+            chrome="shipped", firefox="none", safari="partial",
+            chrome_version="94", wpt_chrome=(38, 40),
+            mdn_url="https://developer.mozilla.org/docs/Web/API/X",
+        )),
         date(2026, 7, 13),
     )
-    assert [name for name, *_ in v.engine_rows] == ["Chrome", "Firefox", "Safari"]
-    # (name, state, glyph, href) — href is None without a webstatus_id.
-    assert v.engine_rows[0] == ("Chrome", "shipped", "●", None)
+    assert [e.name for e in v.engine_rows] == ["Chrome", "Firefox", "Safari"]
+    chrome = v.engine_rows[0]
+    assert chrome.state == "shipped" and chrome.glyph == "●"
+    assert chrome.version == "94"
+    assert chrome.wpt == "38/40"
+    assert chrome.href.endswith("#browser_compatibility")
+
+
+def test_spec_view_engine_rows_no_mdn_url_has_no_link():
+    v = spec_view(_spec(), date(2026, 7, 13))
+    assert all(e.href is None for e in v.engine_rows)
 
 
 def test_spec_view_horizontal_rows_ordered_and_linked():

@@ -42,13 +42,15 @@ def build_spec(
         cr_blocking_issues_open=nr_count,
     )
 
-    interop = InteropStatus(
-        chrome=support.chrome,
-        firefox=support.firefox,
-        safari=support.safari,
-        all_engines_wpt=(wpt_scores or {}).get("all_engines_wpt"),
-        wpt_test_count=(wpt_scores or {}).get("wpt_test_count"),
-    )
+    # support carries MDN per-engine states/versions/mdn_url; layer WPT on top.
+    per = (wpt_scores or {}).get("per_engine", {})
+    interop = support.model_copy(update={
+        "all_engines_wpt": (wpt_scores or {}).get("all_engines_wpt"),
+        "wpt_test_count": (wpt_scores or {}).get("wpt_test_count"),
+        "wpt_chrome": per.get("chrome"),
+        "wpt_firefox": per.get("firefox"),
+        "wpt_safari": per.get("safari"),
+    })
 
     editors = distinct_commit_authors(commits) if commits else None
     health = SpecHealth(

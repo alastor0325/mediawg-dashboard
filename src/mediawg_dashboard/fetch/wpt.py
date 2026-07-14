@@ -50,9 +50,7 @@ def parse_wpt_scores(payload: dict) -> dict:
 
     test_count = len(results)
     all_engines_wpt = round(all_pass / test_count * 100, 1) if test_count else None
-    per_engine = {
-        b: (round(p / t * 100, 1) if t else None) for b, (p, t) in totals.items()
-    }
+    per_engine = {b: (p, t) for b, (p, t) in totals.items()}  # (passes, total)
     return {
         "all_engines_wpt": all_engines_wpt,
         "wpt_test_count": test_count,
@@ -60,12 +58,16 @@ def parse_wpt_scores(payload: dict) -> dict:
     }
 
 
-def fetch_stable_run_ids(client: httpx.Client) -> list[str]:
-    """Latest stable run ids for the three engines (spec-independent — fetch once)."""
-    products = ",".join(f"{e}[stable]" for e in ENGINES)
+def fetch_experimental_run_ids(client: httpx.Client) -> list[str]:
+    """Latest *aligned* experimental (nightly) run ids for the three engines.
+
+    Aligned = same revision across engines, so the pass rates are comparable.
+    Spec-independent, so fetch once per refresh.
+    """
+    products = ",".join(f"{e}[experimental]" for e in ENGINES)
     resp = client.get(
         f"{WPT_API_BASE}/runs",
-        params={"products": products, "label": "master", "max-count": 1},
+        params={"products": products, "aligned": "true", "max-count": 1},
     )
     resp.raise_for_status()
     return [str(run["id"]) for run in resp.json()]

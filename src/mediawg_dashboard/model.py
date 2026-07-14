@@ -41,7 +41,7 @@ class SpecMeta(BaseModel):
     tr_url: str | None = None
     wpt_path: str | None = None
     charter_target: str | None = None  # neutral config fact, e.g. "CR Q4 2025"
-    webstatus_id: str | None = None  # feature id for webstatus.dev support lookup
+    bcd_path: str | None = None  # MDN browser-compat-data key, e.g. api.MediaSource
 
 
 class SpecStatus(BaseModel):
@@ -88,14 +88,37 @@ class SpecMilestones(BaseModel):
 
 
 class InteropStatus(BaseModel):
-    """Shipping reality, presented evenly across engines (alphabetical)."""
+    """Shipping reality, presented evenly across engines (alphabetical).
+
+    Support (chrome/firefox/safari + versions + mdn_url) comes from MDN
+    browser-compat-data; WPT numbers come from wpt.fyi experimental (nightly)
+    runs, both all-engines and per-engine (passes, total).
+    """
 
     chrome: SupportState = "unknown"
     firefox: SupportState = "unknown"
     safari: SupportState = "unknown"
+    chrome_version: str | None = None
+    firefox_version: str | None = None
+    safari_version: str | None = None
+    mdn_url: str | None = None
     all_engines_wpt: float | None = None  # 0..100
     wpt_test_count: int | None = None
+    wpt_chrome: tuple[int, int] | None = None  # (passes, total), nightly
+    wpt_firefox: tuple[int, int] | None = None
+    wpt_safari: tuple[int, int] | None = None
     interop_focus_year: int | None = None
+
+
+class EngineRow(BaseModel):
+    """One engine's interop line for the detail panel."""
+
+    name: str  # Chrome / Firefox / Safari
+    state: SupportState
+    glyph: str
+    version: str | None = None
+    wpt: str | None = None  # "14/40" or None
+    href: str | None = None  # MDN compat anchor
 
 
 class SpecHealth(BaseModel):
@@ -142,7 +165,7 @@ class SpecView(BaseModel):
     readiness: str | None  # ready / blocked / unknown (None if terminal)
     blocker_rows: list[tuple[str, str, str | None]]  # (glyph, label, href|None)
     horizontal_rows: list[tuple[str, str, str]]  # (name, state, href)
-    engine_rows: list[tuple[str, str, str, str | None]]  # (name, state, glyph, href|None)
+    engine_rows: list[EngineRow]
     interop_label: str
     wpt_pct: float | None
     wpt_href: str | None

@@ -13,7 +13,7 @@ from mediawg_dashboard.config import load_specs
 from mediawg_dashboard.fetch.github import fetch_open_issues, fetch_recent_commits
 from mediawg_dashboard.fetch.support import fetch_support
 from mediawg_dashboard.fetch.w3c import fetch_spec_status
-from mediawg_dashboard.fetch.wpt import fetch_stable_run_ids, fetch_wpt_scores
+from mediawg_dashboard.fetch.wpt import fetch_experimental_run_ids, fetch_wpt_scores
 from mediawg_dashboard.model import InteropStatus, Spec, SpecMeta, SpecStatus
 from mediawg_dashboard.render import render_index
 from mediawg_dashboard.snapshots import issue_series, read_history, record_snapshot, write_history
@@ -60,7 +60,7 @@ def _fetch_one(
     raw_issues = _safe("issues", lambda: fetch_open_issues(meta.repo, client=client), None)
     commits = _safe("commits", lambda: fetch_recent_commits(meta.repo, client=client), [])
     wpt = _safe("wpt", lambda: fetch_wpt_scores(meta.wpt_path, run_ids, client=client), None) if meta.wpt_path else None
-    support = _safe("support", lambda: fetch_support(meta.webstatus_id, client=client), InteropStatus())
+    support = _safe("support", lambda: fetch_support(meta.bcd_path, client=client), InteropStatus())
     spec = build_spec(meta, status, raw_issues or [], commits, wpt, support, now)
     return spec, raw_issues is not None
 
@@ -71,7 +71,7 @@ def cmd_refresh() -> int:
     specs: list[Spec] = []
     ok_counts: dict[str, int] = {}
     with httpx.Client(follow_redirects=True, timeout=30.0) as client:
-        run_ids = _safe("wpt-runs", lambda: fetch_stable_run_ids(client), [])
+        run_ids = _safe("wpt-runs", lambda: fetch_experimental_run_ids(client), [])
         for meta in metas:
             t0 = time.time()
             print(f"  fetching {meta.shortname}…", end="", flush=True, file=sys.stderr)
