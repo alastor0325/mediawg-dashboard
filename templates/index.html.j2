@@ -774,7 +774,7 @@
             <dl class="panel-kv">
               <dt>Stage</dt><dd>{{ spec.status.stage }} · in stage {{ row.stage_age_label }}{% if spec.status.last_tr_publication %} · last /TR/ {{ spec.status.last_tr_publication }}{% endif %}</dd>
               <dt>Next gate</dt><dd>{% if row.next_gate %}→ {{ row.next_gate }} <span class="tag tag-{{ row.readiness }}">{{ row.readiness }}</span>{% else %}terminal{% endif %}</dd>
-              <dt>Charter</dt><dd>{{ spec.health.charter_target or '—' }}{% if spec.health.charter_overdue %} <span class="tag tag-warn">behind</span>{% endif %}</dd>
+              <dt>Charter</dt><dd>{% if spec.health.charter_target %}<a href="{{ charter_url }}" title="W3C Media WG charter — deliverables (expected completion)">{{ spec.health.charter_target }}</a>{% else %}—{% endif %}{% if spec.health.charter_overdue %} <span class="tag tag-warn">behind</span>{% endif %}</dd>
             </dl>
             {% if row.blocker_rows %}
             <div class="panel-sub">Blockers to {{ row.next_gate }}</div>

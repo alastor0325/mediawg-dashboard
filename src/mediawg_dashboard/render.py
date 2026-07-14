@@ -10,6 +10,8 @@ from mediawg_dashboard.model import STAGE_DESCRIPTIONS, Spec
 TEMPLATES_DIR = Path(__file__).resolve().parent.parent.parent / "templates"
 
 WPT_FYI_BASE = "https://wpt.fyi/results"
+# Source of the per-spec charter_target dates (the charter's deliverables table).
+CHARTER_URL = "https://www.w3.org/2025/07/media-wg-charter.html#deliverables"
 
 
 def _env() -> Environment:
@@ -41,4 +43,5 @@ def render_index(specs: list[Spec], refreshed_at: datetime | None = None) -> str
         summary=summarize(specs),
         stage_descriptions=STAGE_DESCRIPTIONS,
         wpt_fyi_base=WPT_FYI_BASE,
+        charter_url=CHARTER_URL,
     )

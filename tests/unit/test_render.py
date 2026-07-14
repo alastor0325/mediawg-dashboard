@@ -198,6 +198,16 @@ def test_render_panel_lists_engines():
     assert "Chrome" in html and "Firefox" in html and "Safari" in html
 
 
+def test_render_charter_target_links_to_charter():
+    from mediawg_dashboard.model import SpecHealth
+
+    spec = _spec("webcodecs")
+    spec.health = SpecHealth(charter_target="CR Q1 2026")
+    html = render_index([spec])
+    assert "CR Q1 2026" in html
+    assert "media-wg-charter.html#deliverables" in html
+
+
 def test_render_panel_shows_blocker_checklist():
     # A WD spec's next gate is CR; the panel lists its blocker labels.
     html = render_index([_spec("webcodecs", stage="WD")])
