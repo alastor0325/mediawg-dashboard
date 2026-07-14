@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 Stage = Literal[
     "ED",
@@ -58,3 +58,55 @@ class Spec(BaseModel):
     meta: SpecMeta
     status: SpecStatus
     stats: RepoStats
+
+
+# --- Expandable-view types (all vendor-neutral) ---
+
+SupportState = Literal["shipped", "partial", "none", "unknown"]
+ReviewState = Literal["resolved", "open", "requested", "na", "unknown"]
+BlockerState = Literal["done", "open", "partial", "unknown"]
+PulseTier = Literal["on-track", "watch", "at-risk"]
+
+
+class HorizontalReviews(BaseModel):
+    """State of the 5 W3C horizontal reviews for a spec."""
+
+    a11y: ReviewState = "unknown"
+    i18n: ReviewState = "unknown"
+    privacy: ReviewState = "unknown"
+    security: ReviewState = "unknown"
+    tag: ReviewState = "unknown"
+
+
+class SpecMilestones(BaseModel):
+    """Process facts that gate the next Rec-track transition.
+
+    Fields are optional/unknown by default; fetchers or config populate them.
+    """
+
+    wide_review_complete: bool | None = None
+    horizontal: HorizontalReviews = Field(default_factory=HorizontalReviews)
+    impl_report_ready: bool | None = None
+    ac_review_done: bool | None = None
+    cr_blocking_issues_open: int | None = None
+
+
+class InteropStatus(BaseModel):
+    """Shipping reality, presented evenly across engines (alphabetical)."""
+
+    chrome: SupportState = "unknown"
+    firefox: SupportState = "unknown"
+    safari: SupportState = "unknown"
+    all_engines_wpt: float | None = None  # 0..100
+    wpt_test_count: int | None = None
+    interop_focus_year: int | None = None
+
+
+class Blocker(BaseModel):
+    label: str
+    state: BlockerState
+
+
+class Pulse(BaseModel):
+    tier: PulseTier
+    reason: str = ""
