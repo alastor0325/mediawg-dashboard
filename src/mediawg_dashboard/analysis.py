@@ -10,6 +10,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import date
 
+from mediawg_dashboard import links
 from mediawg_dashboard.model import (
     Blocker,
     HorizontalReviews,
@@ -167,27 +168,27 @@ Requirement = Callable[[SpecMilestones], Blocker]
 
 
 def _wide_review_req(m: SpecMilestones) -> Blocker:
-    return Blocker(label="Wide review complete", state=_bool_state(m.wide_review_complete))
+    return Blocker(label="Wide review complete", state=_bool_state(m.wide_review_complete), kind="wide_review")
 
 
 def _horizontal_req(m: SpecMilestones) -> Blocker:
     state, resolved, total = horizontal_summary(m.horizontal)
-    return Blocker(label=f"Horizontal reviews {resolved}/{total}", state=state)
+    return Blocker(label=f"Horizontal reviews {resolved}/{total}", state=state, kind="horizontal")
 
 
 def _cr_issues_req(m: SpecMilestones) -> Blocker:
     n = m.cr_blocking_issues_open
     state = "unknown" if n is None else ("done" if n == 0 else "open")
     label = f"CR-blocking issues ({n} open)" if n else "CR-blocking issues"
-    return Blocker(label=label, state=state)
+    return Blocker(label=label, state=state, kind="cr_blocking")
 
 
 def _impl_report_req(m: SpecMilestones) -> Blocker:
-    return Blocker(label="Implementation report", state=_bool_state(m.impl_report_ready))
+    return Blocker(label="Implementation report", state=_bool_state(m.impl_report_ready), kind="impl_report")
 
 
 def _ac_review_req(m: SpecMilestones) -> Blocker:
-    return Blocker(label="AC review", state=_bool_state(m.ac_review_done))
+    return Blocker(label="AC review", state=_bool_state(m.ac_review_done), kind="ac_review")
 
 
 GATE_REQUIREMENTS: dict[str, list[Requirement]] = {
@@ -208,6 +209,13 @@ def gate_requirements(gate: str | None) -> list[Requirement]:
 def compute_blockers(stage: Stage, milestones: SpecMilestones) -> list[Blocker]:
     """The blocker checklist for the spec's *next* gate (empty if terminal)."""
     return [req(milestones) for req in gate_requirements(next_gate(stage))]
+
+
+def _blocker_href(kind: str, repo: str) -> str | None:
+    """Link a blocker to the GitHub issues that back it (None if config-derived)."""
+    if kind in ("horizontal", "cr_blocking"):
+        return links.needs_resolution_url(repo)
+    return None
 
 
 def _readiness(gate: str | None, blockers: list[Blocker]) -> str | None:
@@ -321,17 +329,22 @@ def spec_view(spec: Spec, today: date) -> SpecView:
         single_editor=h.editor_count == 1,
     )
     interop = spec.interop
+    repo = spec.meta.repo
     engines = (("Chrome", interop.chrome), ("Firefox", interop.firefox), ("Safari", interop.safari))
     hz = spec.milestones.horizontal
+    ws_url = links.webstatus_url(spec.meta.webstatus_id)
     return SpecView(
         spec=spec,
         next_gate=gate,
         readiness=_readiness(gate, blockers),
-        blocker_rows=[(blocker_glyph(b.state), b.label) for b in blockers],
-        horizontal_rows=[(name, getattr(hz, attr)) for name, attr in HORIZONTAL_FIELDS],
-        engine_rows=[(name, st, support_glyph(st)) for name, st in engines],
+        blocker_rows=[(blocker_glyph(b.state), b.label, _blocker_href(b.kind, repo)) for b in blockers],
+        horizontal_rows=[
+            (name, getattr(hz, attr), links.horizontal_group_url(repo, attr)) for name, attr in HORIZONTAL_FIELDS
+        ],
+        engine_rows=[(name, st, support_glyph(st), ws_url) for name, st in engines],
         interop_label=interop_label(interop),
         wpt_pct=interop.all_engines_wpt,
+        wpt_href=links.wpt_url(spec.meta.wpt_path),
         stage_age_days=stage_age_days,
         stage_age_label=format_duration_days(stage_age_days),
         pulse=pulse if has_health else None,

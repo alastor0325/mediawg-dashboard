@@ -378,21 +378,29 @@ def test_spec_view_interop_label_reflects_support():
     assert v.interop_label == "C● F● S◐"
 
 
-def test_spec_view_engine_rows_alphabetical_with_glyph():
+def test_spec_view_engine_rows_alphabetical_with_glyph_and_link():
     v = spec_view(
         _spec(interop=InteropStatus(chrome="shipped", firefox="none", safari="partial")),
         date(2026, 7, 13),
     )
-    assert [name for name, _, _ in v.engine_rows] == ["Chrome", "Firefox", "Safari"]
-    assert v.engine_rows[0] == ("Chrome", "shipped", "●")
+    assert [name for name, *_ in v.engine_rows] == ["Chrome", "Firefox", "Safari"]
+    # (name, state, glyph, href) — href is None without a webstatus_id.
+    assert v.engine_rows[0] == ("Chrome", "shipped", "●", None)
 
 
-def test_spec_view_horizontal_rows_ordered():
+def test_spec_view_horizontal_rows_ordered_and_linked():
     v = spec_view(_spec(), date(2026, 7, 13))
-    assert [name for name, _ in v.horizontal_rows] == ["a11y", "i18n", "privacy", "security", "TAG"]
+    assert [name for name, *_ in v.horizontal_rows] == ["a11y", "i18n", "privacy", "security", "TAG"]
+    # Each horizontal chip links to its group's GitHub issue filter.
+    _, _, href = v.horizontal_rows[0]
+    assert "w3c/x/issues" in href and "a11y-needs-resolution" in href
 
 
-def test_spec_view_blocker_rows_carry_glyph_and_label():
+def test_spec_view_blocker_rows_link_github_derived_only():
     v = spec_view(_spec(stage="WD"), date(2026, 7, 13))
-    labels = [label for _, label in v.blocker_rows]
-    assert any("Wide review complete" in x for x in labels)
+    by_label = {label: href for _, label, href in v.blocker_rows}
+    # Wide review is config-derived -> no link.
+    assert by_label["Wide review complete"] is None
+    # CR-blocking issues comes from labels -> links to the needs-resolution filter.
+    cr = next(h for lbl, h in by_label.items() if lbl.startswith("CR-blocking"))
+    assert cr is not None and "needs-resolution" in cr

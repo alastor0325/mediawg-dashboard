@@ -113,6 +113,7 @@ class SpecHealth(BaseModel):
 class Blocker(BaseModel):
     label: str
     state: BlockerState
+    kind: str = ""  # wide_review / horizontal / cr_blocking / impl_report / ac_review
 
 
 class Pulse(BaseModel):
@@ -139,11 +140,12 @@ class SpecView(BaseModel):
     spec: Spec
     next_gate: str | None
     readiness: str | None  # ready / blocked / unknown (None if terminal)
-    blocker_rows: list[tuple[str, str]]  # (glyph, label)
-    horizontal_rows: list[tuple[str, str]]  # (name, state)
-    engine_rows: list[tuple[str, str, str]]  # (name, state, glyph)
+    blocker_rows: list[tuple[str, str, str | None]]  # (glyph, label, href|None)
+    horizontal_rows: list[tuple[str, str, str]]  # (name, state, href)
+    engine_rows: list[tuple[str, str, str, str | None]]  # (name, state, glyph, href|None)
     interop_label: str
     wpt_pct: float | None
+    wpt_href: str | None
     stage_age_days: int | None
     stage_age_label: str
     pulse: Pulse | None

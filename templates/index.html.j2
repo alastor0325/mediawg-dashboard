@@ -400,10 +400,10 @@
   .panel {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 1.4rem 2rem;
+    gap: 1.4rem 2.5rem;
     background: var(--paper-warm);
     border: 1px solid var(--rule);
-    padding: 1.2rem 1.4rem;
+    padding: 1.3rem 1.5rem;
   }
   .panel-h {
     font-family: "IBM Plex Mono", monospace;
@@ -412,29 +412,73 @@
     text-transform: uppercase;
     letter-spacing: 0.14em;
     color: var(--ink-soft);
-    margin-bottom: 0.6rem;
+    margin-bottom: 0.7rem;
     padding-bottom: 0.4rem;
     border-bottom: 1px solid var(--rule);
   }
-  .panel-line {
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    font-size: 0.82rem;
-    padding: 0.18rem 0;
-    align-items: baseline;
+  /* Aligned key/value grid — labels and values line up in two columns
+     (reads cleanly both in the 3-up wide view and stacked narrow view). */
+  dl.panel-kv {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    column-gap: 1rem;
+    row-gap: 0.32rem;
+    margin: 0 0 0.5rem;
   }
-  .panel-line .k {
+  .panel-kv dt {
     font-family: "IBM Plex Mono", monospace;
     font-size: 0.72rem;
     color: var(--muted);
     white-space: nowrap;
   }
-  .panel-line .v { color: var(--ink); text-align: right; }
-  .panel .chk { font-family: "IBM Plex Mono", monospace; font-size: 0.78rem; }
-  .panel .sep { color: var(--rule-strong); margin: 0 0.35rem; }
-  .panel .vlinks a { color: var(--ink); text-decoration: none; border-bottom: 1px dotted var(--rule-strong); }
-  .panel .vlinks a:hover { color: var(--accent); border-color: var(--accent); }
+  .panel-kv dd {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .panel-kv dd a,
+  ul.checklist a {
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--rule-strong);
+  }
+  .panel-kv dd a:hover,
+  ul.checklist a:hover { color: var(--accent); border-color: var(--accent); }
+  .panel-sub {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.64rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.13em;
+    color: var(--muted);
+    margin: 0.55rem 0 0.35rem;
+  }
+  ul.checklist { list-style: none; margin: 0 0 0.3rem; padding: 0; }
+  ul.checklist li { font-size: 0.8rem; padding: 0.12rem 0; color: var(--ink); }
+  ul.checklist .chk-mark { display: inline-block; width: 1.3em; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .chip {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    padding: 0.12rem 0.5rem;
+    border: 1px solid var(--rule-strong);
+    border-radius: 2px;
+    color: var(--ink);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .chip-open { color: var(--signal-rose); }
+  .chip-requested { color: var(--signal-amber); }
+  .chip-resolved { color: var(--signal-green); }
+  .chip-unknown, .chip-na { color: var(--muted); }
+  .tag { font-family: "IBM Plex Mono", monospace; font-size: 0.68rem; font-weight: 600; }
+  .tag-ready, .tag-pulse-on-track { color: var(--signal-green); }
+  .tag-blocked, .tag-warn { color: var(--accent); }
+  .tag-pulse-at-risk { color: var(--signal-rose); }
+  .tag-pulse-watch { color: var(--signal-amber); }
+  .tag-unknown { color: var(--muted); }
   @media (max-width: 900px) {
     /* Specificity must beat `.ledger tbody tr { display: grid }` below. */
     .ledger tbody tr.panel-row { display: block; }
@@ -733,28 +777,51 @@
         <div class="panel">
           <div class="panel-group">
             <div class="panel-h">Standardization &amp; next gate</div>
-            <div class="panel-line"><span class="k">Stage</span><span class="v">{{ spec.status.stage }} · in stage {{ row.stage_age_label }}{% if spec.status.last_tr_publication %} · last /TR/ {{ spec.status.last_tr_publication }}{% endif %}</span></div>
-            <div class="panel-line"><span class="k">Next gate</span><span class="v">{% if row.next_gate %}→ {{ row.next_gate }} ({{ row.readiness }}){% else %}— terminal{% endif %}</span></div>
-            <div class="panel-line"><span class="k">Charter</span><span class="v">{{ spec.health.charter_target or '—' }}{% if spec.health.charter_overdue %} · ⚠ behind{% endif %}</span></div>
+            <dl class="panel-kv">
+              <dt>Stage</dt><dd>{{ spec.status.stage }} · in stage {{ row.stage_age_label }}{% if spec.status.last_tr_publication %} · last /TR/ {{ spec.status.last_tr_publication }}{% endif %}</dd>
+              <dt>Next gate</dt><dd>{% if row.next_gate %}→ {{ row.next_gate }} <span class="tag tag-{{ row.readiness }}">{{ row.readiness }}</span>{% else %}terminal{% endif %}</dd>
+              <dt>Charter</dt><dd>{{ spec.health.charter_target or '—' }}{% if spec.health.charter_overdue %} <span class="tag tag-warn">behind</span>{% endif %}</dd>
+            </dl>
             {% if row.blocker_rows %}
-            <div class="panel-line"><span class="k">Blockers</span><span class="v">{% for glyph, label in row.blocker_rows %}<span class="chk">{{ glyph }} {{ label }}</span>{% if not loop.last %}<span class="sep">·</span>{% endif %}{% endfor %}</span></div>
+            <div class="panel-sub">Blockers to {{ row.next_gate }}</div>
+            <ul class="checklist">
+              {% for glyph, label, href in row.blocker_rows %}
+              <li><span class="chk-mark">{{ glyph }}</span>{% if href %}<a href="{{ href }}">{{ label }}</a>{% else %}{{ label }}{% endif %}</li>
+              {% endfor %}
+            </ul>
             {% endif %}
-            <div class="panel-line"><span class="k">Horizontal</span><span class="v">{% for name, st in row.horizontal_rows %}<span class="chk">{{ name }}:{{ st }}</span>{% if not loop.last %}<span class="sep">·</span>{% endif %}{% endfor %}</span></div>
+            <div class="panel-sub">Horizontal reviews</div>
+            <div class="chips">
+              {% for name, st, href in row.horizontal_rows %}<a class="chip chip-{{ st }}" href="{{ href }}">{{ name }} {{ st }}</a>{% endfor %}
+            </div>
           </div>
           <div class="panel-group">
             <div class="panel-h">Interoperability</div>
-            {% for engine, st, glyph in row.engine_rows %}
-            <div class="panel-line"><span class="k">{{ engine }}</span><span class="v">{{ glyph }} {{ st }}</span></div>
-            {% endfor %}
-            <div class="panel-line"><span class="k">All-engines WPT</span><span class="v">{% if row.wpt_pct is not none %}{{ row.wpt_pct | round | int }}%{% else %}—{% endif %} · tests {% if spec.interop.wpt_test_count is not none %}{{ spec.interop.wpt_test_count }}{% else %}—{% endif %} · Interop {{ spec.interop.interop_focus_year or '—' }}</span></div>
+            <dl class="panel-kv">
+              {% for engine, st, glyph, href in row.engine_rows %}
+              <dt>{{ engine }}</dt><dd>{% if href %}<a href="{{ href }}">{{ glyph }} {{ st }}</a>{% else %}{{ glyph }} {{ st }}{% endif %}</dd>
+              {% endfor %}
+              <dt>All-engines WPT</dt><dd>{% if row.wpt_pct is not none %}{% if row.wpt_href %}<a href="{{ row.wpt_href }}">{{ row.wpt_pct | round | int }}%</a>{% else %}{{ row.wpt_pct | round | int }}%{% endif %}{% else %}—{% endif %}{% if spec.interop.wpt_test_count is not none %} · {{ spec.interop.wpt_test_count }} tests{% endif %}</dd>
+              <dt>Interop focus</dt><dd>{{ spec.interop.interop_focus_year or '—' }}</dd>
+            </dl>
           </div>
           <div class="panel-group">
             <div class="panel-h">Activity &amp; health</div>
-            <div class="panel-line"><span class="k">Pulse</span><span class="v">{% if row.pulse %}{{ row.pulse.tier }} — {{ row.pulse.reason }}{% else %}—{% endif %}</span></div>
-            <div class="panel-line"><span class="k">Oldest blocking issue</span><span class="v">{% if spec.health.oldest_blocking_issue_days is not none %}{{ spec.health.oldest_blocking_issue_days }}d{% else %}—{% endif %}</span></div>
-            <div class="panel-line"><span class="k">Open issues / PRs</span><span class="v">{{ spec.stats.open_issues_count }} / {{ spec.stats.open_prs_count }}{% if spec.health.backlog_trend %} · backlog {{ spec.health.backlog_trend }}{% endif %}</span></div>
-            <div class="panel-line"><span class="k">Agenda / editors</span><span class="v">{% if spec.health.agenda_count is not none %}{{ spec.health.agenda_count }}{% else %}—{% endif %} / {% if spec.health.editor_count is not none %}{{ spec.health.editor_count }}{% else %}—{% endif %}</span></div>
-            <div class="panel-line"><span class="k">Links</span><span class="v vlinks"><a href="https://github.com/{{ spec.meta.repo }}">repo</a><span class="sep">·</span><a href="https://github.com/{{ spec.meta.repo }}/issues">issues</a><span class="sep">·</span><a href="https://github.com/{{ spec.meta.repo }}/pulls">PRs</a>{% if spec.meta.tr_url %}<span class="sep">·</span><a href="{{ spec.meta.tr_url }}">/TR/</a>{% endif %}{% if spec.status.ed_url %}<span class="sep">·</span><a href="{{ spec.status.ed_url }}">ED</a>{% endif %}{% if spec.meta.wpt_path %}<span class="sep">·</span><a href="{{ wpt_fyi_base }}{{ spec.meta.wpt_path }}">wpt.fyi</a>{% endif %}</span></div>
+            <dl class="panel-kv">
+              <dt>Pulse</dt><dd>{% if row.pulse %}<span class="tag tag-pulse-{{ row.pulse.tier }}">{{ row.pulse.tier }}</span> {{ row.pulse.reason }}{% else %}—{% endif %}</dd>
+              <dt>Open issues</dt><dd><a href="https://github.com/{{ spec.meta.repo }}/issues">{{ spec.stats.open_issues_count }}</a>{% if spec.health.backlog_trend %} · {{ spec.health.backlog_trend }}{% endif %}</dd>
+              <dt>Open PRs</dt><dd><a href="https://github.com/{{ spec.meta.repo }}/pulls">{{ spec.stats.open_prs_count }}</a></dd>
+              <dt>Oldest blocking</dt><dd>{% if spec.health.oldest_blocking_issue_days is not none %}{{ spec.health.oldest_blocking_issue_days }}d{% else %}—{% endif %}</dd>
+              <dt>Agenda items</dt><dd>{% if spec.health.agenda_count is not none %}{{ spec.health.agenda_count }}{% else %}—{% endif %}</dd>
+              <dt>Editors</dt><dd>{% if spec.health.editor_count is not none %}{{ spec.health.editor_count }}{% else %}—{% endif %}</dd>
+            </dl>
+            <div class="panel-sub">Links</div>
+            <div class="chips">
+              <a class="chip" href="https://github.com/{{ spec.meta.repo }}">repo</a>
+              {% if spec.meta.tr_url %}<a class="chip" href="{{ spec.meta.tr_url }}">/TR/</a>{% endif %}
+              {% if spec.status.ed_url %}<a class="chip" href="{{ spec.status.ed_url }}">ED</a>{% endif %}
+              {% if row.wpt_href %}<a class="chip" href="{{ row.wpt_href }}">wpt.fyi</a>{% endif %}
+            </div>
           </div>
         </div>
       </td>
