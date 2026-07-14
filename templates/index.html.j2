@@ -631,14 +631,13 @@
       align-self: start;
       padding-top: 0.45rem;
     }
-    /* Metadata rows: start where the title starts (column 2) so they
-       visually indent under the title rather than under the rownum. */
+    /* Metadata rows: label then value, both LEFT-aligned against a fixed-width
+       label so every value (and any status dot) starts at the same x. */
     .ledger tbody tr.spec-row td:nth-child(n+4) {
       grid-column: 2 / -1;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 1rem;
+      align-items: baseline;
+      gap: 0.75rem;
     }
     .ledger tbody tr.spec-row td:nth-child(n+4)::before {
       content: attr(data-label);
@@ -649,16 +648,15 @@
       letter-spacing: 0.14em;
       color: var(--ink-soft);
       flex: none;
+      min-width: 6.5rem;
     }
-    /* All right-side content lives inside .cell-value (or is a single child
-       like a text node or an <a>). The flex parent only sees [label]+[1 item]
-       so space-between gives a clean two-column row. */
+    /* Value sits immediately after the label, left-aligned. */
     .ledger tbody tr.spec-row td:nth-child(n+4) > .cell-value {
       display: inline-flex;
-      align-items: center;
+      align-items: baseline;
       gap: 0.5rem;
       flex: 0 1 auto;
-      text-align: right;
+      text-align: left;
     }
     .spec-title { font-size: 1.4rem; }
     .spec-sub { font-size: 0.82rem; }
