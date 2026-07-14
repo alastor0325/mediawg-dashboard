@@ -86,7 +86,10 @@ def cmd_refresh() -> int:
     history = read_history(HISTORY_PATH)
     record_snapshot(history, now.date().isoformat(), ok_counts)
     for spec in specs:
-        spec.health.backlog_trend = trend_direction(issue_series(history, spec.meta.shortname))
+        series = issue_series(history, spec.meta.shortname)
+        # Only surface a trend once there are ≥2 daily points; otherwise it's
+        # a meaningless "flat".
+        spec.health.backlog_trend = trend_direction(series) if len(series) >= 2 else None
     write_history(HISTORY_PATH, history)
 
     html = render_index(specs, now)

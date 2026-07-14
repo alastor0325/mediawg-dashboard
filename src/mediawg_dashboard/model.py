@@ -42,6 +42,7 @@ class SpecMeta(BaseModel):
     wpt_path: str | None = None
     charter_target: str | None = None  # neutral config fact, e.g. "CR Q4 2025"
     bcd_path: str | None = None  # MDN browser-compat-data key, e.g. api.MediaSource
+    hr_shortname: str | None = None  # horizontal-issue-tracker shortname (defaults to shortname)
 
 
 class SpecStatus(BaseModel):
@@ -126,7 +127,6 @@ class SpecHealth(BaseModel):
 
     days_since_activity: int | None = None
     oldest_blocking_issue_days: int | None = None
-    agenda_count: int | None = None
     editor_count: int | None = None
     charter_target: str | None = None  # e.g. "CR Q1 2026"
     charter_overdue: bool = False
@@ -167,7 +167,6 @@ class SpecView(BaseModel):
     horizontal_rows: list[tuple[str, str, str]]  # (name, state, href)
     engine_rows: list[EngineRow]
     interop_label: str
-    wpt_pct: float | None
     wpt_href: str | None
     stage_age_days: int | None
     stage_age_label: str

@@ -14,6 +14,7 @@ specs:
     tr: https://www.w3.org/TR/autoplay-detection/
     wpt_path: /autoplay-policy-detection/
     bcd_path: api.Navigator.getAutoplayPolicy
+    hr_shortname: autoplay-detection
     charter_target: CR Q2 2026
 
   - shortname: encrypted-media

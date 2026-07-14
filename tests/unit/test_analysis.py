@@ -408,11 +408,14 @@ def test_spec_view_horizontal_rows_ordered_and_linked():
     assert "w3c/x/issues" in href and "a11y-needs-resolution" in href
 
 
-def test_spec_view_blocker_rows_link_github_derived_only():
+def test_spec_view_blocker_rows_link_to_the_right_venue():
     v = spec_view(_spec(stage="WD"), date(2026, 7, 13))
     by_label = {label: href for _, label, href in v.blocker_rows}
-    # Wide review is config-derived -> no link.
-    assert by_label["Wide review complete"] is None
-    # CR-blocking issues comes from labels -> links to the needs-resolution filter.
+    # Wide review -> the repo's issues (community/wide review venue).
+    assert by_label["Wide review complete"].endswith("/w3c/x/issues")
+    # Horizontal reviews -> the cross-group horizontal-issue-tracker view.
+    hz = next(h for lbl, h in by_label.items() if lbl.startswith("Horizontal reviews"))
+    assert "review.html?shortname=" in hz
+    # CR-blocking issues -> the open needs-resolution filter.
     cr = next(h for lbl, h in by_label.items() if lbl.startswith("CR-blocking"))
     assert cr is not None and "needs-resolution" in cr

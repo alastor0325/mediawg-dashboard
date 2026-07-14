@@ -212,10 +212,19 @@ def compute_blockers(stage: Stage, milestones: SpecMilestones) -> list[Blocker]:
     return [req(milestones) for req in gate_requirements(next_gate(stage))]
 
 
-def _blocker_href(kind: str, repo: str) -> str | None:
-    """Link a blocker to the GitHub issues that back it (None if config-derived)."""
-    if kind in ("horizontal", "cr_blocking"):
-        return links.needs_resolution_url(repo)
+def _blocker_href(kind: str, meta) -> str | None:
+    """Link each blocker to where its status actually lives (None if no venue).
+
+    - horizontal → the cross-group horizontal-issue-tracker view for the spec
+    - wide_review → the repo's issues (where community/wide review happens)
+    - cr_blocking → open ``*-needs-resolution`` issues (the must-resolve set)
+    """
+    if kind == "horizontal":
+        return links.hr_review_url(meta.hr_shortname or meta.shortname)
+    if kind == "wide_review":
+        return links.repo_issues_url(meta.repo)
+    if kind == "cr_blocking":
+        return links.needs_resolution_url(meta.repo)
     return None
 
 
@@ -319,7 +328,7 @@ def compute_pulse(
     if days_since_activity is not None and days_since_activity >= _STALE_WATCH_DAYS:
         return Pulse(tier="watch", reason=f"quiet {days_since_activity}d")
     if single_editor:
-        return Pulse(tier="watch", reason="single editor")
+        return Pulse(tier="watch", reason="single recent author")
 
     return Pulse(tier="on-track", reason="active")
 
@@ -357,13 +366,12 @@ def spec_view(spec: Spec, today: date) -> SpecView:
         spec=spec,
         next_gate=gate,
         readiness=_readiness(gate, blockers),
-        blocker_rows=[(blocker_glyph(b.state), b.label, _blocker_href(b.kind, repo)) for b in blockers],
+        blocker_rows=[(blocker_glyph(b.state), b.label, _blocker_href(b.kind, spec.meta)) for b in blockers],
         horizontal_rows=[
             (name, getattr(hz, attr), links.horizontal_group_url(repo, attr)) for name, attr in HORIZONTAL_FIELDS
         ],
         engine_rows=_engine_rows(interop),
         interop_label=interop_label(interop),
-        wpt_pct=interop.all_engines_wpt,
         wpt_href=links.wpt_url(spec.meta.wpt_path),
         stage_age_days=stage_age_days,
         stage_age_label=format_duration_days(stage_age_days),

@@ -365,12 +365,6 @@
     letter-spacing: 0.06em;
   }
   .interop-dots { color: var(--ink); }
-  .interop-pct {
-    color: var(--muted);
-    margin-left: 0.5rem;
-    font-size: 0.82rem;
-    font-variant-numeric: tabular-nums;
-  }
 
   /* Pulse */
   td.pulse {
@@ -762,7 +756,7 @@
         {% endif %}
       </td>
       <td class="interop" data-label="Interop">
-        <span class="cell-value"><span class="interop-dots">{{ row.interop_label }}</span>{% if row.wpt_pct is not none %}<span class="interop-pct">{{ row.wpt_pct | round | int }}%</span>{% endif %}</span>
+        <span class="cell-value"><span class="interop-dots">{{ row.interop_label }}</span></span>
       </td>
       <td class="pulse" data-label="Pulse">
         {% if row.pulse %}
@@ -799,20 +793,27 @@
             <div class="panel-h">Interoperability</div>
             <dl class="panel-kv">
               {% for e in row.engine_rows %}
-              <dt>{% if e.href %}<a href="{{ e.href }}">{{ e.name }}</a>{% else %}{{ e.name }}{% endif %}</dt><dd>{{ e.glyph }} {{ e.state }}{% if e.version %} {{ e.version }}{% endif %}{% if e.wpt %} · WPT {{ e.wpt }}{% endif %}</dd>
+              <dt>{{ e.name }}</dt><dd>{% if e.href %}<a href="{{ e.href }}" title="MDN browser compatibility">{{ e.glyph }} {{ e.state }}{% if e.version %} {{ e.version }}{% endif %}</a>{% else %}{{ e.glyph }} {{ e.state }}{% if e.version %} {{ e.version }}{% endif %}{% endif %}</dd>
               {% endfor %}
-              <dt>All-engines WPT</dt><dd>{% if row.wpt_pct is not none %}{% if row.wpt_href %}<a href="{{ row.wpt_href }}">{{ row.wpt_pct | round | int }}%</a>{% else %}{{ row.wpt_pct | round | int }}%{% endif %}{% else %}—{% endif %}{% if spec.interop.wpt_test_count is not none %} · {{ spec.interop.wpt_test_count }} tests{% endif %} · nightly</dd>
             </dl>
+            {% set wpt_rows = row.engine_rows | selectattr('wpt') | list %}
+            {% if wpt_rows %}
+            <div class="panel-sub">All-engines WPT · experimental{% if row.wpt_href %} · <a href="{{ row.wpt_href }}">wpt.fyi ↗</a>{% endif %}</div>
+            <dl class="panel-kv">
+              {% for e in wpt_rows %}
+              <dt>{{ e.name }}</dt><dd>{% if row.wpt_href %}<a href="{{ row.wpt_href }}" title="passing subtests / total (experimental channel, aligned run)">{{ e.wpt }}</a>{% else %}{{ e.wpt }}{% endif %}</dd>
+              {% endfor %}
+            </dl>
+            {% endif %}
           </div>
           <div class="panel-group">
             <div class="panel-h">Activity &amp; health</div>
             <dl class="panel-kv">
               <dt>Pulse</dt><dd>{% if row.pulse %}<span class="tag tag-pulse-{{ row.pulse.tier }}">{{ row.pulse.tier }}</span> {{ row.pulse.reason }}{% else %}—{% endif %}</dd>
-              <dt>Open issues</dt><dd><a href="https://github.com/{{ spec.meta.repo }}/issues">{{ spec.stats.open_issues_count }}</a>{% if spec.health.backlog_trend %} · {{ spec.health.backlog_trend }}{% endif %}</dd>
+              <dt>Open issues</dt><dd><a href="https://github.com/{{ spec.meta.repo }}/issues">{{ spec.stats.open_issues_count }}</a>{% if spec.health.backlog_trend %} · backlog {{ spec.health.backlog_trend }}{% endif %}</dd>
               <dt>Open PRs</dt><dd><a href="https://github.com/{{ spec.meta.repo }}/pulls">{{ spec.stats.open_prs_count }}</a></dd>
-              <dt>Oldest blocking</dt><dd>{% if spec.health.oldest_blocking_issue_days is not none %}{{ spec.health.oldest_blocking_issue_days }}d{% else %}—{% endif %}</dd>
-              <dt>Agenda items</dt><dd>{% if spec.health.agenda_count is not none %}{{ spec.health.agenda_count }}{% else %}—{% endif %}</dd>
-              <dt>Editors</dt><dd>{% if spec.health.editor_count is not none %}{{ spec.health.editor_count }}{% else %}—{% endif %}</dd>
+              <dt title="days since the oldest open *-needs-resolution issue was filed">Oldest blocking</dt><dd>{% if spec.health.oldest_blocking_issue_days is not none %}{{ spec.health.oldest_blocking_issue_days }}d{% else %}—{% endif %}</dd>
+              <dt title="distinct commit authors in the repo's recent history (bus-factor signal)">Recent authors</dt><dd>{% if spec.health.editor_count is not none %}{{ spec.health.editor_count }}{% else %}—{% endif %}</dd>
             </dl>
             <div class="panel-sub">Links</div>
             <div class="chips">
