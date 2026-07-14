@@ -187,6 +187,8 @@ def test_render_rows_are_expandable():
     assert 'class="spec-row"' in html
     assert 'class="panel-row"' in html
     assert 'id="panel-webcodecs"' in html
+    # Panels start collapsed (hidden) — including in the narrow card layout.
+    assert 'id="panel-webcodecs" hidden>' in html
 
 
 def test_render_expand_affordance_is_discoverable():
