@@ -4,6 +4,7 @@ specs:
     repo: w3c/audio-session
     tr: https://www.w3.org/TR/audio-session/
     wpt_path: /audio-session/
+    charter_target: CR Q4 2026
 
   - shortname: autoplay
     title: Autoplay Policy Detection
@@ -11,6 +12,7 @@ specs:
     w3c_shortname: autoplay-detection
     tr: https://www.w3.org/TR/autoplay-detection/
     wpt_path: /autoplay-policy-detection/
+    charter_target: CR Q2 2026
 
   - shortname: encrypted-media
     title: Encrypted Media Extensions
@@ -18,17 +20,20 @@ specs:
     w3c_shortname: encrypted-media-2
     tr: https://www.w3.org/TR/encrypted-media-2/
     wpt_path: /encrypted-media/
+    charter_target: CR Q4 2026
 
   - shortname: media-capabilities
     title: Media Capabilities
     repo: w3c/media-capabilities
     tr: https://www.w3.org/TR/media-capabilities/
     wpt_path: /media-capabilities/
+    charter_target: CR Q4 2025
 
   - shortname: media-playback-quality
     title: Media Playback Quality
     repo: w3c/media-playback-quality
-    # No /TR/ publication yet — Editor's Draft only.
+    # No /TR/ publication yet — Editor's Draft only. Charter treats it as a
+    # Note (fold into HTML), so it has no Rec-track target.
     tr: null
     wpt_path: /media-playback-quality/
 
@@ -37,6 +42,7 @@ specs:
     repo: w3c/mediasession
     tr: https://www.w3.org/TR/mediasession/
     wpt_path: /mediasession/
+    charter_target: CR Q4 2026
 
   - shortname: media-source
     title: Media Source Extensions
@@ -44,15 +50,19 @@ specs:
     w3c_shortname: media-source-2
     tr: https://www.w3.org/TR/media-source-2/
     wpt_path: /media-source/
+    charter_target: CR Q4 2026
 
   - shortname: picture-in-picture
     title: Picture-in-Picture
     repo: w3c/picture-in-picture
     tr: https://www.w3.org/TR/picture-in-picture/
     wpt_path: /picture-in-picture/
+    charter_target: CR Q2 2026
 
   - shortname: webcodecs
     title: WebCodecs
     repo: w3c/webcodecs
     tr: https://www.w3.org/TR/webcodecs/
     wpt_path: /webcodecs/
+    charter_target: CR Q1 2026
+</content>

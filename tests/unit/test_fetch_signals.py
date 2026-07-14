@@ -1,0 +1,132 @@
+from datetime import datetime, timezone
+
+from mediawg_dashboard.fetch.github import (
+    count_labeled,
+    days_since_last_commit,
+    distinct_commit_authors,
+    needs_resolution_stats,
+    parse_horizontal_reviews,
+)
+from mediawg_dashboard.fetch.support import parse_support
+from mediawg_dashboard.fetch.wpt import parse_wpt_scores
+
+NOW = datetime(2026, 7, 13, tzinfo=timezone.utc)
+
+
+def _issue(labels, created="2026-01-01T00:00:00Z"):
+    return {"labels": [{"name": n} for n in labels], "created_at": created}
+
+
+# ---------- horizontal reviews from labels ----------
+
+
+def test_parse_horizontal_open_and_requested():
+    issues = [
+        _issue(["a11y-needs-resolution"]),
+        _issue(["i18n-tracker"]),
+        _issue(["random"]),
+    ]
+    hr = parse_horizontal_reviews(issues)
+    assert hr.a11y == "open"
+    assert hr.i18n == "requested"
+    assert hr.privacy == "unknown"
+    assert hr.security == "unknown"
+    assert hr.tag == "unknown"
+
+
+def test_parse_horizontal_empty():
+    hr = parse_horizontal_reviews([])
+    assert hr.security == "unknown"
+
+
+def test_count_labeled():
+    issues = [_issue(["agenda"]), _issue(["agenda"]), _issue(["x"])]
+    assert count_labeled(issues, "agenda") == 2
+
+
+def test_needs_resolution_stats():
+    issues = [
+        _issue(["security-needs-resolution"], "2026-01-01T00:00:00Z"),
+        _issue(["i18n-needs-resolution"], "2026-06-01T00:00:00Z"),
+        _issue(["agenda"]),
+    ]
+    count, oldest = needs_resolution_stats(issues, now=NOW)
+    assert count == 2
+    assert oldest == (NOW - datetime(2026, 1, 1, tzinfo=timezone.utc)).days
+
+
+def test_needs_resolution_stats_none():
+    assert needs_resolution_stats([], now=NOW) == (0, None)
+
+
+# ---------- commit signals ----------
+
+
+def _commit(date_str, login=None, name="Ed"):
+    return {"commit": {"author": {"date": date_str, "name": name}}, "author": {"login": login} if login else None}
+
+
+def test_days_since_last_commit():
+    commits = [_commit("2026-07-11T00:00:00Z"), _commit("2026-05-01T00:00:00Z")]
+    assert days_since_last_commit(commits, now=NOW) == 2
+
+
+def test_days_since_last_commit_none():
+    assert days_since_last_commit([], now=NOW) is None
+
+
+def test_distinct_commit_authors():
+    commits = [_commit("2026-07-11T00:00:00Z", login="a"), _commit("2026-07-10T00:00:00Z", login="b"), _commit("2026-07-09T00:00:00Z", login="a")]
+    assert distinct_commit_authors(commits) == 2
+
+
+def test_distinct_commit_authors_falls_back_to_name():
+    commits = [_commit("2026-07-11T00:00:00Z", login=None, name="Solo")]
+    assert distinct_commit_authors(commits) == 1
+
+
+# ---------- wpt scoring ----------
+
+
+def test_parse_wpt_scores_all_pass():
+    payload = {
+        "runs": [{"browser_name": "chrome"}, {"browser_name": "firefox"}, {"browser_name": "safari"}],
+        "results": [
+            {"test": "/x/a.html", "legacy_status": [{"passes": 5, "total": 5}, {"passes": 5, "total": 5}, {"passes": 5, "total": 5}]},
+            {"test": "/x/b.html", "legacy_status": [{"passes": 4, "total": 5}, {"passes": 5, "total": 5}, {"passes": 5, "total": 5}]},
+        ],
+    }
+    out = parse_wpt_scores(payload)
+    assert out["wpt_test_count"] == 2
+    # Only 1 of 2 tests passes fully in all engines.
+    assert out["all_engines_wpt"] == 50.0
+    assert out["per_engine"]["chrome"] == 90.0  # 9/10
+    assert out["per_engine"]["firefox"] == 100.0
+
+
+def test_parse_wpt_scores_empty():
+    out = parse_wpt_scores({"runs": [], "results": []})
+    assert out["all_engines_wpt"] is None
+    assert out["wpt_test_count"] == 0
+
+
+# ---------- browser support mapping ----------
+
+
+def test_parse_support_maps_statuses():
+    payload = {"browser_implementations": {"chrome": {"status": "available"}, "firefox": {"status": "available"}, "safari": {"status": "unavailable"}}}
+    interop = parse_support(payload)
+    assert interop.chrome == "shipped"
+    assert interop.firefox == "shipped"
+    assert interop.safari == "none"
+
+
+def test_parse_support_missing_engine_is_unknown():
+    interop = parse_support({"browser_implementations": {"chrome": {"status": "available"}}})
+    assert interop.chrome == "shipped"
+    assert interop.safari == "unknown"
+
+
+def test_parse_support_empty():
+    interop = parse_support({})
+    assert interop.chrome == "unknown"

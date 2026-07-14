@@ -40,6 +40,8 @@ class SpecMeta(BaseModel):
     w3c_shortname: str
     tr_url: str | None = None
     wpt_path: str | None = None
+    charter_target: str | None = None  # neutral config fact, e.g. "CR Q4 2025"
+    webstatus_id: str | None = None  # feature id for webstatus.dev support lookup
 
 
 class SpecStatus(BaseModel):

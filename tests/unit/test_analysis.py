@@ -2,6 +2,7 @@ from datetime import date
 
 from mediawg_dashboard.analysis import (
     blocker_glyph,
+    charter_overdue,
     compute_blockers,
     compute_pulse,
     compute_stage_age_days,
@@ -11,6 +12,7 @@ from mediawg_dashboard.analysis import (
     horizontal_summary,
     interop_label,
     next_gate,
+    parse_charter_target,
     spec_view,
     support_glyph,
 )
@@ -219,6 +221,38 @@ def test_blocker_glyph_mapping():
     assert blocker_glyph("open") == "✘"
     assert blocker_glyph("partial") == "◐"
     assert blocker_glyph("unknown") == "·"
+
+
+# ---------------- charter targets ----------------
+
+
+def test_parse_charter_target_valid():
+    assert parse_charter_target("CR Q4 2025") == ("CR", date(2025, 12, 31))
+    assert parse_charter_target("REC Q2 2027") == ("REC", date(2027, 6, 30))
+
+
+def test_parse_charter_target_invalid():
+    assert parse_charter_target(None) is None
+    assert parse_charter_target("soon") is None
+    assert parse_charter_target("CR Q9 2025") is None
+
+
+def test_charter_overdue_true_when_past_and_behind():
+    # CR target end of 2025, still at WD in mid-2026 -> overdue.
+    assert charter_overdue("CR Q4 2025", date(2026, 7, 13), "WD") is True
+
+
+def test_charter_not_overdue_when_reached_stage():
+    # Already at PR (past CR) -> not overdue even if the CR date passed.
+    assert charter_overdue("CR Q4 2025", date(2026, 7, 13), "PR") is False
+
+
+def test_charter_not_overdue_before_target_date():
+    assert charter_overdue("CR Q4 2026", date(2026, 7, 13), "WD") is False
+
+
+def test_charter_overdue_unparseable_is_false():
+    assert charter_overdue(None, date(2026, 7, 13), "WD") is False
 
 
 # ---------------- pulse ----------------

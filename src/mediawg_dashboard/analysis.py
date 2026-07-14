@@ -47,6 +47,44 @@ def next_gate(stage: Stage) -> str | None:
     return NEXT_GATE.get(stage)
 
 
+# Ordinal for comparing how far along the Rec track a stage is.
+STAGE_ORDER: dict[str, int] = {
+    "ED": 0, "FPWD": 1, "WD": 2,
+    "CR-snapshot": 3, "CR-draft": 3, "CR": 3,
+    "PR": 4, "REC": 5,
+    "NOTE": -1, "Discontinued": -1, "unknown": -1,
+}
+
+_QUARTER_END = {"Q1": (3, 31), "Q2": (6, 30), "Q3": (9, 30), "Q4": (12, 31)}
+
+
+def parse_charter_target(target: str | None) -> tuple[str, date] | None:
+    """Parse a charter target like 'CR Q4 2025' -> ('CR', date(2025, 12, 31)).
+
+    Returns None if the string can't be parsed.
+    """
+    if not target:
+        return None
+    parts = target.split()
+    if len(parts) != 3:
+        return None
+    stage, quarter, year = parts
+    if quarter not in _QUARTER_END or not year.isdigit():
+        return None
+    month, day = _QUARTER_END[quarter]
+    return (stage, date(int(year), month, day))
+
+
+def charter_overdue(target: str | None, today: date, stage: Stage) -> bool:
+    """True if the charter target quarter has passed and the spec hasn't reached it."""
+    parsed = parse_charter_target(target)
+    if parsed is None:
+        return False
+    target_stage, target_end = parsed
+    behind = STAGE_ORDER.get(stage, -1) < STAGE_ORDER.get(target_stage, 99)
+    return today > target_end and behind
+
+
 def compute_stage_age_days(last_tr_publication: date | None, today: date) -> int | None:
     """Approximate days spent in the current stage (uses last /TR/ publication)."""
     if last_tr_publication is None:
