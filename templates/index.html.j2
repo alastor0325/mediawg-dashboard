@@ -588,8 +588,9 @@
     .section-head { flex-wrap: wrap; gap: 0.5rem; }
     .section-meta { font-size: 0.66rem; }
 
-    /* Table → card layout (fixed layout + column clipping are desktop-only). */
-    table.ledger { border-collapse: separate; table-layout: auto; }
+    /* Table → card layout. The table itself must go block+full-width, else it
+       shrinks to content and the card grid's 1fr title column collapses to 0. */
+    table.ledger { display: block; width: 100%; border-collapse: separate; table-layout: auto; }
     .ledger tbody tr.spec-row > td { overflow: visible; }
     .ledger thead { display: none; }
     .ledger tbody { display: block; }
