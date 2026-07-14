@@ -4,17 +4,41 @@ from mediawg_dashboard.analysis import (
     compute_blockers,
     compute_pulse,
     compute_stage_age_days,
+    gate_readiness,
     gate_requirements,
     horizontal_summary,
     interop_label,
     next_gate,
+    spec_view,
     support_glyph,
 )
 from mediawg_dashboard.model import (
     HorizontalReviews,
     InteropStatus,
+    RepoStats,
+    Spec,
+    SpecHealth,
+    SpecMeta,
     SpecMilestones,
+    SpecStatus,
 )
+
+
+def _spec(
+    stage="WD",
+    milestones=None,
+    interop=None,
+    health=None,
+    last_tr=date(2026, 1, 1),
+) -> Spec:
+    return Spec(
+        meta=SpecMeta(shortname="x", title="X", repo="w3c/x", w3c_shortname="x", wpt_path="/x/"),
+        status=SpecStatus(stage=stage, last_tr_publication=last_tr),
+        stats=RepoStats(open_issues_count=1, open_prs_count=0),
+        milestones=milestones or SpecMilestones(),
+        interop=interop or InteropStatus(),
+        health=health or SpecHealth(),
+    )
 
 # ---------------- next_gate ----------------
 
@@ -222,3 +246,66 @@ def test_pulse_on_track_default():
 def test_pulse_handles_all_none_inputs():
     p = compute_pulse(days_since_activity=None, oldest_blocker_days=None)
     assert p.tier in {"on-track", "watch", "at-risk"}
+
+
+# ---------------- gate_readiness ----------------
+
+
+def test_gate_readiness_terminal_is_none():
+    assert gate_readiness("REC", SpecMilestones()) is None
+
+
+def test_gate_readiness_ready_when_no_blockers():
+    # ED -> FPWD has no tracked blockers.
+    assert gate_readiness("ED", SpecMilestones()) == "ready"
+
+
+def test_gate_readiness_blocked_when_any_open():
+    m = SpecMilestones(wide_review_complete=False, cr_blocking_issues_open=3)
+    assert gate_readiness("WD", m) == "blocked"
+
+
+def test_gate_readiness_ready_when_all_done():
+    m = SpecMilestones(
+        wide_review_complete=True,
+        horizontal=HorizontalReviews(
+            a11y="resolved", i18n="resolved", privacy="resolved",
+            security="resolved", tag="resolved",
+        ),
+        cr_blocking_issues_open=0,
+    )
+    assert gate_readiness("WD", m) == "ready"
+
+
+def test_gate_readiness_unknown_when_all_unknown():
+    assert gate_readiness("WD", SpecMilestones()) == "unknown"
+
+
+# ---------------- spec_view ----------------
+
+
+def test_spec_view_has_core_fields():
+    v = spec_view(_spec(stage="WD"), date(2026, 7, 13))
+    assert v.spec.status.stage == "WD"
+    assert v.next_gate == "CR"
+    assert v.interop_label == "C· F· S·"
+    assert v.stage_age_days == 193
+
+
+def test_spec_view_pulse_none_without_health_data():
+    v = spec_view(_spec(), date(2026, 7, 13))
+    assert v.pulse is None
+
+
+def test_spec_view_pulse_present_with_health_data():
+    v = spec_view(_spec(health=SpecHealth(days_since_activity=200)), date(2026, 7, 13))
+    assert v.pulse is not None
+    assert v.pulse.tier == "at-risk"
+
+
+def test_spec_view_interop_label_reflects_support():
+    v = spec_view(
+        _spec(interop=InteropStatus(chrome="shipped", firefox="shipped", safari="partial")),
+        date(2026, 7, 13),
+    )
+    assert v.interop_label == "C● F● S◐"

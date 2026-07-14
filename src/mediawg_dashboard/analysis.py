@@ -15,10 +15,14 @@ from mediawg_dashboard.model import (
     HorizontalReviews,
     InteropStatus,
     Pulse,
+    Spec,
     SpecMilestones,
+    SpecView,
     Stage,
     SupportState,
 )
+
+PRE_CR_STAGES = {"ED", "FPWD", "WD"}
 
 # --- Rec-track gate model (from docs/spec-process-flow.md) ---
 
@@ -129,6 +133,24 @@ def compute_blockers(stage: Stage, milestones: SpecMilestones) -> list[Blocker]:
     return [req(milestones) for req in gate_requirements(next_gate(stage))]
 
 
+def _readiness(gate: str | None, blockers: list[Blocker]) -> str | None:
+    if gate is None:
+        return None
+    if not blockers:
+        return "ready"
+    states = {b.state for b in blockers}
+    if states & {"open", "partial"}:
+        return "blocked"
+    if states == {"done"}:
+        return "ready"
+    return "unknown"
+
+
+def gate_readiness(stage: Stage, milestones: SpecMilestones) -> str | None:
+    """Readiness of the next gate: ready / blocked / unknown (None if terminal)."""
+    return _readiness(next_gate(stage), compute_blockers(stage, milestones))
+
+
 # --- Interop presentation (neutral: alphabetical Chrome/Firefox/Safari) ---
 
 _GLYPHS: dict[str, str] = {
@@ -149,6 +171,17 @@ def interop_label(interop: InteropStatus) -> str:
         f"C{support_glyph(interop.chrome)} "
         f"F{support_glyph(interop.firefox)} "
         f"S{support_glyph(interop.safari)}"
+    )
+
+
+def shipping_cross_engine(specs: list[Spec]) -> int:
+    """Count specs shipped in all three engines (the neutral interop headline)."""
+    return sum(
+        1
+        for s in specs
+        if s.interop.chrome == "shipped"
+        and s.interop.firefox == "shipped"
+        and s.interop.safari == "shipped"
     )
 
 
@@ -182,3 +215,40 @@ def compute_pulse(
         return Pulse(tier="watch", reason="single editor")
 
     return Pulse(tier="on-track", reason="active")
+
+
+def spec_view(spec: Spec, today: date) -> SpecView:
+    """Assemble the typed payload the first/second-level template renders per spec.
+
+    Pure: derives everything from the spec's own fields. Pulse is None until any
+    health input is present, so the UI shows '—' rather than a false 'on-track'.
+    """
+    stage = spec.status.stage
+    gate = next_gate(stage)
+    blockers = compute_blockers(stage, spec.milestones)
+    h = spec.health
+    has_health = any(
+        (
+            h.charter_overdue,
+            h.days_since_activity is not None,
+            h.oldest_blocking_issue_days is not None,
+            h.editor_count is not None,
+        )
+    )
+    pulse = compute_pulse(
+        days_since_activity=h.days_since_activity,
+        oldest_blocker_days=h.oldest_blocking_issue_days,
+        charter_overdue=h.charter_overdue,
+        stage_before_cr=stage in PRE_CR_STAGES,
+        single_editor=h.editor_count == 1,
+    )
+    return SpecView(
+        spec=spec,
+        next_gate=gate,
+        readiness=_readiness(gate, blockers),
+        blockers=blockers,
+        interop_label=interop_label(spec.interop),
+        wpt_pct=spec.interop.all_engines_wpt,
+        stage_age_days=compute_stage_age_days(spec.status.last_tr_publication, today),
+        pulse=pulse if has_health else None,
+    )

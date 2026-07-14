@@ -1,6 +1,12 @@
 from datetime import date
 
-from mediawg_dashboard.model import RepoStats, Spec, SpecMeta, SpecStatus
+from mediawg_dashboard.model import (
+    InteropStatus,
+    RepoStats,
+    Spec,
+    SpecMeta,
+    SpecStatus,
+)
 from mediawg_dashboard.render import render_index
 
 
@@ -8,6 +14,7 @@ def _spec(
     shortname: str = "webcodecs",
     stage: str = "WD",
     wpt_path: str | None = "/webcodecs/",
+    interop: InteropStatus | None = None,
 ) -> Spec:
     return Spec(
         meta=SpecMeta(
@@ -24,6 +31,7 @@ def _spec(
             ed_url=f"https://w3c.github.io/{shortname}/",
         ),
         stats=RepoStats(open_issues_count=42, open_prs_count=5, oldest_open_issue_age_days=180),
+        interop=interop or InteropStatus(),
     )
 
 
@@ -127,7 +135,48 @@ def test_summarize_empty_list():
     from mediawg_dashboard.render import summarize
 
     s = summarize([])
-    assert s == {"total_specs": 0, "total_issues": 0, "total_prs": 0, "by_stage": {}}
+    assert s == {
+        "total_specs": 0,
+        "total_issues": 0,
+        "total_prs": 0,
+        "by_stage": {},
+        "shipping_cross_engine": 0,
+    }
+
+
+def test_summarize_counts_shipping_cross_engine():
+    from mediawg_dashboard.render import summarize
+
+    all_ship = _spec("a", interop=InteropStatus(chrome="shipped", firefox="shipped", safari="shipped"))
+    partial = _spec("b", interop=InteropStatus(chrome="shipped", firefox="shipped", safari="partial"))
+    s = summarize([all_ship, partial])
+    assert s["shipping_cross_engine"] == 1
+
+
+def test_render_shows_next_gate():
+    html = render_index([_spec("webcodecs", stage="WD")])
+    assert "→CR" in html
+
+
+def test_render_shows_interop_dots():
+    html = render_index([
+        _spec("webcodecs", interop=InteropStatus(chrome="shipped", firefox="shipped", safari="partial"))
+    ])
+    assert "C● F● S◐" in html
+
+
+def test_render_pulse_dash_without_health_data():
+    # No health data -> no pulse mark is applied to a row (the "cell-value pulse-*"
+    # wrapper only appears when a pulse is rendered; the CSS class defs don't count).
+    html = render_index([_spec("webcodecs")])
+    assert "cell-value pulse-" not in html
+
+
+def test_render_summary_shows_shipping_count():
+    html = render_index([
+        _spec("a", interop=InteropStatus(chrome="shipped", firefox="shipped", safari="shipped"))
+    ])
+    assert "1/1 shipping cross-engine" in html
 
 
 def test_render_summary_includes_totals():

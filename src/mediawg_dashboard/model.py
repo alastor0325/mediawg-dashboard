@@ -54,12 +54,6 @@ class RepoStats(BaseModel):
     oldest_open_issue_age_days: int | None = None
 
 
-class Spec(BaseModel):
-    meta: SpecMeta
-    status: SpecStatus
-    stats: RepoStats
-
-
 # --- Expandable-view types (all vendor-neutral) ---
 
 SupportState = Literal["shipped", "partial", "none", "unknown"]
@@ -102,6 +96,17 @@ class InteropStatus(BaseModel):
     interop_focus_year: int | None = None
 
 
+class SpecHealth(BaseModel):
+    """Activity/health inputs for the Pulse signal (populated by fetchers)."""
+
+    days_since_activity: int | None = None
+    oldest_blocking_issue_days: int | None = None
+    agenda_count: int | None = None
+    editor_count: int | None = None
+    charter_target: str | None = None  # e.g. "CR Q1 2026"
+    charter_overdue: bool = False
+
+
 class Blocker(BaseModel):
     label: str
     state: BlockerState
@@ -110,3 +115,29 @@ class Blocker(BaseModel):
 class Pulse(BaseModel):
     tier: PulseTier
     reason: str = ""
+
+
+class Spec(BaseModel):
+    meta: SpecMeta
+    status: SpecStatus
+    stats: RepoStats
+    milestones: SpecMilestones = Field(default_factory=SpecMilestones)
+    interop: InteropStatus = Field(default_factory=InteropStatus)
+    health: SpecHealth = Field(default_factory=SpecHealth)
+
+
+class SpecView(BaseModel):
+    """Everything the template renders for one spec row + its expand panel.
+
+    A typed payload (not a bare dict) so template access is schema-checked and
+    can grow safely across P3–P5.
+    """
+
+    spec: Spec
+    next_gate: str | None
+    readiness: str | None  # ready / blocked / unknown (None if terminal)
+    blockers: list[Blocker]
+    interop_label: str
+    wpt_pct: float | None
+    stage_age_days: int | None
+    pulse: Pulse | None

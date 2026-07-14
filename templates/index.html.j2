@@ -334,6 +334,56 @@
   .stage.ED::before, .stage.NOTE::before { background: var(--signal-mute); }
   .stage.Discontinued::before { background: var(--signal-rose); }
 
+  /* Shared status-dot primitive (next-gate + pulse read as colored dots;
+     interop keeps its ●◐○ glyph string so the two vocabularies never clash) */
+  .hdot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--signal-mute);
+    flex: none;
+    vertical-align: 0;
+  }
+
+  /* Next-gate mark */
+  td.gate {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
+  .gate-name { color: var(--ink); font-weight: 600; letter-spacing: 0.04em; }
+  .gate-dot { margin-left: 0.45rem; }
+  .gate-dot.ready { background: var(--signal-green); }
+  .gate-dot.blocked { background: var(--accent); }
+  .gate-dot.unknown { background: var(--signal-mute); }
+
+  /* Interop tri-dot + all-engines WPT */
+  td.interop {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    letter-spacing: 0.06em;
+  }
+  .interop-dots { color: var(--ink); }
+  .interop-pct {
+    color: var(--muted);
+    margin-left: 0.5rem;
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Pulse */
+  td.pulse {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+  .pulse-dot { margin-right: 0.4rem; }
+  .pulse-on-track .pulse-dot { background: var(--signal-green); }
+  .pulse-watch .pulse-dot { background: var(--signal-amber); }
+  .pulse-at-risk .pulse-dot { background: var(--signal-rose); }
+  .pulse-reason { color: var(--muted); }
+
   /* Date */
   td.date {
     font-family: "IBM Plex Mono", monospace;
@@ -435,7 +485,7 @@
   .ledger tbody tr {
     animation: row-enter 420ms cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
   }
-  {% for i in range(specs|length) %}
+  {% for i in range(rows|length) %}
   .ledger tbody tr:nth-child({{ i + 1 }}) {
     animation-delay: {{ 40 + i * 30 }}ms;
   }
@@ -677,7 +727,7 @@
   <div class="section-head">
     <span class="section-label">— Status, by specification</span>
     <span class="section-rule"></span>
-    <span class="section-meta">click any header to sort · hover a stage code for its definition</span>
+    <span class="section-meta">{{ summary.shipping_cross_engine }}/{{ summary.total_specs }} shipping cross-engine · click any header to sort · hover a stage code for its definition</span>
   </div>
 
   <table class="ledger" id="specs">
@@ -686,6 +736,9 @@
       <th aria-hidden="true"></th>
       <th>Specification <span class="sort-glyph">⇅</span></th>
       <th>Stage <span class="sort-glyph">⇅</span></th>
+      <th>Next <span class="sort-glyph">⇅</span></th>
+      <th>Interop</th>
+      <th>Pulse</th>
       <th>Last TR <span class="sort-glyph">⇅</span></th>
       <th class="num">Issues <span class="sort-glyph">⇅</span></th>
       <th class="num">PRs <span class="sort-glyph">⇅</span></th>
@@ -695,7 +748,8 @@
     </tr>
   </thead>
   <tbody>
-  {% for spec in specs %}
+  {% for row in rows %}
+    {% set spec = row.spec %}
     {% set age = spec.stats.oldest_open_issue_age_days %}
     {% set age_w = ([100, (age or 0) // 50] | min) %}
     {% set warn = age and age > 730 %}
@@ -711,6 +765,23 @@
       </td>
       <td data-label="Stage">
         <span class="stage {{ spec.status.stage }}" title="{{ stage_descriptions[spec.status.stage] }}">{{ spec.status.stage }}</span>
+      </td>
+      <td class="gate" data-label="Next gate">
+        {% if row.next_gate %}
+          <span class="cell-value"><span class="gate-name">→{{ row.next_gate }}</span><span class="hdot gate-dot {{ row.readiness }}" title="{{ row.readiness }}"></span></span>
+        {% else %}
+          <span class="dash">—</span>
+        {% endif %}
+      </td>
+      <td class="interop" data-label="Interop">
+        <span class="cell-value"><span class="interop-dots">{{ row.interop_label }}</span>{% if row.wpt_pct is not none %}<span class="interop-pct">{{ row.wpt_pct | round | int }}%</span>{% endif %}</span>
+      </td>
+      <td class="pulse" data-label="Pulse">
+        {% if row.pulse %}
+          <span class="cell-value pulse-{{ row.pulse.tier }}"><span class="hdot pulse-dot"></span><span class="pulse-reason">{{ row.pulse.reason }}</span></span>
+        {% else %}
+          <span class="dash">—</span>
+        {% endif %}
       </td>
       <td class="date" data-label="Last TR">
         {% if spec.status.last_tr_publication %}{{ spec.status.last_tr_publication }}{% else %}<span class="dash">—</span>{% endif %}
@@ -740,7 +811,7 @@
       </td>
     </tr>
   {% else %}
-    <tr><td colspan="9" style="text-align:center; color:var(--muted); padding:2rem;">No specifications configured.</td></tr>
+    <tr><td colspan="12" style="text-align:center; color:var(--muted); padding:2rem;">No specifications configured.</td></tr>
   {% endfor %}
   </tbody>
   </table>
