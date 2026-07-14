@@ -79,9 +79,10 @@ def fetch_wpt_scores(
         return None
     ctx = nullcontext(client) if client is not None else httpx.Client(follow_redirects=True, timeout=30.0)
     with ctx as c:
+        # wpt.fyi search matches the path as a plain substring (no 'path:' op).
         resp = c.get(
             f"{WPT_API_BASE}/search",
-            params={"run_ids": ",".join(run_ids), "q": f"path:{wpt_path}"},
+            params={"run_ids": ",".join(run_ids), "q": wpt_path},
         )
         resp.raise_for_status()
         return parse_wpt_scores(resp.json())

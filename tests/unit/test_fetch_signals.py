@@ -130,3 +130,34 @@ def test_parse_support_missing_engine_is_unknown():
 def test_parse_support_empty():
     interop = parse_support({})
     assert interop.chrome == "unknown"
+
+
+# ---------- wpt fetch (query regression) ----------
+
+import httpx  # noqa: E402
+
+from mediawg_dashboard.fetch.wpt import fetch_wpt_scores  # noqa: E402
+
+
+def test_fetch_wpt_scores_queries_path_substring_and_parses():
+    captured = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["q"] = request.url.params.get("q")
+        return httpx.Response(200, json={
+            "runs": [{"browser_name": "chrome"}, {"browser_name": "firefox"}, {"browser_name": "safari"}],
+            "results": [{"test": "/webcodecs/a.html", "legacy_status": [
+                {"passes": 5, "total": 5}, {"passes": 5, "total": 5}, {"passes": 5, "total": 5}]}],
+        })
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        out = fetch_wpt_scores("/webcodecs/", ["1", "2", "3"], client=client)
+
+    # Regression: query must be the bare path (no 'path:' operator).
+    assert captured["q"] == "/webcodecs/"
+    assert out["wpt_test_count"] == 1
+    assert out["all_engines_wpt"] == 100.0
+
+
+def test_fetch_wpt_scores_no_runs_returns_none():
+    assert fetch_wpt_scores("/x/", []) is None

@@ -1,4 +1,8 @@
+from pathlib import Path
+
 from mediawg_dashboard.config import load_specs
+
+REPO_CONFIG = Path(__file__).resolve().parents[2] / "config" / "specs.yaml"
 
 SAMPLE_YAML = """
 specs:
@@ -30,6 +34,13 @@ def test_load_specs_w3c_shortname_defaults_to_shortname(tmp_path):
     cfg.write_text(SAMPLE_YAML)
     specs = load_specs(cfg)
     assert specs[0].w3c_shortname == "webcodecs"
+
+
+def test_repo_specs_yaml_parses():
+    # Regression: the shipped config must load (a stray line once broke refresh).
+    specs = load_specs(REPO_CONFIG)
+    assert len(specs) == 9
+    assert all(s.shortname and s.repo for s in specs)
 
 
 def test_load_specs_parses_charter_and_webstatus(tmp_path):
