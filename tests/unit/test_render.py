@@ -197,6 +197,13 @@ def test_render_expand_affordance_is_discoverable():
     assert "click a row to expand" in html
 
 
+def test_render_table_layout_fixed_keeps_columns_stable():
+    # Fixed layout + colgroup so expanding a row can't re-flow the columns.
+    html = render_index([_spec("webcodecs")])
+    assert "table-layout: fixed" in html
+    assert "<colgroup>" in html and 'class="col-interop"' in html
+
+
 def test_render_cr_blocking_before_horizontal():
     # CR-blocking issues should render above Horizontal reviews in the checklist.
     html = render_index([_spec("webcodecs", stage="WD")])

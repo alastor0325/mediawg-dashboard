@@ -227,7 +227,19 @@
     width: 100%;
     border-collapse: collapse;
     font-size: 0.93rem;
+    /* Fixed layout so the first-level columns keep their widths when a row is
+       expanded (the panel's colspan cell must not re-flow the columns). */
+    table-layout: fixed;
   }
+  .ledger col.col-num { width: 2.4rem; }
+  .ledger col.col-stage { width: 6rem; }
+  .ledger col.col-next { width: 7.5rem; }
+  .ledger col.col-interop { width: 11rem; }
+  .ledger col.col-pulse { width: 10rem; }
+  /* col-spec is left unset — it absorbs the remaining width. */
+  /* Clip only the first-level cells if content exceeds the fixed width; never
+     the expanded panel row (colspan cell). */
+  .ledger tr.spec-row > td { overflow: hidden; text-overflow: ellipsis; }
   .ledger thead th {
     font-family: "IBM Plex Mono", monospace;
     font-size: 0.7rem;
@@ -577,8 +589,9 @@
     .section-head { flex-wrap: wrap; gap: 0.5rem; }
     .section-meta { font-size: 0.66rem; }
 
-    /* Table → card layout */
-    table.ledger { border-collapse: separate; }
+    /* Table → card layout (fixed layout + column clipping are desktop-only). */
+    table.ledger { border-collapse: separate; table-layout: auto; }
+    .ledger tbody tr.spec-row > td { overflow: visible; }
     .ledger thead { display: none; }
     .ledger tbody { display: block; }
     .ledger tbody tr {
@@ -740,6 +753,14 @@
   </div>
 
   <table class="ledger" id="specs">
+  <colgroup>
+    <col class="col-num">
+    <col class="col-spec">
+    <col class="col-stage">
+    <col class="col-next">
+    <col class="col-interop">
+    <col class="col-pulse">
+  </colgroup>
   <thead>
     <tr>
       <th aria-hidden="true"></th>
