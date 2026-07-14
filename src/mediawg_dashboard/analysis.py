@@ -54,10 +54,40 @@ def compute_stage_age_days(last_tr_publication: date | None, today: date) -> int
     return (today - last_tr_publication).days
 
 
+def format_duration_days(days: int | None) -> str:
+    """Human duration for the panel: '12d', '5mo', '2y 1m' ('—' if unknown)."""
+    if days is None:
+        return "—"
+    if days < 60:
+        return f"{days}d"
+    if days < 365:
+        return f"{days // 30}mo"
+    years, rem_months = days // 365, (days % 365) // 30
+    return f"{years}y {rem_months}m" if rem_months else f"{years}y"
+
+
+_BLOCKER_GLYPHS = {"done": "✔", "open": "✘", "partial": "◐", "unknown": "·"}
+
+
+def blocker_glyph(state: str) -> str:
+    """Checklist mark for a blocker state (done/open/partial/unknown)."""
+    return _BLOCKER_GLYPHS.get(state, "·")
+
+
 def _bool_state(value: bool | None) -> str:
     if value is None:
         return "unknown"
     return "done" if value else "open"
+
+
+# Display name -> attribute for the 5 horizontal reviews (single source of order).
+HORIZONTAL_FIELDS: tuple[tuple[str, str], ...] = (
+    ("a11y", "a11y"),
+    ("i18n", "i18n"),
+    ("privacy", "privacy"),
+    ("security", "security"),
+    ("TAG", "tag"),
+)
 
 
 def horizontal_summary(h: HorizontalReviews) -> tuple[str, int, int]:
@@ -66,7 +96,7 @@ def horizontal_summary(h: HorizontalReviews) -> tuple[str, int, int]:
     Returns ``(state, resolved, total)`` where ``total`` excludes ``na`` reviews
     and ``state`` is one of done/partial/open/unknown.
     """
-    considered = [s for s in (h.a11y, h.i18n, h.privacy, h.security, h.tag) if s != "na"]
+    considered = [s for s in (getattr(h, attr) for _, attr in HORIZONTAL_FIELDS) if s != "na"]
     total = len(considered)
     resolved = sum(1 for s in considered if s == "resolved")
     if total == 0:
@@ -226,6 +256,7 @@ def spec_view(spec: Spec, today: date) -> SpecView:
     stage = spec.status.stage
     gate = next_gate(stage)
     blockers = compute_blockers(stage, spec.milestones)
+    stage_age_days = compute_stage_age_days(spec.status.last_tr_publication, today)
     h = spec.health
     has_health = any(
         (
@@ -242,13 +273,19 @@ def spec_view(spec: Spec, today: date) -> SpecView:
         stage_before_cr=stage in PRE_CR_STAGES,
         single_editor=h.editor_count == 1,
     )
+    interop = spec.interop
+    engines = (("Chrome", interop.chrome), ("Firefox", interop.firefox), ("Safari", interop.safari))
+    hz = spec.milestones.horizontal
     return SpecView(
         spec=spec,
         next_gate=gate,
         readiness=_readiness(gate, blockers),
-        blockers=blockers,
-        interop_label=interop_label(spec.interop),
-        wpt_pct=spec.interop.all_engines_wpt,
-        stage_age_days=compute_stage_age_days(spec.status.last_tr_publication, today),
+        blocker_rows=[(blocker_glyph(b.state), b.label) for b in blockers],
+        horizontal_rows=[(name, getattr(hz, attr)) for name, attr in HORIZONTAL_FIELDS],
+        engine_rows=[(name, st, support_glyph(st)) for name, st in engines],
+        interop_label=interop_label(interop),
+        wpt_pct=interop.all_engines_wpt,
+        stage_age_days=stage_age_days,
+        stage_age_label=format_duration_days(stage_age_days),
         pulse=pulse if has_health else None,
     )

@@ -384,97 +384,64 @@
   .pulse-at-risk .pulse-dot { background: var(--signal-rose); }
   .pulse-reason { color: var(--muted); }
 
-  /* Date */
-  td.date {
-    font-family: "IBM Plex Mono", monospace;
-    font-size: 0.86rem;
-    font-weight: 500;
-    color: var(--ink);
-    font-variant-numeric: tabular-nums;
-  }
-  td.date .relative {
-    display: block;
-    color: var(--muted);
-    font-size: 0.7rem;
-    margin-top: 0.15rem;
-  }
-
-  /* Numeric count cells */
-  td.count { padding: 1.05rem 0.85rem; }
-  .count-link {
-    font-family: "IBM Plex Mono", monospace;
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: var(--ink);
-    text-decoration: none;
-    font-variant-numeric: tabular-nums;
+  /* Expand affordance + detail panel */
+  tr.spec-row { cursor: pointer; }
+  .caret {
     display: inline-block;
-    padding: 0.2rem 0.55rem;
-    border: 1px solid transparent;
-    border-radius: 2px;
-    transition: all 100ms ease;
-    min-width: 2.5rem;
-    text-align: right;
+    color: var(--rule-strong);
+    font-size: 0.7em;
+    margin-right: 0.35rem;
+    transition: transform 140ms ease;
   }
-  .count-link:hover {
-    color: var(--accent);
-    border-color: var(--rule-strong);
-    background: var(--paper);
+  tr.spec-row.open .caret { transform: rotate(90deg); color: var(--accent); }
+  tr.panel-row { animation: none !important; }
+  tr.panel-row:hover { background: transparent; }
+  tr.panel-row > td { padding: 0 0.85rem 1.4rem; border-bottom: 1px solid var(--rule); }
+  .panel {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.4rem 2rem;
+    background: var(--paper-warm);
+    border: 1px solid var(--rule);
+    padding: 1.2rem 1.4rem;
   }
-  .count-zero { color: var(--muted); }
-
-  /* Age cell with horizontal weight bar */
-  td.age {
+  .panel-h {
     font-family: "IBM Plex Mono", monospace;
-    font-size: 0.88rem;
-    font-weight: 500;
-    color: var(--ink);
-    font-variant-numeric: tabular-nums;
-    min-width: 8rem;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-soft);
+    margin-bottom: 0.6rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--rule);
   }
-  .age-num { display: inline-block; min-width: 3.5rem; text-align: right; }
-  .age-bar {
-    display: inline-block;
-    vertical-align: middle;
-    margin-left: 0.6rem;
-    height: 5px;
-    width: 60px;
-    background: var(--rule);
-    position: relative;
-    border-radius: 0;
-  }
-  .age-bar::after {
-    content: "";
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: var(--w, 0%);
-    background: var(--signal-amber);
-    transition: width 400ms ease;
-  }
-  .age-bar.warn::after { background: var(--accent); }
-  .age-num.warn { color: var(--accent); }
-
-  /* Link cells */
-  td.links {
-    font-family: "IBM Plex Mono", monospace;
+  .panel-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
     font-size: 0.82rem;
-    font-weight: 500;
+    padding: 0.18rem 0;
+    align-items: baseline;
+  }
+  .panel-line .k {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
     white-space: nowrap;
   }
-  td.links a {
-    color: var(--ink);
-    text-decoration: none;
-    border-bottom: 1px dotted var(--rule-strong);
-    padding-bottom: 2px;
+  .panel-line .v { color: var(--ink); text-align: right; }
+  .panel .chk { font-family: "IBM Plex Mono", monospace; font-size: 0.78rem; }
+  .panel .sep { color: var(--rule-strong); margin: 0 0.35rem; }
+  .panel .vlinks a { color: var(--ink); text-decoration: none; border-bottom: 1px dotted var(--rule-strong); }
+  .panel .vlinks a:hover { color: var(--accent); border-color: var(--accent); }
+  @media (max-width: 900px) {
+    /* Specificity must beat `.ledger tbody tr { display: grid }` below. */
+    .ledger tbody tr.panel-row { display: block; }
+    .ledger tbody tr.panel-row > td { display: block; padding: 0 0 1rem; }
+    .panel { grid-template-columns: 1fr; gap: 1rem; }
   }
-  td.links a:hover {
-    color: var(--accent);
-    border-bottom-color: var(--accent);
-  }
-  td.links .sep {
-    color: var(--rule-strong);
-    margin: 0 0.4rem;
-  }
+
   .dash { color: var(--rule-strong); }
 
   /* Row entry animation */
@@ -528,17 +495,16 @@
 
   /* ============ Responsive ============ */
 
-  /* Tier: laptop / small desktop — tighten paddings, drop the age bar */
+  /* Tier: laptop / small desktop — tighten paddings */
   @media (max-width: 1100px) {
     .frame { padding: 2.5rem 1.5rem 3rem; }
     table.ledger { font-size: 0.88rem; }
     .ledger thead th, .ledger tbody td { padding-left: 0.6rem; padding-right: 0.6rem; }
     .spec-title { font-size: 1.1rem; }
     td.spec { min-width: 12rem; }
-    .age-bar { width: 40px; }
   }
 
-  /* Tier: tablet portrait & phone — the 9-column ledger doesn't fit; stack
+  /* Tier: tablet portrait & phone — the ledger doesn't fit; stack
      rows as labeled cards. Summary collapses to 2 cols. */
   @media (max-width: 900px) {
     .frame { padding: 2rem 1.25rem 2.5rem; }
@@ -624,18 +590,9 @@
       flex: 0 1 auto;
       text-align: right;
     }
-    .ledger .count-link {
-      padding: 0.15rem 0.5rem;
-      font-size: 1.15rem;
-    }
     .spec-title { font-size: 1.4rem; }
     .spec-sub { font-size: 0.82rem; }
-    td.date { font-size: 0.98rem; }
-    td.age { font-size: 1.02rem; }
     .stage { font-size: 0.86rem; }
-    /* Keep the age bar but make it narrower so it stays right-aligned with
-       the value on the same line */
-    .age-bar { width: 80px; margin-left: 0.55rem; height: 6px; }
   }
 
   /* Tier: phone — tighter paddings + smaller type for narrow viewports */
@@ -650,13 +607,9 @@
     .ledger tbody tr { padding: 1.1rem 0; gap: 0.5rem 0.75rem; }
     .ledger tbody td { font-size: 0.88rem; }
     .ledger tbody tr td:nth-child(n+4)::before { font-size: 0.7rem; letter-spacing: 0.13em; }
-    .ledger .count-link { font-size: 1.02rem; padding: 0.1rem 0.4rem; }
     .spec-title { font-size: 1.18rem; }
     .spec-sub { font-size: 0.74rem; }
-    td.date { font-size: 0.88rem; }
-    td.age { font-size: 0.92rem; }
     .stage { font-size: 0.78rem; }
-    .age-bar { display: none; }
   }
 
   /* Tier: very narrow — collapse summary to single column */
@@ -739,25 +692,16 @@
       <th>Next <span class="sort-glyph">⇅</span></th>
       <th>Interop</th>
       <th>Pulse</th>
-      <th>Last TR <span class="sort-glyph">⇅</span></th>
-      <th class="num">Issues <span class="sort-glyph">⇅</span></th>
-      <th class="num">PRs <span class="sort-glyph">⇅</span></th>
-      <th class="num">Oldest <span class="sort-glyph">⇅</span></th>
-      <th>Tests</th>
-      <th>Source</th>
     </tr>
   </thead>
   <tbody>
   {% for row in rows %}
     {% set spec = row.spec %}
-    {% set age = spec.stats.oldest_open_issue_age_days %}
-    {% set age_w = ([100, (age or 0) // 50] | min) %}
-    {% set warn = age and age > 730 %}
-    <tr>
-      <td class="rownum" data-label="№">{{ "%02d" | format(loop.index) }}</td>
+    <tr class="spec-row" data-panel="panel-{{ spec.meta.shortname }}">
+      <td class="rownum" data-label="№"><span class="caret" aria-hidden="true">▸</span>{{ "%02d" | format(loop.index) }}</td>
       <td class="spec" data-label="Specification">
         {% if spec.status.ed_url %}
-          <a class="spec-title" href="{{ spec.status.ed_url }}">{{ spec.meta.title }}</a>
+          <a class="spec-title" href="{{ spec.status.ed_url }}" onclick="event.stopPropagation()">{{ spec.meta.title }}</a>
         {% else %}
           <span class="spec-title">{{ spec.meta.title }}</span>
         {% endif %}
@@ -783,35 +727,40 @@
           <span class="dash">—</span>
         {% endif %}
       </td>
-      <td class="date" data-label="Last TR">
-        {% if spec.status.last_tr_publication %}{{ spec.status.last_tr_publication }}{% else %}<span class="dash">—</span>{% endif %}
-      </td>
-      <td class="count num" data-label="Open issues">
-        <a class="count-link {% if spec.stats.open_issues_count == 0 %}count-zero{% endif %}" href="https://github.com/{{ spec.meta.repo }}/issues">{{ spec.stats.open_issues_count }}</a>
-      </td>
-      <td class="count num" data-label="Open PRs">
-        <a class="count-link {% if spec.stats.open_prs_count == 0 %}count-zero{% endif %}" href="https://github.com/{{ spec.meta.repo }}/pulls">{{ spec.stats.open_prs_count }}</a>
-      </td>
-      <td class="age num" data-label="Oldest issue">
-        {% if age is not none %}
-          <span class="cell-value"><span class="age-num {% if warn %}warn{% endif %}">{{ "{:,}".format(age) }}d</span><span class="age-bar {% if warn %}warn{% endif %}" style="--w: {{ age_w }}%;"></span></span>
-        {% else %}
-          <span class="dash">—</span>
-        {% endif %}
-      </td>
-      <td class="links" data-label="Tests">
-        {% if spec.meta.wpt_path %}
-          <a href="{{ wpt_fyi_base }}{{ spec.meta.wpt_path }}">wpt.fyi ↗</a>
-        {% else %}
-          <span class="dash">—</span>
-        {% endif %}
-      </td>
-      <td class="links" data-label="Source">
-        <span class="cell-value"><a href="https://github.com/{{ spec.meta.repo }}">repo ↗</a>{% if spec.meta.tr_url %}<span class="sep">·</span><a href="{{ spec.meta.tr_url }}">/TR/ ↗</a>{% endif %}</span>
+    </tr>
+    <tr class="panel-row" id="panel-{{ spec.meta.shortname }}" hidden>
+      <td colspan="6">
+        <div class="panel">
+          <div class="panel-group">
+            <div class="panel-h">Standardization &amp; next gate</div>
+            <div class="panel-line"><span class="k">Stage</span><span class="v">{{ spec.status.stage }} · in stage {{ row.stage_age_label }}{% if spec.status.last_tr_publication %} · last /TR/ {{ spec.status.last_tr_publication }}{% endif %}</span></div>
+            <div class="panel-line"><span class="k">Next gate</span><span class="v">{% if row.next_gate %}→ {{ row.next_gate }} ({{ row.readiness }}){% else %}— terminal{% endif %}</span></div>
+            <div class="panel-line"><span class="k">Charter</span><span class="v">{{ spec.health.charter_target or '—' }}{% if spec.health.charter_overdue %} · ⚠ behind{% endif %}</span></div>
+            {% if row.blocker_rows %}
+            <div class="panel-line"><span class="k">Blockers</span><span class="v">{% for glyph, label in row.blocker_rows %}<span class="chk">{{ glyph }} {{ label }}</span>{% if not loop.last %}<span class="sep">·</span>{% endif %}{% endfor %}</span></div>
+            {% endif %}
+            <div class="panel-line"><span class="k">Horizontal</span><span class="v">{% for name, st in row.horizontal_rows %}<span class="chk">{{ name }}:{{ st }}</span>{% if not loop.last %}<span class="sep">·</span>{% endif %}{% endfor %}</span></div>
+          </div>
+          <div class="panel-group">
+            <div class="panel-h">Interoperability</div>
+            {% for engine, st, glyph in row.engine_rows %}
+            <div class="panel-line"><span class="k">{{ engine }}</span><span class="v">{{ glyph }} {{ st }}</span></div>
+            {% endfor %}
+            <div class="panel-line"><span class="k">All-engines WPT</span><span class="v">{% if row.wpt_pct is not none %}{{ row.wpt_pct | round | int }}%{% else %}—{% endif %} · tests {% if spec.interop.wpt_test_count is not none %}{{ spec.interop.wpt_test_count }}{% else %}—{% endif %} · Interop {{ spec.interop.interop_focus_year or '—' }}</span></div>
+          </div>
+          <div class="panel-group">
+            <div class="panel-h">Activity &amp; health</div>
+            <div class="panel-line"><span class="k">Pulse</span><span class="v">{% if row.pulse %}{{ row.pulse.tier }} — {{ row.pulse.reason }}{% else %}—{% endif %}</span></div>
+            <div class="panel-line"><span class="k">Oldest blocking issue</span><span class="v">{% if spec.health.oldest_blocking_issue_days is not none %}{{ spec.health.oldest_blocking_issue_days }}d{% else %}—{% endif %}</span></div>
+            <div class="panel-line"><span class="k">Open issues / PRs</span><span class="v">{{ spec.stats.open_issues_count }} / {{ spec.stats.open_prs_count }}</span></div>
+            <div class="panel-line"><span class="k">Agenda / editors</span><span class="v">{% if spec.health.agenda_count is not none %}{{ spec.health.agenda_count }}{% else %}—{% endif %} / {% if spec.health.editor_count is not none %}{{ spec.health.editor_count }}{% else %}—{% endif %}</span></div>
+            <div class="panel-line"><span class="k">Links</span><span class="v vlinks"><a href="https://github.com/{{ spec.meta.repo }}">repo</a><span class="sep">·</span><a href="https://github.com/{{ spec.meta.repo }}/issues">issues</a><span class="sep">·</span><a href="https://github.com/{{ spec.meta.repo }}/pulls">PRs</a>{% if spec.meta.tr_url %}<span class="sep">·</span><a href="{{ spec.meta.tr_url }}">/TR/</a>{% endif %}{% if spec.status.ed_url %}<span class="sep">·</span><a href="{{ spec.status.ed_url }}">ED</a>{% endif %}{% if spec.meta.wpt_path %}<span class="sep">·</span><a href="{{ wpt_fyi_base }}{{ spec.meta.wpt_path }}">wpt.fyi</a>{% endif %}</span></div>
+          </div>
+        </div>
       </td>
     </tr>
   {% else %}
-    <tr><td colspan="12" style="text-align:center; color:var(--muted); padding:2rem;">No specifications configured.</td></tr>
+    <tr><td colspan="6" style="text-align:center; color:var(--muted); padding:2rem;">No specifications configured.</td></tr>
   {% endfor %}
   </tbody>
   </table>
@@ -835,13 +784,30 @@
   const table = document.getElementById("specs");
   if (!table) return;
   const tbody = table.querySelector("tbody");
+
+  // Expand / collapse the detail panel for a spec row.
+  tbody.querySelectorAll("tr.spec-row").forEach(row => {
+    row.addEventListener("click", () => {
+      const panel = document.getElementById(row.dataset.panel);
+      if (!panel) return;
+      if (panel.hasAttribute("hidden")) {
+        panel.removeAttribute("hidden");
+        row.classList.add("open");
+      } else {
+        panel.setAttribute("hidden", "");
+        row.classList.remove("open");
+      }
+    });
+  });
+
+  // Sort by column, keeping each panel row paired directly under its spec row.
   const headers = table.querySelectorAll("thead th");
   headers.forEach((th, idx) => {
     if (th.getAttribute("aria-hidden") === "true") return;
     let asc = true;
     th.addEventListener("click", () => {
-      const rows = Array.from(tbody.querySelectorAll("tr"));
-      rows.sort((a, b) => {
+      const specRows = Array.from(tbody.querySelectorAll("tr.spec-row"));
+      specRows.sort((a, b) => {
         const av = a.cells[idx].textContent.trim();
         const bv = b.cells[idx].textContent.trim();
         const an = parseFloat(av.replace(/,/g, ""));
@@ -849,7 +815,12 @@
         if (!isNaN(an) && !isNaN(bn)) return asc ? an - bn : bn - an;
         return asc ? av.localeCompare(bv) : bv.localeCompare(av);
       });
-      rows.forEach(r => { r.style.animation = "none"; tbody.appendChild(r); });
+      specRows.forEach(r => {
+        r.style.animation = "none";
+        tbody.appendChild(r);
+        const panel = document.getElementById(r.dataset.panel);
+        if (panel) tbody.appendChild(panel);
+      });
       asc = !asc;
     });
   });

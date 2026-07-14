@@ -1,9 +1,11 @@
 from datetime import date
 
 from mediawg_dashboard.analysis import (
+    blocker_glyph,
     compute_blockers,
     compute_pulse,
     compute_stage_age_days,
+    format_duration_days,
     gate_readiness,
     gate_requirements,
     horizontal_summary,
@@ -198,6 +200,27 @@ def test_interop_label_alphabetical_cfs():
     assert interop_label(i) == "C● F● S◐"
 
 
+# ---------------- duration + blocker glyph ----------------
+
+
+def test_format_duration_days_none():
+    assert format_duration_days(None) == "—"
+
+
+def test_format_duration_days_buckets():
+    assert format_duration_days(12) == "12d"
+    assert format_duration_days(150) == "5mo"
+    assert format_duration_days(400) == "1y 1m"
+    assert format_duration_days(365) == "1y"
+
+
+def test_blocker_glyph_mapping():
+    assert blocker_glyph("done") == "✔"
+    assert blocker_glyph("open") == "✘"
+    assert blocker_glyph("partial") == "◐"
+    assert blocker_glyph("unknown") == "·"
+
+
 # ---------------- pulse ----------------
 
 
@@ -309,3 +332,23 @@ def test_spec_view_interop_label_reflects_support():
         date(2026, 7, 13),
     )
     assert v.interop_label == "C● F● S◐"
+
+
+def test_spec_view_engine_rows_alphabetical_with_glyph():
+    v = spec_view(
+        _spec(interop=InteropStatus(chrome="shipped", firefox="none", safari="partial")),
+        date(2026, 7, 13),
+    )
+    assert [name for name, _, _ in v.engine_rows] == ["Chrome", "Firefox", "Safari"]
+    assert v.engine_rows[0] == ("Chrome", "shipped", "●")
+
+
+def test_spec_view_horizontal_rows_ordered():
+    v = spec_view(_spec(), date(2026, 7, 13))
+    assert [name for name, _ in v.horizontal_rows] == ["a11y", "i18n", "privacy", "security", "TAG"]
+
+
+def test_spec_view_blocker_rows_carry_glyph_and_label():
+    v = spec_view(_spec(stage="WD"), date(2026, 7, 13))
+    labels = [label for _, label in v.blocker_rows]
+    assert any("Wide review complete" in x for x in labels)

@@ -179,6 +179,32 @@ def test_render_summary_shows_shipping_count():
     assert "1/1 shipping cross-engine" in html
 
 
+def test_render_rows_are_expandable():
+    html = render_index([_spec("webcodecs")])
+    assert 'class="spec-row"' in html
+    assert 'class="panel-row"' in html
+    assert 'id="panel-webcodecs"' in html
+
+
+def test_render_panel_has_three_groups():
+    html = render_index([_spec("webcodecs")])
+    assert "Standardization" in html
+    assert "Interoperability" in html
+    assert "Activity" in html
+
+
+def test_render_panel_lists_engines():
+    html = render_index([_spec("webcodecs")])
+    assert "Chrome" in html and "Firefox" in html and "Safari" in html
+
+
+def test_render_panel_shows_blocker_checklist():
+    # A WD spec's next gate is CR; the panel lists its blocker labels.
+    html = render_index([_spec("webcodecs", stage="WD")])
+    assert "Wide review complete" in html
+    assert "Horizontal reviews" in html
+
+
 def test_render_summary_includes_totals():
     html = render_index([_spec("a", "WD"), _spec("b", "REC")])
     # Total open issues across two specs (42 + 42 = 84) should appear.

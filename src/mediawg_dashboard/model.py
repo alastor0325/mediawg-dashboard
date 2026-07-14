@@ -136,8 +136,11 @@ class SpecView(BaseModel):
     spec: Spec
     next_gate: str | None
     readiness: str | None  # ready / blocked / unknown (None if terminal)
-    blockers: list[Blocker]
+    blocker_rows: list[tuple[str, str]]  # (glyph, label)
+    horizontal_rows: list[tuple[str, str]]  # (name, state)
+    engine_rows: list[tuple[str, str, str]]  # (name, state, glyph)
     interop_label: str
     wpt_pct: float | None
     stage_age_days: int | None
+    stage_age_label: str
     pulse: Pulse | None
