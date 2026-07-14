@@ -158,11 +158,14 @@ def test_render_shows_next_gate():
     assert "→CR" in html
 
 
-def test_render_shows_interop_dots():
+def test_render_shows_colored_interop_icons():
     html = render_index([
-        _spec("webcodecs", interop=InteropStatus(chrome="shipped", firefox="shipped", safari="partial"))
+        _spec("webcodecs", interop=InteropStatus(chrome="shipped", firefox="none", safari="partial"))
     ])
-    assert "C● F● S◐" in html
+    # Per-engine coloured support icons (green/red/amber via sup-* classes).
+    assert "sup sup-shipped" in html
+    assert "sup sup-none" in html
+    assert "sup sup-partial" in html
 
 
 def test_render_pulse_dash_without_health_data():

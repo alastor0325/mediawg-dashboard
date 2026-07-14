@@ -10,7 +10,6 @@ from mediawg_dashboard.analysis import (
     gate_readiness,
     gate_requirements,
     horizontal_summary,
-    interop_label,
     next_gate,
     parse_charter_target,
     spec_view,
@@ -197,11 +196,6 @@ def test_support_glyph_mapping():
     assert support_glyph("unknown") == "·"
 
 
-def test_interop_label_alphabetical_cfs():
-    i = InteropStatus(chrome="shipped", firefox="shipped", safari="partial")
-    assert interop_label(i) == "C● F● S◐"
-
-
 # ---------------- duration + blocker glyph ----------------
 
 
@@ -350,7 +344,7 @@ def test_spec_view_has_core_fields():
     v = spec_view(_spec(stage="WD"), date(2026, 7, 13))
     assert v.spec.status.stage == "WD"
     assert v.next_gate == "CR"
-    assert v.interop_label == "C· F· S·"
+    assert [e.name for e in v.engine_rows] == ["Chromium", "Firefox", "Safari"]
     assert v.stage_age_days == 193
 
 
@@ -363,14 +357,6 @@ def test_spec_view_pulse_present_with_health_data():
     v = spec_view(_spec(health=SpecHealth(days_since_activity=200)), date(2026, 7, 13))
     assert v.pulse is not None
     assert v.pulse.tier == "at-risk"
-
-
-def test_spec_view_interop_label_reflects_support():
-    v = spec_view(
-        _spec(interop=InteropStatus(chrome="shipped", firefox="shipped", safari="partial")),
-        date(2026, 7, 13),
-    )
-    assert v.interop_label == "C● F● S◐"
 
 
 def test_spec_view_engine_rows_alphabetical_with_glyph_version_wpt():
@@ -403,13 +389,17 @@ def test_spec_view_horizontal_rows_ordered_and_linked():
     assert "w3c/x/issues" in href and "a11y-needs-resolution" in href
 
 
-def test_spec_view_blocker_rows_exclude_horizontal_and_link_venues():
+def test_spec_view_blocker_rows_include_horizontal_and_link_venues():
     v = spec_view(_spec(stage="WD"), date(2026, 7, 13))
-    by_label = {label: href for _, label, href in v.blocker_rows}
-    # Horizontal reviews are shown as chips, not in the blocker checklist.
-    assert not any(lbl.startswith("Horizontal reviews") for lbl in by_label)
+    by_label = {label: href for _, label, href, _, _ in v.blocker_rows}
+    kinds = {kind for *_, kind in v.blocker_rows}
+    # Horizontal review IS a CR blocker (nested chips render under it).
+    assert "horizontal" in kinds
     # Wide review -> the repo's issues (community/wide review venue).
     assert by_label["Wide review complete"].endswith("/w3c/x/issues")
+    # Horizontal reviews -> the cross-group horizontal-issue-tracker view.
+    hz = next(h for lbl, h in by_label.items() if lbl.startswith("Horizontal reviews"))
+    assert "review.html?shortname=" in hz
     # CR-blocking issues -> the open needs-resolution filter.
     cr = next(h for lbl, h in by_label.items() if lbl.startswith("CR-blocking"))
     assert cr is not None and "needs-resolution" in cr

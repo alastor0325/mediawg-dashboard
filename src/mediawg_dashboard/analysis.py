@@ -260,17 +260,8 @@ def support_glyph(state: SupportState) -> str:
     return _GLYPHS.get(state, _GLYPHS["unknown"])
 
 
-def interop_label(interop: InteropStatus) -> str:
-    """Compact tri-engine label, e.g. ``C● F● S◐`` (alphabetical, even weight)."""
-    return (
-        f"C{support_glyph(interop.chrome)} "
-        f"F{support_glyph(interop.firefox)} "
-        f"S{support_glyph(interop.safari)}"
-    )
-
-
 def _engine_rows(interop: InteropStatus) -> list[EngineRow]:
-    """Per-engine interop lines: MDN support + version + nightly WPT + MDN link."""
+    """Per-engine interop lines: MDN support + version + experimental WPT + MDN link."""
     anchor = f"{interop.mdn_url}#browser_compatibility" if interop.mdn_url else None
     data = (
         ("Chromium", interop.chrome, interop.chrome_version, interop.wpt_chrome),
@@ -361,18 +352,16 @@ def spec_view(spec: Spec, today: date) -> SpecView:
         spec=spec,
         next_gate=gate,
         readiness=_readiness(gate, blockers),
-        # Horizontal reviews render as their own chip row, so keep them out of the
-        # checklist to avoid duplication (they still count toward readiness).
+        # All gate requirements (incl. horizontal review) are blockers; the
+        # horizontal one carries the per-group chips as its sub-level (below).
         blocker_rows=[
-            (blocker_glyph(b.state), b.label, _blocker_href(b.kind, spec.meta))
+            (blocker_glyph(b.state), b.label, _blocker_href(b.kind, spec.meta), b.state, b.kind)
             for b in blockers
-            if b.kind != "horizontal"
         ],
         horizontal_rows=[
             (name, getattr(hz, attr), links.horizontal_group_url(repo, attr)) for name, attr in HORIZONTAL_FIELDS
         ],
         engine_rows=_engine_rows(interop),
-        interop_label=interop_label(interop),
         wpt_href=links.wpt_url(spec.meta.wpt_path),
         needs_resolution_href=links.needs_resolution_url(repo),
         stage_age_days=stage_age_days,

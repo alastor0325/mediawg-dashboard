@@ -162,10 +162,9 @@ class SpecView(BaseModel):
     spec: Spec
     next_gate: str | None
     readiness: str | None  # ready / blocked / unknown (None if terminal)
-    blocker_rows: list[tuple[str, str, str | None]]  # (glyph, label, href|None)
-    horizontal_rows: list[tuple[str, str, str]]  # (name, state, href)
+    blocker_rows: list[tuple[str, str, str | None, str, str]]  # (glyph, label, href, state, kind)
+    horizontal_rows: list[tuple[str, str, str]]  # (name, state, href) — nested under the horizontal blocker
     engine_rows: list[EngineRow]
-    interop_label: str
     wpt_href: str | None
     needs_resolution_href: str  # open *-needs-resolution issues for the repo
     stage_age_days: int | None

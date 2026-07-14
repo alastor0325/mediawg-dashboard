@@ -356,7 +356,7 @@
   .gate-name { color: var(--ink); font-weight: 600; letter-spacing: 0.04em; }
   .gate-dot { margin-left: 0.45rem; }
   .gate-dot.ready { background: var(--signal-green); }
-  .gate-dot.blocked { background: var(--accent); }
+  .gate-dot.blocked { background: var(--signal-rose); }
   .gate-dot.unknown { background: var(--signal-mute); }
 
   /* Interop tri-dot + all-engines WPT */
@@ -366,7 +366,15 @@
     white-space: nowrap;
     letter-spacing: 0.06em;
   }
-  .interop-dots { color: var(--ink); }
+  /* Support icons — colour (green/amber/red/grey) + glyph shape, per
+     docs/ux-visual-rules.md. Used first-level and in the panel. */
+  .sup { font-weight: 700; }
+  .sup-shipped { color: var(--signal-green); }
+  .sup-partial { color: var(--signal-amber); }
+  .sup-none    { color: var(--signal-rose); }
+  .sup-unknown { color: var(--signal-mute); }
+  .eng-cell { margin-right: 0.55rem; white-space: nowrap; }
+  .eng-init { color: var(--muted); font-size: 0.85em; margin-right: 1px; }
 
   /* Pulse */
   td.pulse {
@@ -452,7 +460,12 @@
   }
   ul.checklist { list-style: none; margin: 0 0 0.3rem; padding: 0; }
   ul.checklist li { font-size: 0.8rem; padding: 0.12rem 0; color: var(--ink); }
-  ul.checklist .chk-mark { display: inline-block; width: 1.3em; color: var(--muted); }
+  ul.checklist .chk-mark { display: inline-block; width: 1.3em; font-weight: 700; color: var(--signal-mute); }
+  .chk-mark.mark-done { color: var(--signal-green); }
+  .chk-mark.mark-open { color: var(--signal-rose); }
+  .chk-mark.mark-partial { color: var(--signal-amber); }
+  .chk-mark.mark-unknown { color: var(--signal-mute); }
+  .chips-sub { margin: 0.3rem 0 0.2rem 1.3em; }
   .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
   .chip {
     font-family: "IBM Plex Mono", monospace;
@@ -471,7 +484,7 @@
   .chip-unknown, .chip-na { color: var(--muted); }
   .tag { font-family: "IBM Plex Mono", monospace; font-size: 0.68rem; font-weight: 600; }
   .tag-ready, .tag-pulse-on-track { color: var(--signal-green); }
-  .tag-blocked, .tag-warn { color: var(--accent); }
+  .tag-blocked, .tag-warn { color: var(--signal-rose); }
   .tag-pulse-at-risk { color: var(--signal-rose); }
   .tag-pulse-watch { color: var(--signal-amber); }
   .tag-unknown { color: var(--muted); }
@@ -758,7 +771,7 @@
         {% endif %}
       </td>
       <td class="interop" data-label="Interop">
-        <span class="cell-value"><span class="interop-dots">{{ row.interop_label }}</span></span>
+        <span class="cell-value">{% for e in row.engine_rows %}<span class="eng-cell" title="{{ e.name }}: {{ e.state }}"><span class="eng-init">{{ e.name[0] }}</span><span class="sup sup-{{ e.state }}">{{ e.glyph }}</span></span>{% endfor %}</span>
       </td>
       <td class="pulse" data-label="Pulse">
         {% if row.pulse %}
@@ -780,21 +793,24 @@
             {% if row.blocker_rows %}
             <div class="panel-sub">Blockers to {{ row.next_gate }}</div>
             <ul class="checklist">
-              {% for glyph, label, href in row.blocker_rows %}
-              <li><span class="chk-mark">{{ glyph }}</span>{% if href %}<a href="{{ href }}">{{ label }}</a>{% else %}{{ label }}{% endif %}</li>
+              {% for glyph, label, href, state, kind in row.blocker_rows %}
+              <li>
+                <span class="chk-mark mark-{{ state }}">{{ glyph }}</span>{% if href %}<a href="{{ href }}">{{ label }}</a>{% else %}{{ label }}{% endif %}
+                {% if kind == 'horizontal' %}
+                <div class="chips chips-sub">
+                  {% for name, st, hhref in row.horizontal_rows %}<a class="chip chip-{{ st }}" href="{{ hhref }}">{{ name }} {{ st }}</a>{% endfor %}
+                </div>
+                {% endif %}
+              </li>
               {% endfor %}
             </ul>
             {% endif %}
-            <div class="panel-sub">Horizontal reviews</div>
-            <div class="chips">
-              {% for name, st, href in row.horizontal_rows %}<a class="chip chip-{{ st }}" href="{{ href }}">{{ name }} {{ st }}</a>{% endfor %}
-            </div>
           </div>
           <div class="panel-group">
             <div class="panel-h">Interoperability</div>
             <dl class="panel-kv">
               {% for e in row.engine_rows %}
-              <dt>{{ e.name }}</dt><dd>{% if e.href %}<a href="{{ e.href }}" title="MDN browser compatibility">{{ e.glyph }} {{ e.state }}{% if e.version %} {{ e.version }}{% endif %}</a>{% else %}{{ e.glyph }} {{ e.state }}{% if e.version %} {{ e.version }}{% endif %}{% endif %}</dd>
+              <dt>{{ e.name }}</dt><dd>{% if e.href %}<a href="{{ e.href }}" title="MDN browser compatibility"><span class="sup sup-{{ e.state }}">{{ e.glyph }}</span> {{ e.state }}{% if e.version %} {{ e.version }}{% endif %}</a>{% else %}<span class="sup sup-{{ e.state }}">{{ e.glyph }}</span> {{ e.state }}{% if e.version %} {{ e.version }}{% endif %}{% endif %}</dd>
               {% endfor %}
             </dl>
             {% if row.wpt_href %}
