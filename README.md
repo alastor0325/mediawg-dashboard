@@ -1,10 +1,29 @@
 # mediawg-dashboard
 
-Read-only status dashboard for the W3C Media Working Group. Consolidates spec stage, horizontal review state, open issues, and recent meeting outcomes across the 9 MediaWG specs into one daily-refreshed view.
+Read-only, **vendor-neutral** status dashboard for the W3C Media Working Group.
+Consolidates each spec's Rec-track stage, next-gate readiness, cross-engine
+interop, and health into one daily-refreshed view, with a click-to-expand detail
+panel per spec.
 
 ## Status
 
-Phase 0 — scaffolding only. `make refresh` runs but does nothing useful yet.
+Expandable per-spec view implemented (`make refresh` fetches live data and
+renders `output/index.html`). Each row shows **Stage · Next-gate · Interop
+(neutral C/F/S tri-dot + all-engines WPT %) · Pulse**, plus a roll-up of how
+many specs ship cross-engine. Clicking a spec expands three groups:
+Standardization & next gate (stage age, blocker checklist, horizontal-review
+matrix, charter target vs slippage), Interoperability (per-engine support, WPT,
+coverage), and Activity & health (pulse, oldest blocking issue, issues/PRs,
+agenda/editors, backlog trend, links).
+
+Data sources: W3C API (stage/dates), GitHub API (issues, labels → horizontal
+reviews + agenda + blocking, commits → activity/editors), wpt.fyi (interop test
+scores), webstatus.dev (per-engine support), and neutral config facts (charter
+targets in `config/specs.yaml`). Any single source failing degrades that field
+to "unknown" rather than aborting the refresh.
+
+Design notes and phase plan: `docs/expandable-view-plan.md`,
+`docs/spec-process-flow.md`, `docs/spec-inventory.md`.
 
 ## Quick start
 
@@ -26,6 +45,7 @@ tests/unit/              Unit tests, mock all I/O
 tests/integration/       Integration tests (real I/O), if any
 output/                  Rendered HTML (gitignored)
 data/cache/              API response cache (gitignored)
+data/history.json        Daily snapshots for trend signals (gitignored)
 data/annotations.yaml    Optional personal layer (gitignored)
 ```
 

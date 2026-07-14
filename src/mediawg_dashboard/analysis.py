@@ -92,6 +92,15 @@ def compute_stage_age_days(last_tr_publication: date | None, today: date) -> int
     return (today - last_tr_publication).days
 
 
+def trend_direction(series: list[int]) -> str:
+    """Direction of a numeric series (oldest→newest): rising / falling / flat."""
+    values = [v for v in series if v is not None]
+    if len(values) < 2:
+        return "flat"
+    delta = values[-1] - values[0]
+    return "rising" if delta > 0 else "falling" if delta < 0 else "flat"
+
+
 def format_duration_days(days: int | None) -> str:
     """Human duration for the panel: '12d', '5mo', '2y 1m' ('—' if unknown)."""
     if days is None:

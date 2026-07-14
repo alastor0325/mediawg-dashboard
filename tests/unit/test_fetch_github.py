@@ -6,6 +6,7 @@ from mediawg_dashboard.fetch.github import (
     _fetch_all_pages,
     classify_issues_and_prs,
     compute_oldest_issue_age_days,
+    compute_repo_stats,
 )
 
 
@@ -55,6 +56,21 @@ def test_oldest_age_returns_largest_age():
 
 def test_oldest_age_empty_returns_none():
     assert compute_oldest_issue_age_days([]) is None
+
+
+def test_compute_repo_stats():
+    items = [_issue(1, created_days_ago=50), _issue(2, is_pr=True), _issue(3, created_days_ago=5)]
+    stats = compute_repo_stats(items)
+    assert stats.open_issues_count == 2
+    assert stats.open_prs_count == 1
+    assert stats.oldest_open_issue_age_days == 50
+
+
+def test_compute_repo_stats_empty():
+    stats = compute_repo_stats([])
+    assert stats.open_issues_count == 0
+    assert stats.open_prs_count == 0
+    assert stats.oldest_open_issue_age_days is None
 
 
 def test_oldest_age_single_issue():

@@ -4,6 +4,7 @@
 
 data/annotations.yaml
 data/cache/
+data/history.json
 
 output/
 

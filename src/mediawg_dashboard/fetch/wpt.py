@@ -60,7 +60,8 @@ def parse_wpt_scores(payload: dict) -> dict:
     }
 
 
-def _latest_stable_run_ids(client: httpx.Client) -> list[str]:
+def fetch_stable_run_ids(client: httpx.Client) -> list[str]:
+    """Latest stable run ids for the three engines (spec-independent — fetch once)."""
     products = ",".join(f"{e}[stable]" for e in ENGINES)
     resp = client.get(
         f"{WPT_API_BASE}/runs",
@@ -70,13 +71,14 @@ def _latest_stable_run_ids(client: httpx.Client) -> list[str]:
     return [str(run["id"]) for run in resp.json()]
 
 
-def fetch_wpt_scores(wpt_path: str, client: httpx.Client | None = None) -> dict | None:
-    """Fetch + score the latest stable runs for ``wpt_path`` (None on failure)."""
+def fetch_wpt_scores(
+    wpt_path: str, run_ids: list[str], client: httpx.Client | None = None
+) -> dict | None:
+    """Score ``wpt_path`` against pre-fetched stable ``run_ids`` (None if no runs)."""
+    if not run_ids:
+        return None
     ctx = nullcontext(client) if client is not None else httpx.Client(follow_redirects=True, timeout=30.0)
     with ctx as c:
-        run_ids = _latest_stable_run_ids(c)
-        if not run_ids:
-            return None
         resp = c.get(
             f"{WPT_API_BASE}/search",
             params={"run_ids": ",".join(run_ids), "q": f"path:{wpt_path}"},

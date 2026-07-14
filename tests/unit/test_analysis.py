@@ -205,6 +205,16 @@ def test_interop_label_alphabetical_cfs():
 # ---------------- duration + blocker glyph ----------------
 
 
+def test_trend_direction():
+    from mediawg_dashboard.analysis import trend_direction
+
+    assert trend_direction([]) == "flat"
+    assert trend_direction([5]) == "flat"
+    assert trend_direction([5, 8]) == "rising"
+    assert trend_direction([8, 5]) == "falling"
+    assert trend_direction([5, 5]) == "flat"
+
+
 def test_format_duration_days_none():
     assert format_duration_days(None) == "—"
 

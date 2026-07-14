@@ -15,6 +15,11 @@ _MAX_PAGES = 20
 _HORIZONTAL_GROUPS = ("a11y", "i18n", "privacy", "security", "tag")
 
 
+def _parse_iso(value: str) -> datetime:
+    """Parse a GitHub ISO timestamp, tolerating a trailing 'Z'."""
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
 def classify_issues_and_prs(items: list[dict]) -> tuple[list[dict], list[dict]]:
     issues: list[dict] = []
     prs: list[dict] = []
@@ -30,8 +35,18 @@ def compute_oldest_issue_age_days(issues: list[dict], now: datetime | None = Non
     if not issues:
         return None
     now = now or datetime.now(timezone.utc)
-    oldest = min(datetime.fromisoformat(i["created_at"]) for i in issues)
+    oldest = min(_parse_iso(i["created_at"]) for i in issues)
     return (now - oldest).days
+
+
+def compute_repo_stats(items: list[dict], now: datetime | None = None) -> RepoStats:
+    """Build RepoStats from a raw open-issues+PRs list (single source of truth)."""
+    issues, prs = classify_issues_and_prs(items)
+    return RepoStats(
+        open_issues_count=len(issues),
+        open_prs_count=len(prs),
+        oldest_open_issue_age_days=compute_oldest_issue_age_days(issues, now=now),
+    )
 
 
 def _label_names(issue: dict) -> set[str]:
@@ -68,7 +83,7 @@ def needs_resolution_stats(
     """Count of open ``*-needs-resolution`` issues and the oldest one's age (days)."""
     now = now or datetime.now(timezone.utc)
     dated = [
-        datetime.fromisoformat(i["created_at"])
+        _parse_iso(i["created_at"])
         for i in issues
         if any(name.endswith("-needs-resolution") for name in _label_names(i))
     ]
@@ -82,10 +97,7 @@ def days_since_last_commit(commits: list[dict], now: datetime | None = None) -> 
     if not commits:
         return None
     now = now or datetime.now(timezone.utc)
-    latest = max(
-        datetime.fromisoformat(c["commit"]["author"]["date"].replace("Z", "+00:00"))
-        for c in commits
-    )
+    latest = max(_parse_iso(c["commit"]["author"]["date"]) for c in commits)
     return (now - latest).days
 
 
@@ -130,22 +142,6 @@ def _fetch_all_pages(
             file=sys.stderr,
         )
     return results
-
-
-def fetch_repo_stats(repo: str, client: httpx.Client | None = None) -> RepoStats:
-    ctx = nullcontext(client) if client is not None else httpx.Client(follow_redirects=True, timeout=20.0)
-    with ctx as c:
-        items = _fetch_all_pages(
-            c,
-            f"{GITHUB_API_BASE}/repos/{repo}/issues",
-            {"state": "open", "per_page": 100},
-        )
-    issues, prs = classify_issues_and_prs(items)
-    return RepoStats(
-        open_issues_count=len(issues),
-        open_prs_count=len(prs),
-        oldest_open_issue_age_days=compute_oldest_issue_age_days(issues),
-    )
 
 
 def fetch_open_issues(repo: str, client: httpx.Client | None = None) -> list[dict]:

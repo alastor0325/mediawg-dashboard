@@ -107,6 +107,7 @@ class SpecHealth(BaseModel):
     editor_count: int | None = None
     charter_target: str | None = None  # e.g. "CR Q1 2026"
     charter_overdue: bool = False
+    backlog_trend: str | None = None  # rising / falling / flat (from snapshots)
 
 
 class Blocker(BaseModel):
