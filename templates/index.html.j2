@@ -341,6 +341,24 @@
   .spec-sub a { color: inherit; text-decoration: none; border-bottom: 1px dotted var(--rule); }
   .spec-sub a:hover { color: var(--accent); border-color: var(--accent); }
 
+  /* Tail badge after a title: this spec already reached REC (now being revised).
+     Green = the REC/PR stage colour. A non-interactive marker — the link to the
+     REC lives in the panel's "Published" row (each link appears once). */
+  .rec-badge {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.56rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--signal-green);
+    border: 1px solid color-mix(in srgb, var(--signal-green) 40%, var(--rule));
+    border-radius: 2px;
+    padding: 0.05rem 0.3rem;
+    margin-left: 0.5rem;
+    vertical-align: 0.12em;
+    white-space: nowrap;
+    cursor: help;
+  }
+
   /* Stage as typographic mark */
   .stage {
     font-family: "IBM Plex Mono", monospace;
@@ -949,6 +967,7 @@
         {% else %}
           <span class="spec-title">{{ spec.meta.title }}</span>
         {% endif %}
+        {% if row.published_rec %}<span class="rec-badge" title="Published as a W3C Recommendation {{ row.published_rec }} — now being revised (see the panel for the link)">REC</span>{% endif %}
         <div class="spec-sub"><a href="https://github.com/{{ spec.meta.repo }}" onclick="event.stopPropagation()">{{ spec.meta.repo }}</a></div>
       </td>
       <td data-label="Stage">

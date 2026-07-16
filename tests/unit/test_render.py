@@ -305,6 +305,21 @@ def test_render_panel_no_published_rec_when_absent():
     assert ">Published</dt>" not in html
 
 
+def test_render_rec_tail_badge_for_published_spec():
+    from mediawg_dashboard.model import SpecMeta
+
+    spec = _spec("encrypted-media")
+    spec.meta = SpecMeta(
+        shortname="encrypted-media", title="Encrypted Media Extensions",
+        repo="w3c/encrypted-media", w3c_shortname="encrypted-media-2",
+        published_rec="2017-09-18",
+    )
+    html = render_index([spec])
+    assert 'class="rec-badge"' in html  # small tail badge after the title
+    # No badge for a spec without a prior REC.
+    assert 'class="rec-badge"' not in render_index([_spec("webcodecs")])
+
+
 def test_render_panel_shows_blocker_checklist():
     # A WD spec's next gate is CR; the panel lists its concrete blocker labels
     # (no broad "wide review" item).

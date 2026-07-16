@@ -41,6 +41,10 @@ colour-blindness and greyscale.
   text tag (ready/blocked) in the panel.
 - Tags (`ready` / `blocked` / `behind charter` / pulse tiers) are coloured text
   per the table above.
+- **`REC` tail badge**: a small green (the REC/PR stage colour) `REC` pill after
+  a spec's title when it already published a Recommendation and is now being
+  revised. A **non-interactive marker** (tooltip only) — the link to the REC
+  lives once in the panel's "Published" row.
 
 ## Registries section (registry track)
 
