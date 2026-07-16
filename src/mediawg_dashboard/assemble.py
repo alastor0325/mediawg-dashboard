@@ -18,6 +18,7 @@ from mediawg_dashboard.model import (
     Registry,
     RegistryMeta,
     RegistryStatus,
+    RepoStats,
     Spec,
     SpecHealth,
     SpecMeta,
@@ -29,7 +30,7 @@ from mediawg_dashboard.model import (
 def build_spec(
     meta: SpecMeta,
     status: SpecStatus,
-    issues: list[dict],
+    issues: list[dict] | None,
     commits: list[dict],
     wpt_scores: dict | None,
     support: InteropStatus,
@@ -39,15 +40,21 @@ def build_spec(
 ) -> Spec:
     """Assemble one Spec from already-fetched raw data (no I/O).
 
+    ``issues`` is ``None`` when the GitHub fetch failed — counts then stay unknown
+    (rendered "—"), so a transient outage doesn't look like a real "0".
+
     ``horizontal`` (+ ``horizontal_urls``) come from the request-repo search (see
     fetch/horizontal.py) and reflect only whether the *review was performed*.
     Any ``*-needs-resolution`` issues the review left are a separate axis, counted
     in ``cr_blocking_issues_open`` (the CR-blocking-issues line) — not folded into
     the review status, since the review itself is done.
     """
-    stats = compute_repo_stats(issues, now=now)
-
-    nr_count, nr_oldest = needs_resolution_stats(issues, now=now)
+    if issues is None:
+        stats = RepoStats()  # all-unknown
+        nr_count, nr_oldest = None, None
+    else:
+        stats = compute_repo_stats(issues, now=now)
+        nr_count, nr_oldest = needs_resolution_stats(issues, now=now)
     milestones = SpecMilestones(
         horizontal=horizontal or HorizontalReviews(),
         horizontal_urls=horizontal_urls or {},

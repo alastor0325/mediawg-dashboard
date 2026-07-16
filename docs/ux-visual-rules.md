@@ -102,8 +102,11 @@ logos, no "reference browser", no "outlier/laggard" language. (See the
   own checklist line), NOT a reason to mark the review incomplete.
 - Panel = three groups, each an aligned key/value grid (`dl.panel-kv`,
   `max-content 1fr`) so labels/values line up wide (3-up) and narrow (stacked).
-- Show a signal only when it's meaningful (e.g. backlog trend needs ≥2 snapshots;
-  "behind charter" only when overdue).
+- Show a signal only when it's meaningful (e.g. "behind charter" only when
+  overdue).
+- **Unknown ≠ zero.** When a fetch fails (e.g. a GitHub outage), render "—"
+  (unknown), never "0" — a real 0 and a failed fetch must look different. Counts
+  are `None` on failure; the all-repos totals show "—" when nothing is known.
 - **Blocker order:** simple booleans first, then the one with a nested breakdown
   (horizontal review) last, so its sub-chips sit at the bottom.
 

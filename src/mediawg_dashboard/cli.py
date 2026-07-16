@@ -75,7 +75,7 @@ def _fetch_one(
         lambda: fetch_horizontal_reviews(meta.hr_query or meta.title, client=client),
         HorizontalResult(HorizontalReviews(), {}),
     )
-    spec = build_spec(meta, status, raw_issues or [], commits, wpt, support, now, hz.reviews, hz.urls)
+    spec = build_spec(meta, status, raw_issues, commits, wpt, support, now, hz.reviews, hz.urls)
     return spec, raw_issues is not None
 
 

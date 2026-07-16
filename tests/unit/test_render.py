@@ -109,6 +109,11 @@ def test_render_opens_links_in_new_tab():
     assert '<base target="_blank">' in html
 
 
+def test_render_links_wordmark_to_mediawg_home():
+    html = render_index([_spec("webcodecs")])
+    assert 'href="https://www.w3.org/media-wg/"' in html
+
+
 def test_render_links_to_tr():
     html = render_index([_spec("webcodecs")])
     assert "https://www.w3.org/TR/webcodecs/" in html
@@ -175,8 +180,8 @@ def test_summarize_empty_list():
     s = summarize([])
     assert s == {
         "total_specs": 0,
-        "total_issues": 0,
-        "total_prs": 0,
+        "total_issues": None,  # nothing known -> "—"
+        "total_prs": None,
         "by_stage": {},
         "shipping_cross_engine": 0,
     }

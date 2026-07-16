@@ -54,8 +54,9 @@ class SpecStatus(BaseModel):
 
 
 class RepoStats(BaseModel):
-    open_issues_count: int
-    open_prs_count: int
+    # None = the fetch failed (unknown), rendered as "—" — distinct from a real 0.
+    open_issues_count: int | None = None
+    open_prs_count: int | None = None
     oldest_open_issue_age_days: int | None = None
 
 

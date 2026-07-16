@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 from contextlib import nullcontext
 from datetime import datetime, timezone
 
@@ -10,6 +11,23 @@ from mediawg_dashboard.model import RepoStats
 GITHUB_API_BASE = "https://api.github.com"
 
 _MAX_PAGES = 20
+_RETRY_STATUSES = {429, 500, 502, 503, 504}
+
+
+def github_get(
+    client: httpx.Client, url: str, params=None, headers=None, retries: int = 2, backoff: float = 1.5
+) -> httpx.Response:
+    """GET with a short retry on transient GitHub errors (429 / 5xx), so a brief
+    outage doesn't zero the whole refresh. Raises on the final failure."""
+    headers = headers if headers is not None else _auth_headers()
+    for attempt in range(retries + 1):
+        response = client.get(url, params=params, headers=headers)
+        if response.status_code in _RETRY_STATUSES and attempt < retries:
+            time.sleep(backoff * (attempt + 1))
+            continue
+        response.raise_for_status()
+        return response
+    return response  # unreachable; keeps type-checkers happy
 
 
 def _parse_iso(value: str) -> datetime:
@@ -119,16 +137,14 @@ def _fetch_all_pages(
 ) -> list[dict]:
     headers = _auth_headers()
     results: list[dict] = []
-    response = client.get(url, params=params, headers=headers)
-    response.raise_for_status()
+    response = github_get(client, url, params=params, headers=headers)
     results.extend(response.json())
     next_url: str | None = response.links.get("next", {}).get("url")
     pages = 1
     while next_url and pages < _MAX_PAGES:
         # next_url already encodes all query parameters; passing params=None
         # preserves them. Passing params={} would strip them.
-        response = client.get(next_url, headers=headers)
-        response.raise_for_status()
+        response = github_get(client, next_url, headers=headers)
         results.extend(response.json())
         next_url = response.links.get("next", {}).get("url")
         pages += 1
@@ -157,10 +173,9 @@ def fetch_recent_commits(
     """Most recent commits on the default branch (for activity + author signals)."""
     ctx = nullcontext(client) if client is not None else httpx.Client(follow_redirects=True, timeout=20.0)
     with ctx as c:
-        response = c.get(
+        response = github_get(
+            c,
             f"{GITHUB_API_BASE}/repos/{repo}/commits",
             params={"per_page": per_page},
-            headers=_auth_headers(),
         )
-        response.raise_for_status()
         return response.json()

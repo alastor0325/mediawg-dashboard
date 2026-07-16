@@ -7,6 +7,7 @@ from mediawg_dashboard.fetch.github import (
     classify_issues_and_prs,
     compute_oldest_issue_age_days,
     compute_repo_stats,
+    github_get,
 )
 
 
@@ -117,3 +118,27 @@ def test_fetch_all_pages_terminates_without_next_link():
     with httpx.Client(transport=transport) as client:
         items = _fetch_all_pages(client, "https://api.example.com/items", {})
     assert len(items) == 2
+
+
+def test_github_get_retries_transient_503_then_succeeds():
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        return httpx.Response(503 if calls["n"] < 3 else 200, json=[{"ok": True}])
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        r = github_get(client, "https://api.example.com/x", backoff=0)  # backoff=0 → no sleep
+    assert r.status_code == 200 and calls["n"] == 3
+
+
+def test_github_get_raises_after_exhausting_retries():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(503)
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        try:
+            github_get(client, "https://api.example.com/x", retries=2, backoff=0)
+            raise AssertionError("expected an error after retries")
+        except httpx.HTTPStatusError:
+            pass

@@ -28,11 +28,17 @@ def _env() -> Environment:
     )
 
 
+def _known_sum(values: list[int | None]) -> int | None:
+    """Sum the known values; None if every spec's fetch failed (all unknown)."""
+    known = [v for v in values if v is not None]
+    return sum(known) if known else None
+
+
 def summarize(specs: list[Spec]) -> dict:
     return {
         "total_specs": len(specs),
-        "total_issues": sum(s.stats.open_issues_count for s in specs),
-        "total_prs": sum(s.stats.open_prs_count for s in specs),
+        "total_issues": _known_sum([s.stats.open_issues_count for s in specs]),
+        "total_prs": _known_sum([s.stats.open_prs_count for s in specs]),
         "by_stage": dict(Counter(s.status.stage for s in specs)),
         "shipping_cross_engine": shipping_cross_engine(specs),
     }

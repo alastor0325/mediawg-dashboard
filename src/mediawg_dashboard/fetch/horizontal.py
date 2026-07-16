@@ -12,7 +12,7 @@ from typing import NamedTuple
 
 import httpx
 
-from mediawg_dashboard.fetch.github import _auth_headers
+from mediawg_dashboard.fetch.github import github_get
 from mediawg_dashboard.links import HR_REQUEST_REPOS
 from mediawg_dashboard.model import HorizontalReviews
 
@@ -81,10 +81,9 @@ def fetch_horizontal_reviews(title: str, client: httpx.Client | None = None) -> 
     """Search the 5 request repos for ``title`` and classify each group's state."""
     ctx = nullcontext(client) if client is not None else httpx.Client(follow_redirects=True, timeout=20.0)
     with ctx as c:
-        response = c.get(
+        response = github_get(
+            c,
             f"{GITHUB_API_BASE}/search/issues",
             params={"q": hr_search_query(title), "per_page": 100},
-            headers=_auth_headers(),
         )
-        response.raise_for_status()
         return classify_reviews(response.json().get("items", []))

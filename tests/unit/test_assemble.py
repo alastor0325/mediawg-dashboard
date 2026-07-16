@@ -62,3 +62,11 @@ def test_build_spec_horizontal_defaults_unknown_when_omitted():
     assert spec.interop.all_engines_wpt is None
     assert spec.health.days_since_activity is None
     assert spec.milestones.horizontal.a11y == "unknown"
+
+
+def test_build_spec_issues_none_means_unknown_not_zero():
+    # A failed GitHub fetch (issues=None) must render as unknown, not a real 0.
+    spec = build_spec(_meta(), SpecStatus(stage="WD"), None, [], None, InteropStatus(), NOW)
+    assert spec.stats.open_issues_count is None
+    assert spec.stats.open_prs_count is None
+    assert spec.milestones.cr_blocking_issues_open is None
