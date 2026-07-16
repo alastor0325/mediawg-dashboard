@@ -356,6 +356,31 @@ def test_render_registry_bare_values_as_tags():
     assert "1.0" in html and "2.3" in html
 
 
+def test_render_entries_value_wraps_not_overflow_regression():
+    # Regression guard: a long registered value must be ALLOWED to wrap so it
+    # can never spill out of the panel box. `white-space: nowrap` on .entry-val
+    # caused exactly that overflow — it must not come back.
+    import re
+
+    entries = [RegistryEntry(value="backgroundSegmentationMask", note="Segmentation mask")]
+    html = render_index([_spec()], registries=[_registry(entries=entries)])
+    assert "backgroundSegmentationMask" in html
+    block = re.search(r"\.entry-val\s*\{[^}]*\}", html)
+    assert block, "entry-val CSS rule missing"
+    assert "nowrap" not in block.group(0)
+    assert "overflow-wrap" in block.group(0)
+
+
+def test_render_both_ledgers_share_colgroup_for_alignment():
+    # Regression guard: both sections must use the SAME column classes so their
+    # columns line up (Stage under Stage, Next under Next, …). The registries
+    # table must not reintroduce its own col-r* widths.
+    html = render_index([_spec()], registries=[_registry()])
+    assert html.count('<col class="col-stage">') == 2
+    assert html.count('<col class="col-next">') == 2
+    assert "col-rstage" not in html and "col-rnext" not in html
+
+
 def test_render_registry_value_note_list_when_ungrouped():
     entries = [
         RegistryEntry(value="cenc", note="ISO Common Encryption"),

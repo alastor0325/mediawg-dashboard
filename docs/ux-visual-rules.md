@@ -47,6 +47,13 @@ colour-blindness and greyscale.
   model but has **no interop/WPT/pulse axis** (a registry documents values, it
   isn't shipped or tested) — so those columns are simply absent, with no
   explanatory note needed.
+- **Column alignment:** both ledgers emit the **same `<colgroup>`** (identical
+  `col-*` widths) so their columns line up across sections — Stage under Stage,
+  Next under Next. Don't give the registries table its own column widths.
+- **No overflow:** panel content must never spill outside its box. Registered
+  values must be allowed to wrap (`overflow-wrap`, never `white-space: nowrap`
+  on a value that can be long); grid/column tracks use `minmax(min(…,100%),1fr)`
+  so a narrow container can't force horizontal scroll.
 - **Stage pip** (`.rstage`): amber = Registry Draft (in progress), blue =
   Candidate Snapshot (intermediate, mirrors CR), green = W3C Registry (final);
   colour + the full stage name as text (same pattern as spec `.stage`).

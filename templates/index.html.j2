@@ -248,16 +248,14 @@
        expanded (the panel's colspan cell must not re-flow the columns). */
     table-layout: fixed;
   }
+  /* Shared column widths — BOTH ledgers emit the SAME colgroup so their columns
+     line up vertically across sections (Stage under Stage, Next under Next, …).
+     The last two are interop/pulse for specs and review/entries for registries. */
   .ledger col.col-num { width: 2.4rem; }
-  .ledger col.col-stage { width: 6rem; }
+  .ledger col.col-stage { width: 8.5rem; }
   .ledger col.col-next { width: 7.5rem; }
   .ledger col.col-interop { width: 11rem; }
   .ledger col.col-pulse { width: 10rem; }
-  /* Registry-ledger columns */
-  .ledger col.col-rstage { width: 8.5rem; }
-  .ledger col.col-rnext { width: 8.5rem; }  /* "→Snapshot" (full name in tooltip/panel) */
-  .ledger col.col-review { width: 6rem; }
-  .ledger col.col-entries { width: 4.5rem; }
   /* col-spec is left unset — it absorbs the remaining width. */
   /* Clip only the first-level cells if content exceeds the fixed width; never
      the expanded panel row (colspan cell). */
@@ -573,9 +571,10 @@
        · grouped  → one column PER group side by side (e.g. Audio | Video)
        · value+note, ungrouped → flow into columns
        · bare values (no notes)  → compact inline tokens (e.g. HDCP versions) */
+  /* minmax(min(13rem,100%),…) so a narrow container never forces overflow. */
   .entry-cols {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
     gap: 0 2.4rem;
     margin-top: 0.3rem;
   }
@@ -586,20 +585,26 @@
   }
   .entry-item {
     display: flex;
+    flex-wrap: wrap;              /* note drops below the value if the row is tight */
     justify-content: space-between;
-    gap: 0.9rem;
+    align-items: baseline;
+    gap: 0.05rem 1rem;
+    min-width: 0;
     padding: 0.16rem 0;
     line-height: 1.3;
     font-size: 0.78rem;
     border-bottom: 1px dotted var(--rule);
     break-inside: avoid;
   }
+  /* No `white-space: nowrap` — a long value (e.g. backgroundSegmentationMask)
+     must wrap inside its column, never spill out of the panel. */
   .entry-val {
     font-family: "IBM Plex Mono", monospace;
     color: var(--ink);
-    white-space: nowrap;
+    overflow-wrap: anywhere;
+    min-width: 0;
   }
-  .entry-note { color: var(--muted); text-align: right; }
+  .entry-note { color: var(--muted); text-align: right; overflow-wrap: anywhere; }
   .entry-group {
     font-family: "IBM Plex Mono", monospace;
     font-size: 0.62rem;
@@ -625,9 +630,7 @@
   }
   .panel-empty { color: var(--muted); font-size: 0.82rem; margin: 0.2rem 0; }
   @media (max-width: 640px) {
-    /* Let long registered values wrap instead of forcing page-wide scroll. */
     .entry-list { columns: 1; }
-    .entry-val { white-space: normal; overflow-wrap: anywhere; }
   }
   @media (max-width: 900px) {
     /* Only a NON-hidden panel shows; :not([hidden]) so the card rules below
@@ -988,13 +991,14 @@
   </div>
 
   <table class="ledger" id="registries">
+  {# Same colgroup as the specs table so both sections' columns align. #}
   <colgroup>
     <col class="col-num">
     <col class="col-spec">
-    <col class="col-rstage">
-    <col class="col-rnext">
-    <col class="col-review">
-    <col class="col-entries">
+    <col class="col-stage">
+    <col class="col-next">
+    <col class="col-interop">
+    <col class="col-pulse">
   </colgroup>
   <thead>
     <tr>
