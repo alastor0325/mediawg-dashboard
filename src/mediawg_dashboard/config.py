@@ -2,7 +2,7 @@ from pathlib import Path
 
 import yaml
 
-from mediawg_dashboard.model import RegistryMeta, SpecMeta
+from mediawg_dashboard.model import RegistryEntry, RegistryMeta, SpecMeta
 
 
 def load_specs(path: Path) -> list[SpecMeta]:
@@ -35,7 +35,7 @@ def load_registries(path: Path) -> list[RegistryMeta]:
             w3c_shortname=entry.get("w3c_shortname") or entry["shortname"],
             tr_url=entry.get("tr"),
             hr_shortname=entry.get("hr_shortname"),
-            entry_count=entry.get("entry_count"),
+            entries=[RegistryEntry(**e) for e in (entry.get("entries") or [])],
         )
         for entry in (data.get("registries") or [])
     ]

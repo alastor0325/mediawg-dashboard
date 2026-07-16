@@ -192,6 +192,14 @@ REGISTRY_STAGE_DESCRIPTIONS: dict[str, str] = {
 }
 
 
+class RegistryEntry(BaseModel):
+    """One registered value in a registry (config-maintained fact)."""
+
+    value: str  # the registered key/value, e.g. "vp09.*" or "2.3"
+    note: str | None = None  # human label / mapped media types
+    group: str = ""  # optional sub-heading, e.g. "Audio" / "Video" ("" = none)
+
+
 class RegistryMeta(BaseModel):
     shortname: str
     title: str
@@ -200,7 +208,7 @@ class RegistryMeta(BaseModel):
     w3c_shortname: str
     tr_url: str | None = None
     hr_shortname: str | None = None  # horizontal-issue-tracker shortname (defaults to w3c_shortname)
-    entry_count: int | None = None  # registered entries (config-maintained fact)
+    entries: list[RegistryEntry] = Field(default_factory=list)  # registered values (count = len)
 
 
 class RegistryStatus(BaseModel):

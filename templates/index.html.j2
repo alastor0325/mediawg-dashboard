@@ -566,6 +566,69 @@
   .entry-count { color: var(--ink); font-variant-numeric: tabular-nums; }
   /* Registry panel has two groups, not three. */
   .panel.panel-two { grid-template-columns: repeat(2, 1fr); }
+
+  /* Registered entries (inside the registry panel). Block markup — NOT a nested
+     <table> — so the base `.ledger tbody td/tr` rules can't leak in. Layout
+     adapts to the data so nothing wastes space:
+       · grouped  → one column PER group side by side (e.g. Audio | Video)
+       · value+note, ungrouped → flow into columns
+       · bare values (no notes)  → compact inline tokens (e.g. HDCP versions) */
+  .entry-cols {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: 0 2.4rem;
+    margin-top: 0.3rem;
+  }
+  .entry-list {
+    columns: 15rem 2;
+    column-gap: 2.4rem;
+    margin-top: 0.3rem;
+  }
+  .entry-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.9rem;
+    padding: 0.16rem 0;
+    line-height: 1.3;
+    font-size: 0.78rem;
+    border-bottom: 1px dotted var(--rule);
+    break-inside: avoid;
+  }
+  .entry-val {
+    font-family: "IBM Plex Mono", monospace;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .entry-note { color: var(--muted); text-align: right; }
+  .entry-group {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.62rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.13em;
+    color: var(--muted);
+    padding: 0 0 0.28rem;
+    margin-bottom: 0.15rem;
+    border-bottom: 1px solid var(--rule-strong);
+  }
+  .entry-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1.3rem;
+    margin-top: 0.4rem;
+  }
+  .entry-tag {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.82rem;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .panel-empty { color: var(--muted); font-size: 0.82rem; margin: 0.2rem 0; }
+  @media (max-width: 640px) {
+    /* Let long registered values wrap instead of forcing page-wide scroll. */
+    .entry-list { columns: 1; }
+    .entry-val { white-space: normal; overflow-wrap: anywhere; }
+  }
   @media (max-width: 900px) {
     /* Only a NON-hidden panel shows; :not([hidden]) so the card rules below
        can't override the hidden attribute and force every panel open. */
@@ -972,7 +1035,7 @@
         <span class="cell-value" title="{{ row.review_label }} horizontal reviews resolved ({{ row.review_state }})"><span class="review-count">{{ row.review_label }}</span><span class="review-mark mark-{{ row.review_state }}">{{ row.review_glyph }}</span></span>
       </td>
       <td class="entries num" data-label="Entries">
-        <span class="cell-value"><span class="entry-count">{% if reg.meta.entry_count is not none %}{{ reg.meta.entry_count }}{% else %}<span class="dash">—</span>{% endif %}</span></span>
+        <span class="cell-value"><span class="entry-count">{% if reg.meta.entries %}{{ reg.meta.entries | length }}{% else %}<span class="dash">—</span>{% endif %}</span></span>
       </td>
     </tr>
     <tr class="panel-row" id="rpanel-{{ reg.meta.shortname }}" hidden>
@@ -981,19 +1044,43 @@
           <div class="panel-group">
             <div class="panel-h">Registry &amp; next gate</div>
             <dl class="panel-kv">
-              <dt>Stage</dt><dd>{{ reg.status.stage }}{% if reg.status.last_published %} · last published {% if reg.meta.tr_url %}<a href="{{ reg.meta.tr_url }}">{{ reg.status.last_published }}</a>{% else %}{{ reg.status.last_published }}{% endif %}{% if row.stage_age_label != '—' %} · {{ row.stage_age_label }} in stage{% endif %}{% endif %}</dd>
-              <dt>Parent</dt><dd>{{ reg.meta.parent }}</dd>
+              <dt>Stage</dt><dd>{{ reg.status.stage }}{% if reg.status.last_published %} · last published {{ reg.status.last_published }}{% if row.stage_age_label != '—' %} · {{ row.stage_age_label }} in stage{% endif %}{% endif %}</dd>
               <dt>Next gate</dt><dd>{% if row.next_gate %}→ {{ row.next_gate }} <span class="tag tag-{{ row.readiness }}">{{ row.readiness }}</span>{% else %}terminal{% endif %}</dd>
             </dl>
             {{ blocker_checklist(row) }}
           </div>
           <div class="panel-group">
-            <div class="panel-h">Table</div>
-            <dl class="panel-kv">
-              <dt>Entries</dt><dd>{% if reg.meta.entry_count is not none %}{% if reg.meta.tr_url %}<a href="{{ reg.meta.tr_url }}">{{ reg.meta.entry_count }} registered</a>{% else %}{{ reg.meta.entry_count }} registered{% endif %}{% else %}—{% endif %}</dd>
-              <dt title="proposals for new entries (open registration requests)">Pending</dt><dd><a href="https://github.com/{{ reg.meta.repo }}/pulls">open PRs ↗</a></dd>
-            </dl>
-            <div class="panel-sub">No interop / WPT axis — a registry documents values, it isn't shipped or tested.</div>
+            <div class="panel-h">Registered entries · {{ reg.meta.entries | length }}</div>
+            {% if reg.meta.entries %}
+            {% set has_groups = reg.meta.entries | selectattr('group') | list | length > 0 %}
+            {% set has_notes = reg.meta.entries | selectattr('note') | list | length > 0 %}
+            {% if has_groups %}
+            {# one column per group, side by side (e.g. Audio | Video) #}
+            <div class="entry-cols">
+              {% for group, items in reg.meta.entries | groupby('group') %}
+              <div class="entry-col">
+                {% if group %}<div class="entry-group">{{ group }}</div>{% endif %}
+                {% for e in items %}
+                <div class="entry-item"><span class="entry-val">{{ e.value }}</span>{% if e.note %}<span class="entry-note">{{ e.note }}</span>{% endif %}</div>
+                {% endfor %}
+              </div>
+              {% endfor %}
+            </div>
+            {% elif has_notes %}
+            <div class="entry-list">
+              {% for e in reg.meta.entries %}
+              <div class="entry-item"><span class="entry-val">{{ e.value }}</span><span class="entry-note">{{ e.note }}</span></div>
+              {% endfor %}
+            </div>
+            {% else %}
+            {# bare values, no notes → compact inline tokens (e.g. HDCP versions) #}
+            <div class="entry-tags">
+              {% for e in reg.meta.entries %}<span class="entry-tag">{{ e.value }}</span>{% endfor %}
+            </div>
+            {% endif %}
+            {% else %}
+            <p class="panel-empty">—</p>
+            {% endif %}
           </div>
         </div>
       </td>

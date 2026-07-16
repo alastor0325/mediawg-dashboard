@@ -12,7 +12,7 @@ by the `mediawg-dashboard-ux-review` skill.
 | `--signal-amber` | amber | caution / partial / in-progress / requested / watch | support partial, blocker partial, pulse watch, horizontal requested |
 | `--signal-rose` | red | bad / none / open / blocked / at-risk / overdue | support none, blocker open, gate blocked, pulse at-risk, "behind charter", horizontal open |
 | `--signal-mute` | grey | unknown / no data / N/A | any "unknown" state |
-| `--signal-blue` | blue | neutral Rec-track stage marker | CR stage pip only |
+| `--signal-blue` | blue | neutral intermediate-stage marker | CR stage pip + Candidate-Snapshot registry pip |
 | `--accent` | rust | **interactive only** — links, hover, brand | never a status colour |
 
 **Rule:** `--accent` is for interactivity (links/hover/wordmark), never to encode
@@ -40,6 +40,24 @@ colour-blindness and greyscale.
   text tag (ready/blocked) in the panel.
 - Tags (`ready` / `blocked` / `behind charter` / pulse tiers) are coloured text
   per the table above.
+
+## Registries section (registry track)
+
+- A second ledger below the specs table; shares the stage/next-gate/horizontal
+  model but has **no interop/WPT/pulse axis** (a registry documents values, it
+  isn't shipped or tested) — so those columns are simply absent, with no
+  explanatory note needed.
+- **Stage pip** (`.rstage`): amber = Registry Draft (in progress), blue =
+  Candidate Snapshot (intermediate, mirrors CR), green = W3C Registry (final);
+  colour + the full stage name as text (same pattern as spec `.stage`).
+- **Registered entries** are **data, not status** — plain value (mono ink) +
+  note (muted), no glyph/colour. The layout adapts so nothing wastes space:
+  grouped entries render **one column per group** side by side (e.g.
+  Audio | Video); bare values with no notes (e.g. HDCP versions) render as a
+  **compact inline token row**; value+note lists flow into columns. Use block
+  markup (not a nested `<table>`, whose cells inherit the ledger's row styling).
+- The registry's `/TR/` is linked **once** (the title); don't repeat it on the
+  publication date or the entries header.
 
 ## Neutrality
 

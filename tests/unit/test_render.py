@@ -4,6 +4,7 @@ from mediawg_dashboard.model import (
     HorizontalReviews,
     InteropStatus,
     Registry,
+    RegistryEntry,
     RegistryMeta,
     RegistryStatus,
     RepoStats,
@@ -18,9 +19,14 @@ from mediawg_dashboard.render import render_index, summarize_registries
 def _registry(
     shortname: str = "webcodecs-codec-registry",
     stage: str = "Registry Draft",
-    entry_count: int | None = 13,
+    entries: list[RegistryEntry] | None = None,
     horizontal: HorizontalReviews | None = None,
 ) -> Registry:
+    if entries is None:
+        entries = [
+            RegistryEntry(value="opus", note="Opus", group="Audio"),
+            RegistryEntry(value="vp09.*", note="VP9", group="Video"),
+        ]
     return Registry(
         meta=RegistryMeta(
             shortname=shortname,
@@ -29,7 +35,7 @@ def _registry(
             repo="w3c/webcodecs",
             w3c_shortname=shortname,
             tr_url=f"https://www.w3.org/TR/{shortname}/",
-            entry_count=entry_count,
+            entries=entries,
         ),
         status=RegistryStatus(stage=stage, last_published=date(2026, 2, 12)),
         milestones=SpecMilestones(horizontal=horizontal or HorizontalReviews()),
@@ -320,9 +326,45 @@ def test_render_registry_shows_stage_and_next_gate():
     assert "Candidate Snapshot" in html
 
 
-def test_render_registry_shows_entry_count():
-    html = render_index([_spec()], registries=[_registry(entry_count=13)])
-    assert "13" in html
+def test_render_registry_shows_entry_count_from_entries():
+    entries = [RegistryEntry(value=str(i)) for i in range(13)]
+    html = render_index([_spec()], registries=[_registry(entries=entries)])
+    # Count is derived from the entry list (first-level column + panel header).
+    assert ">13<" in html or "· 13" in html
+
+
+def test_render_registry_lists_entries_with_groups():
+    entries = [
+        RegistryEntry(value="opus", note="Opus", group="Audio"),
+        RegistryEntry(value="vp09.*", note="VP9", group="Video"),
+    ]
+    html = render_index([_spec()], registries=[_registry(entries=entries)])
+    # Grouped entries render one column per group, side by side.
+    assert "opus" in html and "Opus" in html
+    assert "vp09.*" in html and "VP9" in html
+    assert 'class="entry-cols"' in html
+    assert 'class="entry-group"' in html  # Audio / Video sub-headings
+
+
+def test_render_registry_bare_values_as_tags():
+    # Values with no notes (e.g. HDCP versions) render as a compact token list,
+    # not a row-per-value table that wastes space.
+    entries = [RegistryEntry(value=v) for v in ("1.0", "1.1", "2.3")]
+    html = render_index([_spec()], registries=[_registry(entries=entries)])
+    assert 'class="entry-tags"' in html
+    assert 'class="entry-list"' not in html and 'class="entry-cols"' not in html
+    assert "1.0" in html and "2.3" in html
+
+
+def test_render_registry_value_note_list_when_ungrouped():
+    entries = [
+        RegistryEntry(value="cenc", note="ISO Common Encryption"),
+        RegistryEntry(value="webm", note="WebM"),
+    ]
+    html = render_index([_spec()], registries=[_registry(entries=entries)])
+    assert 'class="entry-list"' in html
+    assert 'class="entry-cols"' not in html and 'class="entry-tags"' not in html
+    assert "cenc" in html and "ISO Common Encryption" in html
 
 
 def test_render_registry_review_column():
@@ -331,12 +373,12 @@ def test_render_registry_review_column():
     assert "1/5" in html
 
 
-def test_render_registry_panel_has_two_groups_no_interop():
+def test_render_registry_panel_has_two_groups():
     html = render_index([_spec()], registries=[_registry()])
     assert 'id="rpanel-webcodecs-codec-registry"' in html
     assert "panel-two" in html
-    # A registry has no interop/WPT axis — the panel says so, and shows Entries.
-    assert "isn&#39;t shipped or tested" in html or "isn't shipped or tested" in html
+    # The removed "not shipped or tested" note must not reappear.
+    assert "shipped or tested" not in html
 
 
 def test_render_registry_panel_starts_hidden():

@@ -79,7 +79,8 @@ specs:
 # Registry-track deliverables (Process §6.5) — a separate, simpler lifecycle:
 # Registry Draft → Candidate Snapshot → W3C Registry. Stage + last-published are
 # fetched live from the W3C API; horizontal-review state from the repo's labels.
-# entry_count is a maintained fact (registered entries, verified 2026-07-16).
+# `entries` is a maintained fact (registered values, verified 2026-07-16 from the
+# /TR/ tables); the first-level count is len(entries).
 # repo = where horizontal labels live (EME/WebCodecs registries share the parent
 # repo; MSE's registry has its own).
 registries:
@@ -88,39 +89,76 @@ registries:
     parent: MSE
     repo: w3c/mse-byte-stream-format-registry
     tr: https://www.w3.org/TR/mse-byte-stream-format-registry/
-    entry_count: 4
+    entries:
+      - { value: WebM, note: "audio/webm, video/webm" }
+      - { value: ISO BMFF, note: "audio/mp4, video/mp4" }
+      - { value: MPEG-2 TS, note: "audio/mp2t, video/mp2t" }
+      - { value: MPEG Audio, note: "audio/mpeg, audio/aac" }
 
   - shortname: eme-initdata-registry
     title: EME Initialization Data Format
     parent: EME
     repo: w3c/encrypted-media
     tr: https://www.w3.org/TR/eme-initdata-registry/
-    entry_count: 3
+    entries:
+      - { value: cenc, note: "ISO Common Encryption" }
+      - { value: keyids, note: "Key IDs (JSON)" }
+      - { value: webm, note: "WebM" }
 
   - shortname: eme-stream-registry
     title: EME Stream Format
     parent: EME
     repo: w3c/encrypted-media
     tr: https://www.w3.org/TR/eme-stream-registry/
-    entry_count: 2
+    entries:
+      - { value: ISO CENC, note: "audio/mp4, video/mp4" }
+      - { value: WebM, note: "audio/webm, video/webm" }
 
   - shortname: eme-hdcp-version-registry
     title: EME HDCP Version
     parent: EME
     repo: w3c/encrypted-media
     tr: https://www.w3.org/TR/eme-hdcp-version-registry/
-    entry_count: 9
+    entries:
+      - { value: "1.0" }
+      - { value: "1.1" }
+      - { value: "1.2" }
+      - { value: "1.3" }
+      - { value: "1.4" }
+      - { value: "2.0" }
+      - { value: "2.1" }
+      - { value: "2.2" }
+      - { value: "2.3" }
 
   - shortname: webcodecs-codec-registry
     title: WebCodecs Codec
     parent: WebCodecs
     repo: w3c/webcodecs
     tr: https://www.w3.org/TR/webcodecs-codec-registry/
-    entry_count: 13
+    entries:
+      - { value: "flac",             note: FLAC,          group: Audio }
+      - { value: "mp3",              note: MP3,           group: Audio }
+      - { value: "mp4a.*",           note: AAC,           group: Audio }
+      - { value: "opus",             note: Opus,          group: Audio }
+      - { value: "vorbis",           note: Vorbis,        group: Audio }
+      - { value: "ulaw",             note: "µ-law PCM",   group: Audio }
+      - { value: "alaw",             note: "A-law PCM",   group: Audio }
+      - { value: "pcm-*",            note: "Linear PCM",  group: Audio }
+      - { value: "av01.*",           note: AV1,           group: Video }
+      - { value: "avc1.*, avc3.*",   note: "AVC / H.264", group: Video }
+      - { value: "hev1.*, hvc1.*",   note: "HEVC / H.265", group: Video }
+      - { value: "vp8",              note: VP8,           group: Video }
+      - { value: "vp09.*",           note: VP9,           group: Video }
 
   - shortname: webcodecs-video-frame-metadata-registry
     title: WebCodecs VideoFrame Metadata
     parent: WebCodecs
     repo: w3c/webcodecs
     tr: https://www.w3.org/TR/webcodecs-video-frame-metadata-registry/
-    entry_count: 6
+    entries:
+      - { value: segments,                    note: "Encoded chunk segments" }
+      - { value: captureTime,                 note: "Frame capture timestamp" }
+      - { value: receiveTime,                 note: "Frame receive timestamp" }
+      - { value: rtpTimestamp,                note: "RTP timestamp" }
+      - { value: backgroundBlur,              note: "Background-blur state" }
+      - { value: backgroundSegmentationMask,  note: "Segmentation mask" }

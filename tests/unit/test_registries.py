@@ -15,6 +15,7 @@ from mediawg_dashboard.fetch.w3c import parse_registry_version
 from mediawg_dashboard.model import (
     HorizontalReviews,
     Registry,
+    RegistryEntry,
     RegistryMeta,
     RegistryStatus,
     SpecMilestones,
@@ -25,7 +26,9 @@ REPO_CONFIG = Path(__file__).resolve().parents[2] / "config" / "specs.yaml"
 TODAY = date(2026, 7, 16)
 
 
-def _registry(stage="Registry Draft", horizontal=None, entry_count=6, last_published=None):
+def _registry(stage="Registry Draft", horizontal=None, entries=None, last_published=None):
+    if entries is None:
+        entries = [RegistryEntry(value="opus", note="Opus")]
     return Registry(
         meta=RegistryMeta(
             shortname="webcodecs-codec-registry",
@@ -34,7 +37,7 @@ def _registry(stage="Registry Draft", horizontal=None, entry_count=6, last_publi
             repo="w3c/webcodecs",
             w3c_shortname="webcodecs-codec-registry",
             tr_url="https://www.w3.org/TR/webcodecs-codec-registry/",
-            entry_count=entry_count,
+            entries=entries,
         ),
         status=RegistryStatus(stage=stage, last_published=last_published),
         milestones=SpecMilestones(horizontal=horizontal or HorizontalReviews()),
@@ -110,9 +113,10 @@ def test_registry_view_review_label_counts_resolved():
 
 
 def test_registry_view_next_gate_and_readiness():
-    view = registry_view(_registry(entry_count=13), TODAY)
-    # entry_count is read off registry.meta in the template, not copied to the view.
-    assert view.registry.meta.entry_count == 13
+    entries = [RegistryEntry(value=v) for v in ("a", "b", "c")]
+    view = registry_view(_registry(entries=entries), TODAY)
+    # entries are read off registry.meta in the template, not copied to the view.
+    assert len(view.registry.meta.entries) == 3
     assert view.next_gate == "Candidate Snapshot"
     assert view.readiness in ("blocked", "unknown")
 
@@ -228,13 +232,17 @@ registries:
     parent: EME
     repo: w3c/encrypted-media
     tr: https://www.w3.org/TR/eme-hdcp-version-registry/
-    entry_count: 9
+    entries:
+      - { value: "1.0" }
+      - { value: "2.3", note: "latest" }
 """
     )
     regs = load_registries(cfg)
     assert len(regs) == 1
     assert regs[0].parent == "EME"
-    assert regs[0].entry_count == 9
+    assert len(regs[0].entries) == 2
+    assert regs[0].entries[0].value == "1.0"
+    assert regs[0].entries[1].note == "latest"
     assert regs[0].w3c_shortname == "eme-hdcp-version-registry"  # defaults to shortname
 
 
@@ -249,4 +257,8 @@ def test_repo_config_has_six_registries():
     regs = load_registries(REPO_CONFIG)
     assert len(regs) == 6
     assert all(r.shortname and r.repo and r.parent for r in regs)
-    assert all(r.entry_count is not None for r in regs)
+    assert all(r.entries for r in regs)  # every registry lists its registered values
+    # Verified counts (2026-07-16): codec registry has 13 entries.
+    codec = next(r for r in regs if r.shortname == "webcodecs-codec-registry")
+    assert len(codec.entries) == 13
+    assert any(e.group == "Video" for e in codec.entries)
