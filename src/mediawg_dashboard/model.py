@@ -43,6 +43,9 @@ class SpecMeta(BaseModel):
     charter_target: str | None = None  # neutral config fact, e.g. "CR Q4 2025"
     bcd_path: str | None = None  # MDN browser-compat-data key, e.g. api.MediaSource
     hr_shortname: str | None = None  # horizontal-issue-tracker shortname (defaults to shortname)
+    # Wide-review completion is a WG/chair judgment (no API) — set here once the
+    # group records it; None = unknown (not yet determined).
+    wide_review_complete: bool | None = None
 
 
 class SpecStatus(BaseModel):
@@ -209,6 +212,8 @@ class RegistryMeta(BaseModel):
     tr_url: str | None = None
     hr_shortname: str | None = None  # horizontal-issue-tracker shortname (defaults to w3c_shortname)
     entries: list[RegistryEntry] = Field(default_factory=list)  # registered values (count = len)
+    # WG/chair judgment (no API) — set once wide review is recorded; None = unknown.
+    wide_review_complete: bool | None = None
 
 
 class RegistryStatus(BaseModel):

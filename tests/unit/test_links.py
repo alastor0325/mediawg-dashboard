@@ -4,6 +4,7 @@ from mediawg_dashboard.links import (
     issues_search_url,
     needs_resolution_url,
     repo_issues_url,
+    wide_review_url,
     wpt_url,
 )
 
@@ -41,3 +42,7 @@ def test_repo_issues_url():
 def test_wpt_url_none_when_no_path():
     assert wpt_url(None) is None
     assert wpt_url("/webcodecs/") == "https://wpt.fyi/results/webcodecs/"
+
+
+def test_wide_review_url_points_to_process_definition():
+    assert wide_review_url() == "https://www.w3.org/policies/process/#wide-review"

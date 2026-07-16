@@ -409,8 +409,8 @@ def test_spec_view_blocker_rows_include_horizontal_and_link_venues():
     kinds = {kind for *_, kind in v.blocker_rows}
     # Horizontal review IS a CR blocker (nested chips render under it).
     assert "horizontal" in kinds
-    # Wide review -> the repo's issues (community/wide review venue).
-    assert by_label["Wide review complete"].endswith("/w3c/x/issues")
+    # Wide review -> the W3C Process definition (no single tracking venue).
+    assert by_label["Wide review complete"] == "https://www.w3.org/policies/process/#wide-review"
     # Horizontal reviews -> the cross-group horizontal-issue-tracker view.
     hz = next(h for lbl, h in by_label.items() if lbl.startswith("Horizontal reviews"))
     assert "review.html?shortname=" in hz

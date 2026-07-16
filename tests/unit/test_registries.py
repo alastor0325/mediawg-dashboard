@@ -181,9 +181,18 @@ def test_build_registry_derives_horizontal_from_labels():
     reg = build_registry(meta, RegistryStatus(stage="Registry Draft"), issues)
     assert reg.milestones.horizontal.security == "open"
     assert reg.milestones.horizontal.i18n == "requested"
-    # Neither wide review nor AC review can be proven from open issues.
+    # Wide review defaults to unknown (config not set); AC review can't be proven.
     assert reg.milestones.wide_review_complete is None
     assert reg.milestones.ac_review_done is None
+
+
+def test_build_registry_propagates_wide_review_complete_from_config():
+    meta = RegistryMeta(
+        shortname="r", title="R", parent="P", repo="w3c/r", w3c_shortname="r",
+        wide_review_complete=True,
+    )
+    reg = build_registry(meta, RegistryStatus(stage="Registry Draft"), [])
+    assert reg.milestones.wide_review_complete is True
 
 
 def test_build_registry_empty_issues():
@@ -232,6 +241,7 @@ registries:
     parent: EME
     repo: w3c/encrypted-media
     tr: https://www.w3.org/TR/eme-hdcp-version-registry/
+    wide_review_complete: true
     entries:
       - { value: "1.0" }
       - { value: "2.3", note: "latest" }
@@ -243,6 +253,7 @@ registries:
     assert len(regs[0].entries) == 2
     assert regs[0].entries[0].value == "1.0"
     assert regs[0].entries[1].note == "latest"
+    assert regs[0].wide_review_complete is True
     assert regs[0].w3c_shortname == "eme-hdcp-version-registry"  # defaults to shortname
 
 

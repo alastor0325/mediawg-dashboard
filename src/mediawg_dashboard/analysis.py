@@ -228,13 +228,14 @@ def _blocker_href(kind: str, meta) -> str | None:
     """Link each blocker to where its status actually lives (None if no venue).
 
     - horizontal → the cross-group horizontal-issue-tracker view for the spec
-    - wide_review → the repo's issues (where community/wide review happens)
+    - wide_review → the W3C Process definition (there's no single tracking venue;
+      completion is a WG/chair judgment, set via config — see wide_review_complete)
     - cr_blocking → open ``*-needs-resolution`` issues (the must-resolve set)
     """
     if kind == "horizontal":
         return links.hr_review_url(meta.hr_shortname or meta.shortname)
     if kind == "wide_review":
-        return links.repo_issues_url(meta.repo)
+        return links.wide_review_url()
     if kind == "cr_blocking":
         return links.needs_resolution_url(meta.repo)
     return None
