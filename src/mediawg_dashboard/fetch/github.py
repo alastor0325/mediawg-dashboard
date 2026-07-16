@@ -11,9 +11,6 @@ GITHUB_API_BASE = "https://api.github.com"
 
 _MAX_PAGES = 20
 
-# Horizontal-review groups and the GitHub label suffixes W3C uses.
-_HORIZONTAL_GROUPS = ("a11y", "i18n", "privacy", "security", "tag")
-
 
 def _parse_iso(value: str) -> datetime:
     """Parse a GitHub ISO timestamp, tolerating a trailing 'Z'."""
@@ -51,22 +48,6 @@ def compute_repo_stats(items: list[dict], now: datetime | None = None) -> RepoSt
 
 def _label_names(issue: dict) -> set[str]:
     return {label["name"] for label in issue.get("labels", [])}
-
-
-def needs_resolution_by_group(issues: list[dict]) -> dict[str, dict]:
-    """The first open ``<group>-needs-resolution`` issue for each horizontal group.
-
-    These are the blocking concerns a review raised (the review request may be
-    closed while these stay open — closing = review performed, not resolved). Used
-    to override a group's chip to 'open' and deep-link to the actual issue.
-    """
-    out: dict[str, dict] = {}
-    for issue in issues:
-        labels = _label_names(issue)
-        for group in _HORIZONTAL_GROUPS:
-            if group not in out and f"{group}-needs-resolution" in labels:
-                out[group] = issue
-    return out
 
 
 def count_labeled(issues: list[dict], label: str) -> int:

@@ -3,7 +3,6 @@ from datetime import datetime, timezone
 from mediawg_dashboard.fetch.github import (
     count_labeled,
     days_since_last_commit,
-    needs_resolution_by_group,
     needs_resolution_stats,
 )
 from mediawg_dashboard.fetch.support import bcd_file_url, parse_bcd_support
@@ -12,32 +11,8 @@ from mediawg_dashboard.fetch.wpt import parse_wpt_scores
 NOW = datetime(2026, 7, 13, tzinfo=timezone.utc)
 
 
-def _issue(labels, created="2026-01-01T00:00:00Z", number=1):
-    return {
-        "labels": [{"name": n} for n in labels],
-        "created_at": created,
-        "number": number,
-        "html_url": f"https://github.com/w3c/x/issues/{number}",
-    }
-
-
-# ---------- per-group needs-resolution (the blocking review concerns) ----------
-
-
-def test_needs_resolution_by_group_picks_open_issue_per_group():
-    issues = [
-        _issue(["privacy-needs-resolution"], number=42),
-        _issue(["security-needs-resolution"], number=7),
-        _issue(["i18n-tracker"]),  # tracker only, not blocking -> ignored
-        _issue(["random"]),
-    ]
-    nr = needs_resolution_by_group(issues)
-    assert set(nr) == {"privacy", "security"}
-    assert nr["privacy"]["number"] == 42
-
-
-def test_needs_resolution_by_group_empty():
-    assert needs_resolution_by_group([]) == {}
+def _issue(labels, created="2026-01-01T00:00:00Z"):
+    return {"labels": [{"name": n} for n in labels], "created_at": created}
 
 
 def test_count_labeled():

@@ -89,11 +89,13 @@ logos, no "reference browser", no "outlier/laggard" language. (See the
   Each per-group chip carries **colour + glyph + the state word** (all three, so
   the state is obvious), laid out in an even grid, and **links to the actual
   review issue** — not to an empty label search on the spec's own repo.
-  State semantics: **resolved** = review request closed *and* no open
-  `<group>-needs-resolution`; **open** = an open `<group>-needs-resolution` on
-  the spec repo (a review-raised blocker — this wins even if the request is
-  closed, because "review complete" ≠ "concerns resolved"), linked to that issue;
-  **requested** = review request still open; **unknown** = no matching issue.
+  The chip reflects only whether the **review was performed** (a separate axis
+  from any issues it left): **resolved** = review request closed (done);
+  **requested** = request still open (in progress); **open** = an open
+  `<group>-needs-resolution` was filed as the review request itself; **unknown**
+  = no matching issue. Note a completed review can still leave
+  `*-needs-resolution` issues to fix — those are **CR-blocking issues** (their
+  own checklist line), NOT a reason to mark the review incomplete.
 - Panel = three groups, each an aligned key/value grid (`dl.panel-kv`,
   `max-content 1fr`) so labels/values line up wide (3-up) and narrow (stacked).
 - Show a signal only when it's meaningful (e.g. backlog trend needs ≥2 snapshots;
