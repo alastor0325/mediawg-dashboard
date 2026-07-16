@@ -103,6 +103,12 @@ def test_render_links_to_repo():
     assert "https://github.com/w3c/webcodecs" in html
 
 
+def test_render_opens_links_in_new_tab():
+    # A single <base target="_blank"> makes every link open in a new tab.
+    html = render_index([_spec("webcodecs")])
+    assert '<base target="_blank">' in html
+
+
 def test_render_links_to_tr():
     html = render_index([_spec("webcodecs")])
     assert "https://www.w3.org/TR/webcodecs/" in html
