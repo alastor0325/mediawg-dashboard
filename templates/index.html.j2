@@ -1010,8 +1010,8 @@
       <th>Registry <span class="sort-glyph">⇅</span></th>
       <th>Stage <span class="sort-glyph">⇅</span></th>
       <th>Next <span class="sort-glyph">⇅</span></th>
-      <th>Review <span class="sort-glyph">⇅</span></th>
-      <th>Entries <span class="sort-glyph">⇅</span></th>
+      <th class="center">Review <span class="sort-glyph">⇅</span></th>
+      <th class="center">Entries <span class="sort-glyph">⇅</span></th>
     </tr>
   </thead>
   <tbody>
@@ -1039,10 +1039,10 @@
           <span class="dash">—</span>
         {% endif %}
       </td>
-      <td class="review" data-label="Review">
+      <td class="review center" data-label="Review">
         <span class="cell-value" title="{{ row.review_label }} horizontal reviews resolved ({{ row.review_state }})"><span class="review-count">{{ row.review_label }}</span><span class="review-mark mark-{{ row.review_state }}">{{ row.review_glyph }}</span></span>
       </td>
-      <td class="entries" data-label="Entries">
+      <td class="entries center" data-label="Entries">
         <span class="cell-value"><span class="entry-count">{% if reg.meta.entries %}{{ reg.meta.entries | length }}{% else %}<span class="dash">—</span>{% endif %}</span></span>
       </td>
     </tr>

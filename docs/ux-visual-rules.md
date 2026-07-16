@@ -63,8 +63,9 @@ colour-blindness and greyscale.
   Audio | Video); bare values with no notes (e.g. HDCP versions) render as a
   **compact inline token row**; value+note lists flow into columns with the note
   **stacked under the value on every row** (consistent — a note never stays
-  inline just because it happens to fit). The first-level Entries column is
-  left-aligned to sit under the (left-aligned) Pulse column, not pinned right. Use block
+  inline just because it happens to fit). The first-level Review and Entries
+  columns are **centre-aligned** (header + value) so their short content is
+  balanced within the wide shared columns, rather than hugging one edge. Use block
   markup (not a nested `<table>`, whose cells inherit the ledger's row styling).
 - The registry's `/TR/` is linked **once** (the title); don't repeat it on the
   publication date or the entries header.
