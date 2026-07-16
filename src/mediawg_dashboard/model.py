@@ -171,3 +171,68 @@ class SpecView(BaseModel):
     stage_age_days: int | None
     stage_age_label: str
     pulse: Pulse | None
+
+
+# --- Registry Track (Process §6.5) — a separate, simpler lifecycle than the
+# Rec track, with a different gate and no interop/WPT axis. Vendor-neutral. ---
+
+RegistryStage = Literal[
+    "Registry Draft",
+    "Candidate Snapshot",
+    "W3C Registry",
+    "unknown",
+]
+
+
+REGISTRY_STAGE_DESCRIPTIONS: dict[str, str] = {
+    "Registry Draft": "Registry Draft — initial /TR/ publication of a registry; needs wide/horizontal review to advance.",
+    "Candidate Snapshot": "Candidate Registry Snapshot — stabilised for AC review after wide review is complete.",
+    "W3C Registry": "W3C Registry — the final, AC-approved registry (the registry track's endpoint).",
+    "unknown": "Stage could not be determined from the W3C API.",
+}
+
+
+class RegistryMeta(BaseModel):
+    shortname: str
+    title: str
+    parent: str  # short parent-spec label, e.g. "MSE" / "EME" / "WebCodecs"
+    repo: str  # where horizontal-review labels live (may be the parent's repo)
+    w3c_shortname: str
+    tr_url: str | None = None
+    hr_shortname: str | None = None  # horizontal-issue-tracker shortname (defaults to w3c_shortname)
+    entry_count: int | None = None  # registered entries (config-maintained fact)
+
+
+class RegistryStatus(BaseModel):
+    stage: RegistryStage
+    last_published: date | None = None
+
+
+class Registry(BaseModel):
+    meta: RegistryMeta
+    status: RegistryStatus
+    # Reuse SpecMilestones: the Draft→Snapshot gate needs wide review + the 5
+    # horizontal reviews; Snapshot→W3C Registry needs AC review.
+    milestones: SpecMilestones = Field(default_factory=SpecMilestones)
+
+
+class RegistryView(BaseModel):
+    """Everything the template renders for one registry row + its expand panel.
+
+    Shares the Stage / Next-gate / horizontal-review shape with SpecView; drops
+    the interop/WPT/pulse axes (N/A for a value registry); adds the entry count
+    as the registry-specific "living" signal.
+    """
+
+    registry: Registry
+    next_gate: str | None
+    readiness: str | None  # ready / blocked / unknown (None if terminal)
+    readiness_glyph: str | None
+    review_label: str  # e.g. "0/5" (resolved / considered horizontal reviews)
+    review_state: str  # done / partial / open / unknown (aggregate)
+    review_glyph: str  # colour+shape mark for the aggregate review state
+    blocker_rows: list[tuple[str, str, str | None, str, str]]  # (glyph, label, href, state, kind)
+    horizontal_rows: list[tuple[str, str, str]]  # (name, state, href)
+    stage_age_days: int | None
+    stage_age_label: str
+    # entry_count is read straight off registry.meta in the template (no copy).

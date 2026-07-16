@@ -17,6 +17,9 @@ from mediawg_dashboard.model import (
     HorizontalReviews,
     InteropStatus,
     Pulse,
+    Registry,
+    RegistryStage,
+    RegistryView,
     Spec,
     SpecMilestones,
     SpecView,
@@ -378,4 +381,82 @@ def spec_view(spec: Spec, today: date) -> SpecView:
         stage_age_days=stage_age_days,
         stage_age_label=format_duration_days(stage_age_days),
         pulse=pulse if has_health else None,
+    )
+
+
+# --- Registry Track gate model (Process §6.5.2) ---
+#
+# Parallel to the Rec track but simpler: Registry Draft → Candidate Snapshot
+# (gate = wide/horizontal review) → W3C Registry (gate = AC review). No
+# implementation/interop/WPT gate — registries document values, not behaviour.
+
+REGISTRY_NEXT_GATE: dict[str, str | None] = {
+    "Registry Draft": "Candidate Snapshot",
+    "Candidate Snapshot": "W3C Registry",
+    "W3C Registry": None,
+    "unknown": None,
+}
+
+
+def registry_next_gate(stage: RegistryStage) -> str | None:
+    """The next registry-track transition for ``stage`` (None if terminal)."""
+    return REGISTRY_NEXT_GATE.get(stage)
+
+
+# The gate requirements reuse the same declarative Requirement functions the Rec
+# track uses (horizontal last so its nested chips sit at the bottom).
+REGISTRY_GATE_REQUIREMENTS: dict[str, list[Requirement]] = {
+    "Candidate Snapshot": [_wide_review_req, _horizontal_req],
+    "W3C Registry": [_ac_review_req],
+}
+
+
+def registry_gate_requirements(gate: str | None) -> list[Requirement]:
+    """The requirement checks that gate the given registry transition."""
+    if gate is None:
+        return []
+    return REGISTRY_GATE_REQUIREMENTS.get(gate, [])
+
+
+def compute_registry_blockers(stage: RegistryStage, milestones: SpecMilestones) -> list[Blocker]:
+    """The blocker checklist for the registry's *next* gate (empty if terminal)."""
+    return [req(milestones) for req in registry_gate_requirements(registry_next_gate(stage))]
+
+
+def registry_gate_readiness(stage: RegistryStage, milestones: SpecMilestones) -> str | None:
+    """Readiness of the registry's next gate: ready / blocked / unknown."""
+    return _readiness(registry_next_gate(stage), compute_registry_blockers(stage, milestones))
+
+
+def registry_view(registry: Registry, today: date) -> RegistryView:
+    """Assemble the typed payload the template renders per registry (pure).
+
+    Mirrors ``spec_view`` for the shared Stage/Next-gate/horizontal shape but
+    over the registry track, and carries the entry count instead of interop.
+    """
+    stage = registry.status.stage
+    gate = registry_next_gate(stage)
+    blockers = compute_registry_blockers(stage, registry.milestones)
+    readiness = _readiness(gate, blockers)
+    hz = registry.milestones.horizontal
+    review_state, resolved, total = horizontal_summary(hz)
+    stage_age_days = compute_stage_age_days(registry.status.last_published, today)
+    repo = registry.meta.repo
+    return RegistryView(
+        registry=registry,
+        next_gate=gate,
+        readiness=readiness,
+        readiness_glyph=readiness_glyph(readiness),
+        review_label=f"{resolved}/{total}",
+        review_state=review_state,
+        review_glyph=blocker_glyph(review_state),
+        blocker_rows=[
+            (blocker_glyph(b.state), b.label, _blocker_href(b.kind, registry.meta), b.state, b.kind)
+            for b in blockers
+        ],
+        horizontal_rows=[
+            (name, getattr(hz, attr), links.horizontal_group_url(repo, attr)) for name, attr in HORIZONTAL_FIELDS
+        ],
+        stage_age_days=stage_age_days,
+        stage_age_label=format_duration_days(stage_age_days),
     )

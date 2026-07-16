@@ -1,13 +1,39 @@
 from datetime import date
 
 from mediawg_dashboard.model import (
+    HorizontalReviews,
     InteropStatus,
+    Registry,
+    RegistryMeta,
+    RegistryStatus,
     RepoStats,
     Spec,
     SpecMeta,
+    SpecMilestones,
     SpecStatus,
 )
-from mediawg_dashboard.render import render_index
+from mediawg_dashboard.render import render_index, summarize_registries
+
+
+def _registry(
+    shortname: str = "webcodecs-codec-registry",
+    stage: str = "Registry Draft",
+    entry_count: int | None = 13,
+    horizontal: HorizontalReviews | None = None,
+) -> Registry:
+    return Registry(
+        meta=RegistryMeta(
+            shortname=shortname,
+            title=shortname.replace("-", " ").title(),
+            parent="WebCodecs",
+            repo="w3c/webcodecs",
+            w3c_shortname=shortname,
+            tr_url=f"https://www.w3.org/TR/{shortname}/",
+            entry_count=entry_count,
+        ),
+        status=RegistryStatus(stage=stage, last_published=date(2026, 2, 12)),
+        milestones=SpecMilestones(horizontal=horizontal or HorizontalReviews()),
+    )
 
 
 def _spec(
@@ -258,3 +284,76 @@ def test_render_summary_includes_totals():
     assert ">84<" in html
     # Stage labels should appear in the summary strip.
     assert "WD" in html and "REC" in html
+
+
+# --- Registries section ---
+
+
+def test_render_no_registries_section_when_empty():
+    # No registries → no second table (nothing to show).
+    html = render_index([_spec()])
+    assert 'id="registries"' not in html
+
+
+def test_render_registries_section_appears():
+    html = render_index([_spec()], registries=[_registry()])
+    assert 'id="registries"' in html
+    assert "registry track" in html
+    assert "Webcodecs Codec Registry" in html
+
+
+def test_render_registries_are_independent_table():
+    # Two separate <table class="ledger"> with distinct ids so each sorts alone.
+    html = render_index([_spec("webcodecs")], registries=[_registry()])
+    assert 'id="specs"' in html
+    assert 'id="registries"' in html
+    # The generalized script wires every ledger, not just #specs.
+    assert 'querySelectorAll("table.ledger")' in html
+    assert 'getElementById("specs")' not in html
+
+
+def test_render_registry_shows_stage_and_next_gate():
+    html = render_index([_spec()], registries=[_registry(stage="Registry Draft")])
+    assert "Registry Draft" in html
+    # First level shows the short "→Snapshot"; the full name is in the panel/tooltip.
+    assert "→Snapshot" in html
+    assert "Candidate Snapshot" in html
+
+
+def test_render_registry_shows_entry_count():
+    html = render_index([_spec()], registries=[_registry(entry_count=13)])
+    assert "13" in html
+
+
+def test_render_registry_review_column():
+    h = HorizontalReviews(a11y="resolved", i18n="open", privacy="open", security="open", tag="open")
+    html = render_index([_spec()], registries=[_registry(horizontal=h)])
+    assert "1/5" in html
+
+
+def test_render_registry_panel_has_two_groups_no_interop():
+    html = render_index([_spec()], registries=[_registry()])
+    assert 'id="rpanel-webcodecs-codec-registry"' in html
+    assert "panel-two" in html
+    # A registry has no interop/WPT axis — the panel says so, and shows Entries.
+    assert "isn&#39;t shipped or tested" in html or "isn't shipped or tested" in html
+
+
+def test_render_registry_panel_starts_hidden():
+    html = render_index([_spec()], registries=[_registry()])
+    assert 'id="rpanel-webcodecs-codec-registry" hidden>' in html
+
+
+def test_summarize_registries_counts_advanced():
+    regs = [
+        _registry("a", stage="Registry Draft"),
+        _registry("b", stage="Candidate Snapshot"),
+        _registry("c", stage="W3C Registry"),
+    ]
+    s = summarize_registries(regs)
+    assert s["total"] == 3
+    assert s["at_snapshot"] == 2  # Snapshot + W3C Registry
+
+
+def test_summarize_registries_empty():
+    assert summarize_registries([]) == {"total": 0, "at_snapshot": 0}

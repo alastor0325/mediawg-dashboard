@@ -16,11 +16,21 @@ matrix, charter target vs slippage), Interoperability (per-engine support, WPT,
 coverage), and Activity & health (pulse, oldest blocking issue, issues/PRs,
 agenda/editors, backlog trend, links).
 
-Data sources: W3C API (stage/dates), GitHub API (issues, labels → horizontal
-reviews + agenda + blocking, commits → activity/editors), wpt.fyi (interop test
-scores), webstatus.dev (per-engine support), and neutral config facts (charter
-targets in `config/specs.yaml`). Any single source failing degrades that field
-to "unknown" rather than aborting the refresh.
+A second **Registries** ledger (registry track, Process §6.5) sits below the
+specs table: each of the 6 MediaWG registries shows **Stage · Next-gate
+(→ Candidate Snapshot) · horizontal Review (n/5) · Entries**, expanding to a
+two-group panel (Registry & next gate with the blocker checklist + 5 review
+chips; Table with entry count / pending). It shares the specs' stage/gate/review
+model but drops the interop/WPT/pulse axes (a registry documents values, it
+isn't shipped or tested). The two tables are fully independent — sorting one
+never reorders the other.
+
+Data sources: W3C API (stage/dates, incl. registry status), GitHub API (issues,
+labels → horizontal reviews + agenda + blocking, commits → activity/editors),
+wpt.fyi (interop test scores), webstatus.dev (per-engine support), and neutral
+config facts (charter targets + registry entry counts in `config/specs.yaml`).
+Any single source failing degrades that field to "unknown" rather than aborting
+the refresh.
 
 Design notes and phase plan: `docs/expandable-view-plan.md`,
 `docs/spec-process-flow.md`, `docs/spec-inventory.md`.
@@ -39,7 +49,7 @@ make clean         # removes generated output and caches
 
 ```
 src/mediawg_dashboard/   Python package
-config/specs.yaml        The 9 MediaWG specs tracked
+config/specs.yaml        The 9 MediaWG specs + 6 registries tracked
 templates/               Jinja2 templates (empty in Phase 0)
 tests/unit/              Unit tests, mock all I/O
 tests/integration/       Integration tests (real I/O), if any

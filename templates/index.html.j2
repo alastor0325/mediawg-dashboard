@@ -1,3 +1,20 @@
+{% macro blocker_checklist(row) %}
+{% if row.blocker_rows %}
+<div class="panel-sub">Blockers to {{ row.next_gate }}</div>
+<ul class="checklist">
+  {% for glyph, label, href, state, kind in row.blocker_rows %}
+  <li>
+    <span class="chk-mark mark-{{ state }}">{{ glyph }}</span>{% if href %}<a href="{{ href }}">{{ label }}</a>{% else %}{{ label }}{% endif %}
+    {% if kind == 'horizontal' %}
+    <div class="chips chips-sub">
+      {% for name, st, hhref in row.horizontal_rows %}<a class="chip chip-{{ st }}" href="{{ hhref }}">{{ name }} {{ st }}</a>{% endfor %}
+    </div>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% endmacro %}
 <!doctype html>
 <html lang="en">
 <head>
@@ -236,6 +253,11 @@
   .ledger col.col-next { width: 7.5rem; }
   .ledger col.col-interop { width: 11rem; }
   .ledger col.col-pulse { width: 10rem; }
+  /* Registry-ledger columns */
+  .ledger col.col-rstage { width: 8.5rem; }
+  .ledger col.col-rnext { width: 8.5rem; }  /* "→Snapshot" (full name in tooltip/panel) */
+  .ledger col.col-review { width: 6rem; }
+  .ledger col.col-entries { width: 4.5rem; }
   /* col-spec is left unset — it absorbs the remaining width. */
   /* Clip only the first-level cells if content exceeds the fixed width; never
      the expanded panel row (colspan cell). */
@@ -347,6 +369,33 @@
   .stage.REC::before, .stage.PR::before { background: var(--signal-green); }
   .stage.ED::before, .stage.NOTE::before { background: var(--signal-mute); }
   .stage.Discontinued::before { background: var(--signal-rose); }
+
+  /* Registry stage — like .stage but not uppercased (names contain spaces). */
+  .rstage {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    cursor: help;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--ink);
+    border-bottom: 1px dotted var(--rule-strong);
+    padding-bottom: 2px;
+    white-space: nowrap;
+  }
+  .rstage::before {
+    content: "";
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--signal-mute);
+    flex: none;
+  }
+  .rstage.rs-draft::before { background: var(--signal-amber); }
+  .rstage.rs-snapshot::before { background: var(--signal-blue); }
+  .rstage.rs-final::before { background: var(--signal-green); }
 
   /* Solid status-dot primitive — used by the Pulse mark (colour + reason text). */
   .hdot {
@@ -501,12 +550,28 @@
   .tag-ready { color: var(--signal-green); }
   .tag-blocked, .tag-warn { color: var(--signal-rose); }
   .tag-unknown { color: var(--muted); }
+
+  /* Registry review + entries cells (first level) */
+  td.review, td.entries {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
+  .review-count { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .review-mark { font-weight: 700; margin-left: 0.35rem; }
+  .review-mark.mark-done { color: var(--signal-green); }
+  .review-mark.mark-open { color: var(--signal-rose); }
+  .review-mark.mark-partial { color: var(--signal-amber); }
+  .review-mark.mark-unknown { color: var(--signal-mute); }
+  .entry-count { color: var(--ink); font-variant-numeric: tabular-nums; }
+  /* Registry panel has two groups, not three. */
+  .panel.panel-two { grid-template-columns: repeat(2, 1fr); }
   @media (max-width: 900px) {
     /* Only a NON-hidden panel shows; :not([hidden]) so the card rules below
        can't override the hidden attribute and force every panel open. */
     .ledger tbody tr.panel-row:not([hidden]) { display: block; }
     .ledger tbody tr.panel-row > td { display: block; padding: 0 0 1rem; }
-    .panel { grid-template-columns: 1fr; gap: 1rem; }
+    .panel, .panel.panel-two { grid-template-columns: 1fr; gap: 1rem; }
   }
 
   .dash { color: var(--rule-strong); }
@@ -813,21 +878,7 @@
               <dt>Stage</dt><dd>{{ spec.status.stage }} · in stage {{ row.stage_age_label }}{% if spec.status.last_tr_publication %} · last /TR/ {% if spec.meta.tr_url %}<a href="{{ spec.meta.tr_url }}">{{ spec.status.last_tr_publication }}</a>{% else %}{{ spec.status.last_tr_publication }}{% endif %}{% endif %}</dd>
               <dt>Next gate</dt><dd>{% if row.next_gate %}→ {{ row.next_gate }} <span class="tag tag-{{ row.readiness }}">{{ row.readiness }}</span>{% if spec.health.charter_overdue %} · <a class="tag tag-warn" href="{{ charter_url }}" title="charter target {{ spec.health.charter_target }} — overdue">behind charter</a>{% endif %}{% else %}terminal{% endif %}</dd>
             </dl>
-            {% if row.blocker_rows %}
-            <div class="panel-sub">Blockers to {{ row.next_gate }}</div>
-            <ul class="checklist">
-              {% for glyph, label, href, state, kind in row.blocker_rows %}
-              <li>
-                <span class="chk-mark mark-{{ state }}">{{ glyph }}</span>{% if href %}<a href="{{ href }}">{{ label }}</a>{% else %}{{ label }}{% endif %}
-                {% if kind == 'horizontal' %}
-                <div class="chips chips-sub">
-                  {% for name, st, hhref in row.horizontal_rows %}<a class="chip chip-{{ st }}" href="{{ hhref }}">{{ name }} {{ st }}</a>{% endfor %}
-                </div>
-                {% endif %}
-              </li>
-              {% endfor %}
-            </ul>
-            {% endif %}
+            {{ blocker_checklist(row) }}
           </div>
           <div class="panel-group">
             <div class="panel-h">Interoperability</div>
@@ -866,6 +917,92 @@
   </tbody>
   </table>
 
+  {% if registry_rows %}
+  <div class="section-head">
+    <span class="section-label">— Registries · registry track</span>
+    <span class="section-rule"></span>
+    <span class="section-meta">Registry Draft → Candidate Snapshot → W3C Registry · {{ registry_summary.at_snapshot }} of {{ registry_summary.total }} past Registry Draft · click a row to expand</span>
+  </div>
+
+  <table class="ledger" id="registries">
+  <colgroup>
+    <col class="col-num">
+    <col class="col-spec">
+    <col class="col-rstage">
+    <col class="col-rnext">
+    <col class="col-review">
+    <col class="col-entries">
+  </colgroup>
+  <thead>
+    <tr>
+      <th aria-hidden="true"></th>
+      <th>Registry <span class="sort-glyph">⇅</span></th>
+      <th>Stage <span class="sort-glyph">⇅</span></th>
+      <th>Next <span class="sort-glyph">⇅</span></th>
+      <th>Review <span class="sort-glyph">⇅</span></th>
+      <th class="num">Entries <span class="sort-glyph">⇅</span></th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for row in registry_rows %}
+    {% set reg = row.registry %}
+    {% set rs_class = {'Registry Draft':'rs-draft','Candidate Snapshot':'rs-snapshot','W3C Registry':'rs-final'}.get(reg.status.stage, 'rs-unknown') %}
+    <tr class="spec-row" data-panel="rpanel-{{ reg.meta.shortname }}" tabindex="0" aria-expanded="false" aria-controls="rpanel-{{ reg.meta.shortname }}">
+      <td class="rownum" data-label="№"><span class="caret" aria-hidden="true">▸</span>{{ "%02d" | format(loop.index) }}</td>
+      <td class="spec" data-label="Registry">
+        {% if reg.meta.tr_url %}
+          <a class="spec-title" href="{{ reg.meta.tr_url }}" onclick="event.stopPropagation()">{{ reg.meta.title }}</a>
+        {% else %}
+          <span class="spec-title">{{ reg.meta.title }}</span>
+        {% endif %}
+        <div class="spec-sub">{{ reg.meta.parent }} · <a href="https://github.com/{{ reg.meta.repo }}" onclick="event.stopPropagation()">{{ reg.meta.repo }}</a></div>
+      </td>
+      <td data-label="Stage">
+        <span class="rstage {{ rs_class }}" title="{{ registry_stage_descriptions[reg.status.stage] }}">{{ reg.status.stage }}</span>
+      </td>
+      <td class="gate" data-label="Next gate">
+        {% if row.next_gate %}
+          {% set short_gate = 'Snapshot' if row.next_gate == 'Candidate Snapshot' else row.next_gate %}
+          <span class="cell-value"><span class="gate-name" title="→ {{ row.next_gate }}">→{{ short_gate }}</span> <span class="gate-mark gate-{{ row.readiness }}" title="next gate {{ row.readiness }}">{{ row.readiness_glyph }}</span></span>
+        {% else %}
+          <span class="dash">—</span>
+        {% endif %}
+      </td>
+      <td class="review" data-label="Review">
+        <span class="cell-value" title="{{ row.review_label }} horizontal reviews resolved ({{ row.review_state }})"><span class="review-count">{{ row.review_label }}</span><span class="review-mark mark-{{ row.review_state }}">{{ row.review_glyph }}</span></span>
+      </td>
+      <td class="entries num" data-label="Entries">
+        <span class="cell-value"><span class="entry-count">{% if reg.meta.entry_count is not none %}{{ reg.meta.entry_count }}{% else %}<span class="dash">—</span>{% endif %}</span></span>
+      </td>
+    </tr>
+    <tr class="panel-row" id="rpanel-{{ reg.meta.shortname }}" hidden>
+      <td colspan="6">
+        <div class="panel panel-two">
+          <div class="panel-group">
+            <div class="panel-h">Registry &amp; next gate</div>
+            <dl class="panel-kv">
+              <dt>Stage</dt><dd>{{ reg.status.stage }}{% if reg.status.last_published %} · last published {% if reg.meta.tr_url %}<a href="{{ reg.meta.tr_url }}">{{ reg.status.last_published }}</a>{% else %}{{ reg.status.last_published }}{% endif %}{% if row.stage_age_label != '—' %} · {{ row.stage_age_label }} in stage{% endif %}{% endif %}</dd>
+              <dt>Parent</dt><dd>{{ reg.meta.parent }}</dd>
+              <dt>Next gate</dt><dd>{% if row.next_gate %}→ {{ row.next_gate }} <span class="tag tag-{{ row.readiness }}">{{ row.readiness }}</span>{% else %}terminal{% endif %}</dd>
+            </dl>
+            {{ blocker_checklist(row) }}
+          </div>
+          <div class="panel-group">
+            <div class="panel-h">Table</div>
+            <dl class="panel-kv">
+              <dt>Entries</dt><dd>{% if reg.meta.entry_count is not none %}{% if reg.meta.tr_url %}<a href="{{ reg.meta.tr_url }}">{{ reg.meta.entry_count }} registered</a>{% else %}{{ reg.meta.entry_count }} registered{% endif %}{% else %}—{% endif %}</dd>
+              <dt title="proposals for new entries (open registration requests)">Pending</dt><dd><a href="https://github.com/{{ reg.meta.repo }}/pulls">open PRs ↗</a></dd>
+            </dl>
+            <div class="panel-sub">No interop / WPT axis — a registry documents values, it isn't shipped or tested.</div>
+          </div>
+        </div>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+  </table>
+  {% endif %}
+
   <footer>
     <p>A read-only summary compiled from public sources: <a href="https://api.w3.org/">api.w3.org</a>, <a href="https://api.github.com/">api.github.com</a>, and <a href="https://wpt.fyi/">wpt.fyi</a>. Refreshes once daily via GitHub Actions.</p>
     <p>Source &amp; commit history: <a href="https://github.com/alastor0325/mediawg-dashboard">github.com/alastor0325/mediawg-dashboard</a>.</p>
@@ -882,48 +1019,51 @@
 
 <script>
 (function () {
-  const table = document.getElementById("specs");
-  if (!table) return;
-  const tbody = table.querySelector("tbody");
+  // Wire each ledger independently: its own tbody, its own sort state. Sorting
+  // one table never touches another (the specs and registries tables are
+  // fully independent — each closure captures only its own table/tbody).
+  document.querySelectorAll("table.ledger").forEach(table => {
+    const tbody = table.querySelector("tbody");
+    if (!tbody) return;
 
-  // Expand / collapse the detail panel for a spec row (click or keyboard).
-  tbody.querySelectorAll("tr.spec-row").forEach(row => {
-    const toggle = () => {
-      const panel = document.getElementById(row.dataset.panel);
-      if (!panel) return;
-      const willOpen = panel.hasAttribute("hidden");
-      if (willOpen) panel.removeAttribute("hidden"); else panel.setAttribute("hidden", "");
-      row.classList.toggle("open", willOpen);
-      row.setAttribute("aria-expanded", willOpen ? "true" : "false");
-    };
-    row.addEventListener("click", toggle);
-    row.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+    // Expand / collapse the detail panel for a row (click or keyboard).
+    tbody.querySelectorAll("tr.spec-row").forEach(row => {
+      const toggle = () => {
+        const panel = document.getElementById(row.dataset.panel);
+        if (!panel) return;
+        const willOpen = panel.hasAttribute("hidden");
+        if (willOpen) panel.removeAttribute("hidden"); else panel.setAttribute("hidden", "");
+        row.classList.toggle("open", willOpen);
+        row.setAttribute("aria-expanded", willOpen ? "true" : "false");
+      };
+      row.addEventListener("click", toggle);
+      row.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+      });
     });
-  });
 
-  // Sort by column, keeping each panel row paired directly under its spec row.
-  const headers = table.querySelectorAll("thead th");
-  headers.forEach((th, idx) => {
-    if (th.getAttribute("aria-hidden") === "true") return;
-    let asc = true;
-    th.addEventListener("click", () => {
-      const specRows = Array.from(tbody.querySelectorAll("tr.spec-row"));
-      specRows.sort((a, b) => {
-        const av = a.cells[idx].textContent.trim();
-        const bv = b.cells[idx].textContent.trim();
-        const an = parseFloat(av.replace(/,/g, ""));
-        const bn = parseFloat(bv.replace(/,/g, ""));
-        if (!isNaN(an) && !isNaN(bn)) return asc ? an - bn : bn - an;
-        return asc ? av.localeCompare(bv) : bv.localeCompare(av);
+    // Sort by column, keeping each panel row paired directly under its row.
+    table.querySelectorAll("thead th").forEach((th, idx) => {
+      if (th.getAttribute("aria-hidden") === "true") return;
+      let asc = true;
+      th.addEventListener("click", () => {
+        const rows = Array.from(tbody.querySelectorAll("tr.spec-row"));
+        rows.sort((a, b) => {
+          const av = a.cells[idx].textContent.trim();
+          const bv = b.cells[idx].textContent.trim();
+          const an = parseFloat(av.replace(/,/g, ""));
+          const bn = parseFloat(bv.replace(/,/g, ""));
+          if (!isNaN(an) && !isNaN(bn)) return asc ? an - bn : bn - an;
+          return asc ? av.localeCompare(bv) : bv.localeCompare(av);
+        });
+        rows.forEach(r => {
+          r.style.animation = "none";
+          tbody.appendChild(r);
+          const panel = document.getElementById(r.dataset.panel);
+          if (panel) tbody.appendChild(panel);
+        });
+        asc = !asc;
       });
-      specRows.forEach(r => {
-        r.style.animation = "none";
-        tbody.appendChild(r);
-        const panel = document.getElementById(r.dataset.panel);
-        if (panel) tbody.appendChild(panel);
-      });
-      asc = !asc;
     });
   });
 })();

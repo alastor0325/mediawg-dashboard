@@ -8,13 +8,21 @@ from typing import Callable, TypeVar
 import httpx
 
 from mediawg_dashboard.analysis import trend_direction
-from mediawg_dashboard.assemble import build_spec
-from mediawg_dashboard.config import load_specs
+from mediawg_dashboard.assemble import build_registry, build_spec, registry_owns_repo
+from mediawg_dashboard.config import load_registries, load_specs
 from mediawg_dashboard.fetch.github import fetch_open_issues, fetch_recent_commits
 from mediawg_dashboard.fetch.support import fetch_support
-from mediawg_dashboard.fetch.w3c import fetch_spec_status
+from mediawg_dashboard.fetch.w3c import fetch_registry_status, fetch_spec_status
 from mediawg_dashboard.fetch.wpt import fetch_experimental_run_ids, fetch_wpt_scores
-from mediawg_dashboard.model import InteropStatus, Spec, SpecMeta, SpecStatus
+from mediawg_dashboard.model import (
+    InteropStatus,
+    Registry,
+    RegistryMeta,
+    RegistryStatus,
+    Spec,
+    SpecMeta,
+    SpecStatus,
+)
 from mediawg_dashboard.render import render_index
 from mediawg_dashboard.snapshots import issue_series, read_history, record_snapshot, write_history
 
@@ -65,8 +73,27 @@ def _fetch_one(
     return spec, raw_issues is not None
 
 
+def _fetch_registry(meta: RegistryMeta, client: httpx.Client) -> Registry:
+    """Fetch + assemble one registry (stage from W3C API; horizontal from its own
+    repo's labels). Registries sharing a parent spec's repo skip the issue fetch —
+    the parent's labels describe the spec, not the registry (and would otherwise
+    re-fetch a repo the spec loop already pulled)."""
+    status = _safe(
+        "registry-w3c",
+        lambda: fetch_registry_status(meta.w3c_shortname, client=client),
+        RegistryStatus(stage="unknown"),
+    )
+    raw_issues = (
+        _safe("registry-issues", lambda: fetch_open_issues(meta.repo, client=client), [])
+        if registry_owns_repo(meta)
+        else []
+    )
+    return build_registry(meta, status, raw_issues or [])
+
+
 def cmd_refresh() -> int:
     metas = load_specs(CONFIG_PATH)
+    registry_metas = load_registries(CONFIG_PATH)
     now = datetime.now(timezone.utc)
     specs: list[Spec] = []
     ok_counts: dict[str, int] = {}
@@ -81,6 +108,13 @@ def cmd_refresh() -> int:
                 ok_counts[meta.shortname] = spec.stats.open_issues_count
             print(f" {time.time()-t0:.1f}s", file=sys.stderr)
 
+        registries: list[Registry] = []
+        for rmeta in registry_metas:
+            t0 = time.time()
+            print(f"  fetching registry {rmeta.shortname}…", end="", flush=True, file=sys.stderr)
+            registries.append(_fetch_registry(rmeta, client))
+            print(f" {time.time()-t0:.1f}s", file=sys.stderr)
+
     # Record today's snapshot (only for specs whose issue fetch succeeded, so a
     # fetch outage never looks like a backlog crash) and derive the trend.
     history = read_history(HISTORY_PATH)
@@ -92,11 +126,14 @@ def cmd_refresh() -> int:
         spec.health.backlog_trend = trend_direction(series) if len(series) >= 2 else None
     write_history(HISTORY_PATH, history)
 
-    html = render_index(specs, now)
+    html = render_index(specs, now, registries=registries)
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_PATH.write_text(html)
     static_copied = copy_static(STATIC_DIR, OUTPUT_PATH.parent)
-    print(f"wrote {OUTPUT_PATH} ({len(specs)} specs, {len(static_copied)} static files)")
+    print(
+        f"wrote {OUTPUT_PATH} ({len(specs)} specs, {len(registries)} registries, "
+        f"{len(static_copied)} static files)"
+    )
     return 0
 
 

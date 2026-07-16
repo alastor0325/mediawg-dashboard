@@ -34,7 +34,7 @@ Plus a roll-up header line (e.g. `REC 0 · CR 0 · WD/FPWD 8 · ED 1 · shipping
 - **P3 — Expand panel UI:** `<details>`-based progressive disclosure, the 3 groups; tests.
 - **P4 — Fetchers:** wpt.fyi + browser-support + GitHub label queries + config charter/process facts; unit tests mock I/O.
 - **P5 — Trends + wire-up:** daily snapshot persistence (backlog/WPT deltas), wire fetchers into `cmd_refresh`, update README. *(P1–P5 shipped.)*
-- **P6 — Registries section** (registry track). *← proposed; see below.*
+- **P6 — Registries section** (registry track). *(shipped — see below.)*
 
 Each task runs the full mediawg-dashboard Dev Loop (pure fns → tests → /simplify → commit+push).
 
@@ -82,10 +82,14 @@ parent spec, last published, entry count + pending registrations, links.
 ### Data sources
 - **Stage + last-published:** W3C API (`/specifications/<shortname>/versions/latest`),
   mapping registry statuses → `RegistryStage`.
-- **Horizontal review status:** same as specs — in-repo `*-tracker`/
-  `*-needs-resolution` labels and the per-spec `review.html?shortname=` tracker
-  (resolve each registry's tracker shortname; the EME/MSE ones share their
-  parent's repo, so labels may live on the parent repo — confirm per registry).
+- **Horizontal review status:** same label parser as specs, but **only for a
+  registry with its own repo** (`registry_owns_repo`, i.e. repo named after the
+  shortname — currently just MSE Byte Stream Format). Registries that share a
+  parent spec's repo (the EME ×3 + WebCodecs ×2) skip the label fetch and read
+  `unknown`, because the parent repo's labels describe the *spec*, not the
+  registry — inferring from them would misattribute (e.g. show WebCodecs's
+  privacy review on the codec registry). The horizontal blocker links to the
+  per-registry `review.html?shortname=` tracker for the real status.
 - **Entry count:** parse the registry table (row count) from the TR/ED page.
 - **Pending registrations** (optional v1): open PRs/issues proposing new entries.
 - **Config:** new `registries:` list in `config/specs.yaml` (or a sibling file):
@@ -111,9 +115,21 @@ parent spec, last published, entry count + pending registrations, links.
 - **P6b** — fetchers (stage, horizontal, entry-count) + `build_registry` + tests.
 - **P6c** — render the Registries section + tests; refresh + deploy.
 
-### Open questions (for confirmation before P6a)
-1. **Placement:** second section on the same page (recommended) vs a Specs/Registries tab.
-2. **Review column:** full 5-group chips (consistent with specs) vs a single
-   "wide review: requested/in-progress/done" state.
-3. **Pending registrations:** include in v1, or defer (entry count only)?
+### Decisions taken (shipped v1)
+1. **Placement:** second section on the same page, below the specs ledger. The
+   two `table.ledger`s are wired independently in JS (per-table closures over
+   their own tbody), so sorting one never reorders the other.
+2. **Review column:** first level shows the aggregate `n/5` + colour/glyph mark;
+   the panel nests the full 5-group chips under the horizontal blocker (same as
+   specs).
+3. **Pending registrations:** deferred — the panel links "open PRs" as the
+   pending-proposals proxy; entry count is the primary registry signal.
+
+### Follow-ups (not in v1)
+- **Entry counts** are config-maintained facts (`entry_count`, verified
+  2026-07-16) rather than scraped live; a per-page table-row parser could
+  automate them later.
+- **wide_review_complete / ac_review_done** stay unknown (can't be proven from
+  open issues); a manual/config or tracker signal could set them once the bulk
+  wide-review request resolves.
 </content>

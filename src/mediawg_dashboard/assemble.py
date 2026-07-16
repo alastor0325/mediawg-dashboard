@@ -14,6 +14,9 @@ from mediawg_dashboard.fetch.github import (
 )
 from mediawg_dashboard.model import (
     InteropStatus,
+    Registry,
+    RegistryMeta,
+    RegistryStatus,
     Spec,
     SpecHealth,
     SpecMeta,
@@ -58,3 +61,32 @@ def build_spec(
     )
 
     return Spec(meta=meta, status=status, stats=stats, milestones=milestones, interop=interop, health=health)
+
+
+def registry_owns_repo(meta: RegistryMeta) -> bool:
+    """True if the registry has its own repo (vs sharing a parent spec's).
+
+    Only a registry-specific repo's horizontal-review labels describe the
+    *registry*; a shared parent repo's labels describe the parent spec, so
+    inferring registry review state from them would misattribute (e.g. show the
+    WebCodecs spec's privacy review on the codec registry). Heuristic: the repo
+    is named after the registry's own shortname.
+    """
+    return meta.repo == f"w3c/{meta.shortname}"
+
+
+def build_registry(
+    meta: RegistryMeta,
+    status: RegistryStatus,
+    issues: list[dict],
+) -> Registry:
+    """Assemble one Registry from already-fetched raw data (no I/O).
+
+    Horizontal-review state comes from the registry's own-repo labels (same
+    parser as specs); callers pass ``[]`` for a shared parent repo so review
+    stays 'unknown' rather than borrowing the parent's state. ``wide_review`` /
+    ``ac_review`` stay unknown — neither can be proven from open issues alone, so
+    the gate honestly reads as not-yet-met.
+    """
+    milestones = SpecMilestones(horizontal=parse_horizontal_reviews(issues))
+    return Registry(meta=meta, status=status, milestones=milestones)

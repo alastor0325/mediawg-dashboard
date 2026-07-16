@@ -4,8 +4,13 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from mediawg_dashboard.analysis import shipping_cross_engine, spec_view
-from mediawg_dashboard.model import STAGE_DESCRIPTIONS, Spec
+from mediawg_dashboard.analysis import registry_view, shipping_cross_engine, spec_view
+from mediawg_dashboard.model import (
+    REGISTRY_STAGE_DESCRIPTIONS,
+    STAGE_DESCRIPTIONS,
+    Registry,
+    Spec,
+)
 
 TEMPLATES_DIR = Path(__file__).resolve().parent.parent.parent / "templates"
 
@@ -33,15 +38,34 @@ def summarize(specs: list[Spec]) -> dict:
     }
 
 
-def render_index(specs: list[Spec], refreshed_at: datetime | None = None) -> str:
+def summarize_registries(registries: list[Registry]) -> dict:
+    at_snapshot = sum(
+        1 for r in registries if r.status.stage in ("Candidate Snapshot", "W3C Registry")
+    )
+    return {
+        "total": len(registries),
+        "at_snapshot": at_snapshot,  # advanced past Registry Draft
+    }
+
+
+def render_index(
+    specs: list[Spec],
+    refreshed_at: datetime | None = None,
+    registries: list[Registry] | None = None,
+) -> str:
     refreshed_at = refreshed_at or datetime.now(timezone.utc)
+    registries = registries or []
     rows = [spec_view(spec, refreshed_at.date()) for spec in specs]
+    registry_rows = [registry_view(reg, refreshed_at.date()) for reg in registries]
     template = _env().get_template("index.html.j2")
     return template.render(
         rows=rows,
+        registry_rows=registry_rows,
         refreshed_iso=refreshed_at.strftime("%Y-%m-%d %H:%M UTC"),
         summary=summarize(specs),
+        registry_summary=summarize_registries(registries),
         stage_descriptions=STAGE_DESCRIPTIONS,
+        registry_stage_descriptions=REGISTRY_STAGE_DESCRIPTIONS,
         wpt_fyi_base=WPT_FYI_BASE,
         charter_url=CHARTER_URL,
     )

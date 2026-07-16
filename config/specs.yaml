@@ -75,3 +75,52 @@ specs:
     wpt_path: /webcodecs/
     bcd_path: api.VideoDecoder
     charter_target: CR Q1 2026
+
+# Registry-track deliverables (Process §6.5) — a separate, simpler lifecycle:
+# Registry Draft → Candidate Snapshot → W3C Registry. Stage + last-published are
+# fetched live from the W3C API; horizontal-review state from the repo's labels.
+# entry_count is a maintained fact (registered entries, verified 2026-07-16).
+# repo = where horizontal labels live (EME/WebCodecs registries share the parent
+# repo; MSE's registry has its own).
+registries:
+  - shortname: mse-byte-stream-format-registry
+    title: MSE Byte Stream Format
+    parent: MSE
+    repo: w3c/mse-byte-stream-format-registry
+    tr: https://www.w3.org/TR/mse-byte-stream-format-registry/
+    entry_count: 4
+
+  - shortname: eme-initdata-registry
+    title: EME Initialization Data Format
+    parent: EME
+    repo: w3c/encrypted-media
+    tr: https://www.w3.org/TR/eme-initdata-registry/
+    entry_count: 3
+
+  - shortname: eme-stream-registry
+    title: EME Stream Format
+    parent: EME
+    repo: w3c/encrypted-media
+    tr: https://www.w3.org/TR/eme-stream-registry/
+    entry_count: 2
+
+  - shortname: eme-hdcp-version-registry
+    title: EME HDCP Version
+    parent: EME
+    repo: w3c/encrypted-media
+    tr: https://www.w3.org/TR/eme-hdcp-version-registry/
+    entry_count: 9
+
+  - shortname: webcodecs-codec-registry
+    title: WebCodecs Codec
+    parent: WebCodecs
+    repo: w3c/webcodecs
+    tr: https://www.w3.org/TR/webcodecs-codec-registry/
+    entry_count: 13
+
+  - shortname: webcodecs-video-frame-metadata-registry
+    title: WebCodecs VideoFrame Metadata
+    parent: WebCodecs
+    repo: w3c/webcodecs
+    tr: https://www.w3.org/TR/webcodecs-video-frame-metadata-registry/
+    entry_count: 6
