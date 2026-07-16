@@ -1020,10 +1020,10 @@
               {% if spec.status.last_tr_publication %}
               <dt>Last published</dt><dd>{% if spec.meta.tr_url %}<a href="{{ spec.meta.tr_url }}">{{ spec.status.last_tr_publication }}</a>{% else %}{{ spec.status.last_tr_publication }}{% endif %}{% if row.stage_age_label != '—' %} ({{ row.stage_age_label }} ago){% endif %}</dd>
               {% endif %}
-              <dt>Next gate</dt><dd>{% if row.next_gate %}→ {{ row.next_gate }} <span class="tag tag-{{ row.readiness }}">{{ row.readiness }}</span>{% if spec.health.charter_overdue %} · <a class="tag tag-warn" href="{{ charter_url }}" title="charter target {{ spec.health.charter_target }} — overdue">behind charter</a>{% endif %}{% else %}terminal{% endif %}</dd>
               {% if row.published_rec %}
-              <dt title="a Recommendation was already published; the current work is a revision">Published</dt><dd>{% if row.published_rec_href %}<a href="{{ row.published_rec_href }}">Recommendation {{ row.published_rec }}</a>{% else %}Recommendation {{ row.published_rec }}{% endif %}</dd>
+              <dt title="already published as a W3C Recommendation; the current work is a revision">REC published</dt><dd>{% if row.published_rec_href %}<a href="{{ row.published_rec_href }}">{{ row.published_rec }}</a>{% else %}{{ row.published_rec }}{% endif %}</dd>
               {% endif %}
+              <dt>Next gate</dt><dd>{% if row.next_gate %}→ {{ row.next_gate }} <span class="tag tag-{{ row.readiness }}">{{ row.readiness }}</span>{% if spec.health.charter_overdue %} · <a class="tag tag-warn" href="{{ charter_url }}" title="charter target {{ spec.health.charter_target }} — overdue">behind charter</a>{% endif %}{% else %}terminal{% endif %}</dd>
             </dl>
             {{ blocker_checklist(row) }}
           </div>
