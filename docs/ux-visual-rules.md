@@ -23,12 +23,13 @@ status. "Bad" is always `--signal-rose`, not accent.
 Every status is encoded by **both** a colour and a distinct glyph, so it survives
 colour-blindness and greyscale.
 
-| State | Support | Blocker checklist | Meaning |
+| State | Support | Blocker / review chip | Meaning |
 |---|---|---|---|
-| good | `●` green | `✔` green | shipped / done |
-| caution | `◐` amber | `◐` amber | partial |
+| good | `●` green | `✔` green | shipped / done / resolved |
+| caution | `◐` amber | `◐` amber | partial / requested / in-progress |
 | bad | `○` red | `✘` red | none / open |
-| unknown | `·` grey | `·` grey | no data |
+| n/a | — | `–` grey (dashed) | not applicable |
+| unknown | `·` grey | `·` grey (dashed) | no data |
 
 - **Support tri-dot** (first level + panel): three engines, always **alphabetical
   Chromium / Firefox / Safari**, equal weight, each a coloured glyph + the engine
@@ -85,6 +86,10 @@ logos, no "reference browser", no "outlier/laggard" language. (See the
   per-group chips directly beneath it as a sub-level. Never a separate top-level
   "Horizontal reviews" section (that made it ambiguous whether it's a blocker).
   Items at the same hierarchy level = same section; breakdowns = sub-level.
+  Each per-group chip carries **colour + glyph + the state word** (all three, so
+  the state is obvious), laid out in an even grid, and **links to the actual
+  review issue** in that group's request repo (the same source the state is read
+  from) — not to an empty label search on the spec's own repo.
 - Panel = three groups, each an aligned key/value grid (`dl.panel-kv`,
   `max-content 1fr`) so labels/values line up wide (3-up) and narrow (stacked).
 - Show a signal only when it's meaningful (e.g. backlog trend needs ≥2 snapshots;

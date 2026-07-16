@@ -124,12 +124,15 @@ def test_registry_view_stage_age_from_last_published():
     assert view.stage_age_days == 10
 
 
-def test_registry_view_horizontal_rows_link_to_repo():
+def test_registry_view_horizontal_rows_link_to_request_repos():
     view = registry_view(_registry(), TODAY)
     assert len(view.horizontal_rows) == 5
     names = [name for name, _, _ in view.horizontal_rows]
     assert names == ["a11y", "i18n", "privacy", "security", "TAG"]
-    assert all("w3c/webcodecs" in href for _, _, href in view.horizontal_rows)
+    # With no known issue URL, chips fall back to each group's request repo.
+    hrefs = [href for _, _, href in view.horizontal_rows]
+    assert "w3c/a11y-request/issues" in hrefs[0]
+    assert "w3ctag/design-reviews/issues" in hrefs[4]
 
 
 def test_registry_view_terminal_has_no_next_gate():

@@ -394,9 +394,20 @@ def test_spec_view_engine_rows_no_mdn_url_has_no_link():
 def test_spec_view_horizontal_rows_ordered_and_linked():
     v = spec_view(_spec(), date(2026, 7, 13))
     assert [name for name, *_ in v.horizontal_rows] == ["a11y", "i18n", "privacy", "security", "TAG"]
-    # Each horizontal chip links to its group's GitHub issue filter.
+    # With no known issue URL, the chip falls back to the group's request repo.
     _, _, href = v.horizontal_rows[0]
-    assert "w3c/x/issues" in href and "a11y-needs-resolution" in href
+    assert "w3c/a11y-request/issues" in href
+
+
+def test_spec_view_horizontal_chip_deep_links_to_actual_issue():
+    spec = _spec(
+        milestones=SpecMilestones(
+            horizontal_urls={"a11y": "https://github.com/w3c/a11y-request/issues/39"}
+        )
+    )
+    v = spec_view(spec, date(2026, 7, 13))
+    a11y_href = v.horizontal_rows[0][2]
+    assert a11y_href == "https://github.com/w3c/a11y-request/issues/39"
 
 
 def test_spec_view_blocker_rows_include_horizontal_and_link_venues():

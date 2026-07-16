@@ -10,6 +10,17 @@ HR_TRACKER = "https://w3c.github.io/horizontal-issue-tracker/review.html"
 # The horizontal-review groups and the label suffixes W3C uses.
 _HGROUPS = ("a11y", "i18n", "privacy", "security", "tag")
 
+# The horizontal groups' *request* repos — where each spec's review is actually
+# filed (and where the review state is read from). Single source of truth,
+# imported by fetch/horizontal.py.
+HR_REQUEST_REPOS: dict[str, str] = {
+    "a11y": "w3c/a11y-request",
+    "i18n": "w3c/i18n-request",
+    "privacy": "w3cping/privacy-request",
+    "security": "w3c/security-request",
+    "tag": "w3ctag/design-reviews",
+}
+
 
 def issues_search_url(repo: str, query: str) -> str:
     """A GitHub issue-search URL for ``repo`` with a raw search ``query``."""
@@ -27,10 +38,13 @@ def needs_resolution_url(repo: str) -> str:
     return issues_search_url(repo, f"is:open is:issue label:{labels}")
 
 
-def horizontal_group_url(repo: str, group: str) -> str:
-    """Issues for one horizontal group in the spec's own repo — tracker +
-    needs-resolution labels, open AND closed so resolved reviews still show."""
-    return issues_search_url(repo, f"is:issue label:{group}-tracker,{group}-needs-resolution")
+def horizontal_request_url(group: str, query: str) -> str | None:
+    """Fallback link for a horizontal-review chip: the group's request repo
+    filtered to this spec (used when the exact review issue URL isn't known)."""
+    repo = HR_REQUEST_REPOS.get(group)
+    if not repo:
+        return None
+    return issues_search_url(repo, f'"{query}" in:title is:issue')
 
 
 def hr_review_url(hr_shortname: str) -> str:

@@ -3,27 +3,29 @@
 The real, authoritative state of a spec's horizontal reviews lives in each
 group's *request* repo (one issue per spec), NOT as ``*-tracker`` labels on the
 spec's own repo (those are frequently empty). One cross-repo GitHub search per
-spec fetches all five at once; the pure classifier maps each to a ReviewState.
+spec fetches all five at once; the pure classifier maps each to a ReviewState
+and keeps the actual issue URL so the chip can deep-link to it.
 """
 
 from contextlib import nullcontext
+from typing import NamedTuple
 
 import httpx
 
 from mediawg_dashboard.fetch.github import _auth_headers
+from mediawg_dashboard.links import HR_REQUEST_REPOS
 from mediawg_dashboard.model import HorizontalReviews
 
 GITHUB_API_BASE = "https://api.github.com"
 
-# horizontal group -> the repo where its per-spec review requests are filed.
-HR_REQUEST_REPOS: dict[str, str] = {
-    "a11y": "w3c/a11y-request",
-    "i18n": "w3c/i18n-request",
-    "privacy": "w3cping/privacy-request",
-    "security": "w3c/security-request",
-    "tag": "w3ctag/design-reviews",
-}
 _GROUP_BY_REPO = {repo: group for group, repo in HR_REQUEST_REPOS.items()}
+
+
+class HorizontalResult(NamedTuple):
+    """The 5 review states + the actual request-issue URL behind each."""
+
+    reviews: HorizontalReviews
+    urls: dict[str, str]  # group -> the request-repo issue that set its state
 
 
 def hr_search_query(title: str) -> str:
@@ -47,13 +49,12 @@ def _review_state(issue: dict) -> str:
     return "resolved" if issue.get("state") == "closed" else "requested"
 
 
-def classify_reviews(items: list[dict]) -> HorizontalReviews:
-    """Map cross-repo search results to the 5 horizontal-review states (pure).
+def classify_reviews(items: list[dict]) -> HorizontalResult:
+    """Map cross-repo search results to the 5 states + their issue URLs (pure).
 
     Buckets each issue by its repo's group, then for each group uses the
-    most-recent issue (highest number) as the current status. A group with no
-    matching issue stays ``unknown`` (we can't tell not-requested from a
-    title mismatch).
+    most-recent issue (highest number) as the current status and its link. A
+    group with no matching issue stays ``unknown`` with no URL.
     """
     by_group: dict[str, list[dict]] = {}
     for it in items:
@@ -63,6 +64,7 @@ def classify_reviews(items: list[dict]) -> HorizontalReviews:
         by_group.setdefault(group, []).append(it)
 
     states: dict[str, str] = {}
+    urls: dict[str, str] = {}
     for group in HR_REQUEST_REPOS:
         issues = by_group.get(group)
         if not issues:
@@ -70,10 +72,12 @@ def classify_reviews(items: list[dict]) -> HorizontalReviews:
         else:
             latest = max(issues, key=lambda i: i.get("number", 0))
             states[group] = _review_state(latest)
-    return HorizontalReviews(**states)
+            if latest.get("html_url"):
+                urls[group] = latest["html_url"]
+    return HorizontalResult(HorizontalReviews(**states), urls)
 
 
-def fetch_horizontal_reviews(title: str, client: httpx.Client | None = None) -> HorizontalReviews:
+def fetch_horizontal_reviews(title: str, client: httpx.Client | None = None) -> HorizontalResult:
     """Search the 5 request repos for ``title`` and classify each group's state."""
     ctx = nullcontext(client) if client is not None else httpx.Client(follow_redirects=True, timeout=20.0)
     with ctx as c:

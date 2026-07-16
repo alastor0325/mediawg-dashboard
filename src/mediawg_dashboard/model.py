@@ -83,6 +83,8 @@ class SpecMilestones(BaseModel):
     """
 
     horizontal: HorizontalReviews = Field(default_factory=HorizontalReviews)
+    # group -> the request-repo issue URL that set its state (for chip deep-links).
+    horizontal_urls: dict[str, str] = Field(default_factory=dict)
     impl_report_ready: bool | None = None
     ac_review_done: bool | None = None
     cr_blocking_issues_open: int | None = None

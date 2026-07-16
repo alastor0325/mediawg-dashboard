@@ -6,8 +6,9 @@
   <li>
     <span class="chk-mark mark-{{ state }}">{{ glyph }}</span>{% if href %}<a href="{{ href }}">{{ label }}</a>{% else %}{{ label }}{% endif %}
     {% if kind == 'horizontal' %}
+    {% set chip_glyph = {'resolved':'✔','requested':'◐','open':'✘','na':'–','unknown':'·'} %}
     <div class="chips chips-sub">
-      {% for name, st, hhref in row.horizontal_rows %}<a class="chip chip-{{ st }}" href="{{ hhref }}">{{ name }} {{ st }}</a>{% endfor %}
+      {% for name, st, hhref in row.horizontal_rows %}<a class="chip chip-{{ st }}" href="{{ hhref }}" title="{{ name }}: {{ st }}"><span class="chip-glyph" aria-hidden="true">{{ chip_glyph.get(st, '·') }}</span><span class="chip-name">{{ name }}</span><span class="chip-state">{{ st }}</span></a>{% endfor %}
     </div>
     {% endif %}
   </li>
@@ -530,23 +531,52 @@
   .chk-mark.mark-open { color: var(--signal-rose); }
   .chk-mark.mark-partial { color: var(--signal-amber); }
   .chk-mark.mark-unknown { color: var(--signal-mute); }
-  .chips-sub { margin: 0.3rem 0 0.2rem 1.3em; }
-  .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .chips-sub { margin: 0.35rem 0 0.2rem 1.3em; }
+  /* Even grid so the 5 review chips line up in columns, not a ragged flow. */
+  .chips {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));
+    gap: 0.4rem;
+  }
+  /* Each state has its OWN colour + glyph + tint (colour+shape rule), so
+     resolved / in-progress / open / unknown are obvious at a glance. */
   .chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4rem;
     font-family: "IBM Plex Mono", monospace;
     font-size: 0.72rem;
-    padding: 0.12rem 0.5rem;
+    padding: 0.16rem 0.55rem;
     border: 1px solid var(--rule-strong);
-    border-radius: 2px;
+    border-radius: 3px;
     color: var(--ink);
     text-decoration: none;
     white-space: nowrap;
   }
-  .chip:hover { border-color: var(--accent); color: var(--accent); }
-  .chip-open { color: var(--signal-rose); }
-  .chip-requested { color: var(--signal-amber); }
-  .chip-resolved { color: var(--signal-green); }
-  .chip-unknown, .chip-na { color: var(--muted); }
+  .chip-glyph { font-weight: 700; flex: none; color: var(--signal-mute); }
+  /* State word carries the state colour too (not just the glyph), for obviousness. */
+  .chip-state { color: var(--muted); margin-left: auto; padding-left: 0.4rem; font-weight: 600; }
+  .chip:hover { border-color: var(--accent); }
+  .chip:hover .chip-name { color: var(--accent); }
+  /* resolved = green ✔ · requested/in-progress = amber ◐ · open = red ✘ */
+  .chip-resolved {
+    border-color: color-mix(in srgb, var(--signal-green) 45%, var(--rule-strong));
+    background: color-mix(in srgb, var(--signal-green) 9%, transparent);
+  }
+  .chip-resolved .chip-glyph, .chip-resolved .chip-state { color: var(--signal-green); }
+  .chip-requested {
+    border-color: color-mix(in srgb, var(--signal-amber) 45%, var(--rule-strong));
+    background: color-mix(in srgb, var(--signal-amber) 9%, transparent);
+  }
+  .chip-requested .chip-glyph, .chip-requested .chip-state { color: var(--signal-amber); }
+  .chip-open {
+    border-color: color-mix(in srgb, var(--signal-rose) 45%, var(--rule-strong));
+    background: color-mix(in srgb, var(--signal-rose) 9%, transparent);
+  }
+  .chip-open .chip-glyph, .chip-open .chip-state { color: var(--signal-rose); }
+  /* unknown / na: no data — muted, no tint, dashed border to read as "empty". */
+  .chip-unknown, .chip-na { border-style: dashed; }
+  .chip-unknown .chip-state, .chip-na .chip-state { color: var(--signal-mute); }
   .tag { font-family: "IBM Plex Mono", monospace; font-size: 0.68rem; font-weight: 600; }
   .tag-ready { color: var(--signal-green); }
   .tag-blocked, .tag-warn { color: var(--signal-rose); }

@@ -354,8 +354,9 @@ def spec_view(spec: Spec, today: date) -> SpecView:
         stage_before_cr=stage in PRE_CR_STAGES,
     )
     interop = spec.interop
-    repo = spec.meta.repo
     hz = spec.milestones.horizontal
+    hz_urls = spec.milestones.horizontal_urls
+    hz_query = spec.meta.hr_query or spec.meta.title
     return SpecView(
         spec=spec,
         next_gate=gate,
@@ -368,11 +369,12 @@ def spec_view(spec: Spec, today: date) -> SpecView:
             for b in blockers
         ],
         horizontal_rows=[
-            (name, getattr(hz, attr), links.horizontal_group_url(repo, attr)) for name, attr in HORIZONTAL_FIELDS
+            (name, getattr(hz, attr), hz_urls.get(attr) or links.horizontal_request_url(attr, hz_query))
+            for name, attr in HORIZONTAL_FIELDS
         ],
         engine_rows=_engine_rows(interop),
         wpt_href=links.wpt_url(spec.meta.wpt_path),
-        needs_resolution_href=links.needs_resolution_url(repo),
+        needs_resolution_href=links.needs_resolution_url(spec.meta.repo),
         stage_age_days=stage_age_days,
         stage_age_label=format_duration_days(stage_age_days),
         pulse=pulse if has_health else None,
@@ -436,7 +438,8 @@ def registry_view(registry: Registry, today: date) -> RegistryView:
     hz = registry.milestones.horizontal
     review_state, resolved, total = horizontal_summary(hz)
     stage_age_days = compute_stage_age_days(registry.status.last_published, today)
-    repo = registry.meta.repo
+    hz_urls = registry.milestones.horizontal_urls
+    hz_query = registry.meta.hr_query or registry.meta.title
     return RegistryView(
         registry=registry,
         next_gate=gate,
@@ -450,7 +453,8 @@ def registry_view(registry: Registry, today: date) -> RegistryView:
             for b in blockers
         ],
         horizontal_rows=[
-            (name, getattr(hz, attr), links.horizontal_group_url(repo, attr)) for name, attr in HORIZONTAL_FIELDS
+            (name, getattr(hz, attr), hz_urls.get(attr) or links.horizontal_request_url(attr, hz_query))
+            for name, attr in HORIZONTAL_FIELDS
         ],
         stage_age_days=stage_age_days,
         stage_age_label=format_duration_days(stage_age_days),

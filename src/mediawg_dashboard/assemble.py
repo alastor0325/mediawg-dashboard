@@ -34,17 +34,19 @@ def build_spec(
     support: InteropStatus,
     now: datetime,
     horizontal: HorizontalReviews | None = None,
+    horizontal_urls: dict[str, str] | None = None,
 ) -> Spec:
     """Assemble one Spec from already-fetched raw data (no I/O).
 
-    ``horizontal`` comes from the request-repo search (see fetch/horizontal.py) —
-    not from the spec repo's own labels, which are usually empty.
+    ``horizontal`` (+ ``horizontal_urls``) come from the request-repo search (see
+    fetch/horizontal.py) — not from the spec repo's own labels, which are empty.
     """
     stats = compute_repo_stats(issues, now=now)
 
     nr_count, nr_oldest = needs_resolution_stats(issues, now=now)
     milestones = SpecMilestones(
         horizontal=horizontal or HorizontalReviews(),
+        horizontal_urls=horizontal_urls or {},
         cr_blocking_issues_open=nr_count,
     )
 
@@ -72,11 +74,15 @@ def build_registry(
     meta: RegistryMeta,
     status: RegistryStatus,
     horizontal: HorizontalReviews | None = None,
+    horizontal_urls: dict[str, str] | None = None,
 ) -> Registry:
     """Assemble one Registry (no I/O).
 
-    ``horizontal`` comes from the request-repo search (see fetch/horizontal.py).
-    ``ac_review`` stays unknown — it can't be derived from public sources.
+    ``horizontal`` (+ ``horizontal_urls``) come from the request-repo search (see
+    fetch/horizontal.py). ``ac_review`` stays unknown — not in public sources.
     """
-    milestones = SpecMilestones(horizontal=horizontal or HorizontalReviews())
+    milestones = SpecMilestones(
+        horizontal=horizontal or HorizontalReviews(),
+        horizontal_urls=horizontal_urls or {},
+    )
     return Registry(meta=meta, status=status, milestones=milestones)

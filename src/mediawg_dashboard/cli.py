@@ -11,7 +11,7 @@ from mediawg_dashboard.analysis import trend_direction
 from mediawg_dashboard.assemble import build_registry, build_spec
 from mediawg_dashboard.config import load_registries, load_specs
 from mediawg_dashboard.fetch.github import fetch_open_issues, fetch_recent_commits
-from mediawg_dashboard.fetch.horizontal import fetch_horizontal_reviews
+from mediawg_dashboard.fetch.horizontal import HorizontalResult, fetch_horizontal_reviews
 from mediawg_dashboard.fetch.support import fetch_support
 from mediawg_dashboard.fetch.w3c import fetch_registry_status, fetch_spec_status
 from mediawg_dashboard.fetch.wpt import fetch_experimental_run_ids, fetch_wpt_scores
@@ -71,12 +71,12 @@ def _fetch_one(
     commits = _safe("commits", lambda: fetch_recent_commits(meta.repo, client=client), [])
     wpt = _safe("wpt", lambda: fetch_wpt_scores(meta.wpt_path, run_ids, client=client), None) if meta.wpt_path else None
     support = _safe("support", lambda: fetch_support(meta.bcd_path, client=client), InteropStatus())
-    horizontal = _safe(
+    hz = _safe(
         "horizontal",
         lambda: fetch_horizontal_reviews(meta.hr_query or meta.title, client=client),
-        HorizontalReviews(),
+        HorizontalResult(HorizontalReviews(), {}),
     )
-    spec = build_spec(meta, status, raw_issues or [], commits, wpt, support, now, horizontal)
+    spec = build_spec(meta, status, raw_issues or [], commits, wpt, support, now, hz.reviews, hz.urls)
     return spec, raw_issues is not None
 
 
@@ -88,12 +88,12 @@ def _fetch_registry(meta: RegistryMeta, client: httpx.Client) -> Registry:
         lambda: fetch_registry_status(meta.w3c_shortname, client=client),
         RegistryStatus(stage="unknown"),
     )
-    horizontal = _safe(
+    hz = _safe(
         "registry-horizontal",
         lambda: fetch_horizontal_reviews(meta.hr_query or meta.title, client=client),
-        HorizontalReviews(),
+        HorizontalResult(HorizontalReviews(), {}),
     )
-    return build_registry(meta, status, horizontal)
+    return build_registry(meta, status, hz.reviews, hz.urls)
 
 
 def cmd_refresh() -> int:

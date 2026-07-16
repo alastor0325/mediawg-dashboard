@@ -1,5 +1,5 @@
 from mediawg_dashboard.links import (
-    horizontal_group_url,
+    horizontal_request_url,
     hr_review_url,
     issues_search_url,
     needs_resolution_url,
@@ -20,12 +20,15 @@ def test_needs_resolution_url_lists_all_groups():
         assert f"{g}-needs-resolution" in url
 
 
-def test_horizontal_group_url_includes_tracker_and_needs_resolution():
-    url = horizontal_group_url("w3c/webcodecs", "a11y")
-    assert "a11y-needs-resolution" in url
-    assert "a11y-tracker" in url
-    # No is:open — resolved (closed) reviews should still show.
-    assert "is%3Aopen" not in url
+def test_horizontal_request_url_targets_the_groups_request_repo():
+    url = horizontal_request_url("a11y", "Autoplay Policy Detection")
+    assert "w3c/a11y-request/issues" in url
+    assert "Autoplay%20Policy%20Detection" in url
+    assert "in%3Atitle" in url
+
+
+def test_horizontal_request_url_unknown_group_is_none():
+    assert horizontal_request_url("bogus", "x") is None
 
 
 def test_hr_review_url():
