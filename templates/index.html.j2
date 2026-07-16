@@ -1050,9 +1050,9 @@
             <div class="panel-h">Activity &amp; health</div>
             <dl class="panel-kv">
               <dt>Pulse</dt><dd>{% if row.pulse %}<span class="pulse-{{ row.pulse.tier }}"><span class="hdot pulse-dot"></span>{{ row.pulse.reason }}</span>{% else %}—{% endif %}</dd>
-              <dt title="commits per month, last 6 months">Commits</dt><dd>{% if row.commit_spark %}<a class="spark" href="https://github.com/{{ spec.meta.repo }}/commits" title="{{ row.commit_total }} commits in the last 6 months">{% for label, count, pct in row.commit_spark %}<span class="spark-bar" style="height:{{ pct }}%" title="{{ label }}: {{ count }}"></span>{% endfor %}</a><span class="spark-cap">{{ row.commit_total }} in 6mo</span>{% else %}—{% endif %}</dd>
               <dt>Open issues</dt><dd><a href="https://github.com/{{ spec.meta.repo }}/issues">{{ spec.stats.open_issues_count }}</a></dd>
               <dt>Open PRs</dt><dd><a href="https://github.com/{{ spec.meta.repo }}/pulls">{{ spec.stats.open_prs_count }}</a></dd>
+              <dt title="commits per month, last 6 months">Commits</dt><dd>{% if row.commit_spark %}<a class="spark" href="https://github.com/{{ spec.meta.repo }}/commits" title="{{ row.commit_total }} commits in the last 6 months">{% for label, count, pct in row.commit_spark %}<span class="spark-bar" style="height:{{ pct }}%" title="{{ label }}: {{ count }}"></span>{% endfor %}</a><span class="spark-cap">{{ row.commit_total }} in 6mo</span>{% else %}—{% endif %}</dd>
             </dl>
           </div>
         </div>
