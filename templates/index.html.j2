@@ -839,7 +839,7 @@
   {% for row in rows %}
     {% set spec = row.spec %}
     <tr class="spec-row" data-panel="panel-{{ spec.meta.shortname }}" tabindex="0" aria-expanded="false" aria-controls="panel-{{ spec.meta.shortname }}">
-      <td class="rownum" data-label="№"><span class="caret" aria-hidden="true">▸</span>{{ "%02d" | format(loop.index) }}</td>
+      <td class="rownum"><span class="caret" aria-hidden="true">▸</span></td>
       <td class="spec" data-label="Specification">
         {% if spec.status.ed_url %}
           <a class="spec-title" href="{{ spec.status.ed_url }}" onclick="event.stopPropagation()">{{ spec.meta.title }}</a>
@@ -948,7 +948,7 @@
     {% set reg = row.registry %}
     {% set rs_class = {'Registry Draft':'rs-draft','Candidate Snapshot':'rs-snapshot','W3C Registry':'rs-final'}.get(reg.status.stage, 'rs-unknown') %}
     <tr class="spec-row" data-panel="rpanel-{{ reg.meta.shortname }}" tabindex="0" aria-expanded="false" aria-controls="rpanel-{{ reg.meta.shortname }}">
-      <td class="rownum" data-label="№"><span class="caret" aria-hidden="true">▸</span>{{ "%02d" | format(loop.index) }}</td>
+      <td class="rownum"><span class="caret" aria-hidden="true">▸</span></td>
       <td class="spec" data-label="Registry">
         {% if reg.meta.tr_url %}
           <a class="spec-title" href="{{ reg.meta.tr_url }}" onclick="event.stopPropagation()">{{ reg.meta.title }}</a>
