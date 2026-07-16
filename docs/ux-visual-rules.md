@@ -88,8 +88,12 @@ logos, no "reference browser", no "outlier/laggard" language. (See the
   Items at the same hierarchy level = same section; breakdowns = sub-level.
   Each per-group chip carries **colour + glyph + the state word** (all three, so
   the state is obvious), laid out in an even grid, and **links to the actual
-  review issue** in that group's request repo (the same source the state is read
-  from) — not to an empty label search on the spec's own repo.
+  review issue** — not to an empty label search on the spec's own repo.
+  State semantics: **resolved** = review request closed *and* no open
+  `<group>-needs-resolution`; **open** = an open `<group>-needs-resolution` on
+  the spec repo (a review-raised blocker — this wins even if the request is
+  closed, because "review complete" ≠ "concerns resolved"), linked to that issue;
+  **requested** = review request still open; **unknown** = no matching issue.
 - Panel = three groups, each an aligned key/value grid (`dl.panel-kv`,
   `max-content 1fr`) so labels/values line up wide (3-up) and narrow (stacked).
 - Show a signal only when it's meaningful (e.g. backlog trend needs ≥2 snapshots;

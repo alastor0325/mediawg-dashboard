@@ -12,8 +12,13 @@ def _meta(**kw):
     return SpecMeta(**base)
 
 
-def _issue(labels, created="2026-01-01T00:00:00Z", pr=False):
-    d = {"labels": [{"name": n} for n in labels], "created_at": created}
+def _issue(labels, created="2026-01-01T00:00:00Z", pr=False, number=1):
+    d = {
+        "labels": [{"name": n} for n in labels],
+        "created_at": created,
+        "number": number,
+        "html_url": f"https://github.com/w3c/webcodecs/issues/{number}",
+    }
     if pr:
         d["pull_request"] = {}
     return d
@@ -32,6 +37,8 @@ def test_build_spec_composes_all_layers():
     commits = [_commit("2026-07-11T00:00:00Z", "ed1"), _commit("2026-07-01T00:00:00Z", "ed2")]
     wpt = {"all_engines_wpt": 74.0, "wpt_test_count": 612}
     support = InteropStatus(chrome="shipped", firefox="shipped", safari="partial")
+    # Request-repo said a11y requested, tag resolved — but the repo has an open
+    # a11y-needs-resolution issue, which must override a11y to "open".
     horizontal = HorizontalReviews(a11y="requested", tag="resolved")
 
     spec = build_spec(
@@ -40,10 +47,13 @@ def test_build_spec_composes_all_layers():
 
     assert spec.stats.open_issues_count == 2  # PR excluded
     assert spec.stats.open_prs_count == 1
-    # Horizontal reviews come from the passed-in request-repo data, not repo labels.
-    assert spec.milestones.horizontal.a11y == "requested"
+    # a11y has an open needs-resolution issue -> "open" wins over request "requested".
+    assert spec.milestones.horizontal.a11y == "open"
+    # tag has no needs-resolution -> keeps the request-repo "resolved".
     assert spec.milestones.horizontal.tag == "resolved"
-    assert spec.milestones.cr_blocking_issues_open == 1  # still from repo needs-resolution labels
+    # a11y chip deep-links to the needs-resolution issue.
+    assert spec.milestones.horizontal_urls["a11y"].endswith("/issues/1")
+    assert spec.milestones.cr_blocking_issues_open == 1  # the open needs-resolution issue
     assert spec.interop.all_engines_wpt == 74.0
     assert spec.interop.safari == "partial"
     assert spec.health.days_since_activity == 2

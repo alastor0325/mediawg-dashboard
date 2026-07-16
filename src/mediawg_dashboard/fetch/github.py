@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 import httpx
 
-from mediawg_dashboard.model import HorizontalReviews, RepoStats
+from mediawg_dashboard.model import RepoStats
 
 GITHUB_API_BASE = "https://api.github.com"
 
@@ -53,24 +53,20 @@ def _label_names(issue: dict) -> set[str]:
     return {label["name"] for label in issue.get("labels", [])}
 
 
-def parse_horizontal_reviews(issues: list[dict]) -> HorizontalReviews:
-    """Derive each horizontal review's state from open-issue labels.
+def needs_resolution_by_group(issues: list[dict]) -> dict[str, dict]:
+    """The first open ``<group>-needs-resolution`` issue for each horizontal group.
 
-    Neutral, conservative mapping (open issues only): an open
-    ``<g>-needs-resolution`` -> ``open``; else an open ``<g>-tracker`` ->
-    ``requested``; else ``unknown``. 'resolved' can't be proven from open
-    issues alone, so it is never inferred here.
+    These are the blocking concerns a review raised (the review request may be
+    closed while these stay open — closing = review performed, not resolved). Used
+    to override a group's chip to 'open' and deep-link to the actual issue.
     """
-    all_labels = set().union(*(_label_names(i) for i in issues)) if issues else set()
-    states: dict[str, str] = {}
-    for group in _HORIZONTAL_GROUPS:
-        if f"{group}-needs-resolution" in all_labels:
-            states[group] = "open"
-        elif f"{group}-tracker" in all_labels:
-            states[group] = "requested"
-        else:
-            states[group] = "unknown"
-    return HorizontalReviews(**states)
+    out: dict[str, dict] = {}
+    for issue in issues:
+        labels = _label_names(issue)
+        for group in _HORIZONTAL_GROUPS:
+            if group not in out and f"{group}-needs-resolution" in labels:
+                out[group] = issue
+    return out
 
 
 def count_labeled(issues: list[dict], label: str) -> int:

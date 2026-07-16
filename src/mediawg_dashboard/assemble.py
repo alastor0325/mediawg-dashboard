@@ -9,6 +9,7 @@ from mediawg_dashboard.analysis import charter_overdue
 from mediawg_dashboard.fetch.github import (
     compute_repo_stats,
     days_since_last_commit,
+    needs_resolution_by_group,
     needs_resolution_stats,
 )
 from mediawg_dashboard.model import (
@@ -23,6 +24,30 @@ from mediawg_dashboard.model import (
     SpecMilestones,
     SpecStatus,
 )
+
+_HR_GROUPS = ("a11y", "i18n", "privacy", "security", "tag")
+
+
+def _merge_horizontal(
+    reviews: HorizontalReviews, urls: dict[str, str], issues: list[dict]
+) -> tuple[HorizontalReviews, dict[str, str]]:
+    """Overlay the spec repo's open ``*-needs-resolution`` issues onto the
+    request-repo review states: an open needs-resolution means the review raised
+    a blocking concern that's still unresolved -> 'open' (even if the review
+    request was closed), deep-linked to that issue.
+    """
+    nr = needs_resolution_by_group(issues)
+    states: dict[str, str] = {}
+    merged_urls = dict(urls)
+    for group in _HR_GROUPS:
+        if group in nr:
+            states[group] = "open"
+            html_url = nr[group].get("html_url")
+            if html_url:
+                merged_urls[group] = html_url
+        else:
+            states[group] = getattr(reviews, group)
+    return HorizontalReviews(**states), merged_urls
 
 
 def build_spec(
@@ -44,9 +69,12 @@ def build_spec(
     stats = compute_repo_stats(issues, now=now)
 
     nr_count, nr_oldest = needs_resolution_stats(issues, now=now)
+    merged_reviews, merged_urls = _merge_horizontal(
+        horizontal or HorizontalReviews(), horizontal_urls or {}, issues
+    )
     milestones = SpecMilestones(
-        horizontal=horizontal or HorizontalReviews(),
-        horizontal_urls=horizontal_urls or {},
+        horizontal=merged_reviews,
+        horizontal_urls=merged_urls,
         cr_blocking_issues_open=nr_count,
     )
 
