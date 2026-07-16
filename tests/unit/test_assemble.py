@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from mediawg_dashboard.assemble import build_spec
-from mediawg_dashboard.model import InteropStatus, SpecMeta, SpecStatus
+from mediawg_dashboard.model import HorizontalReviews, InteropStatus, SpecMeta, SpecStatus
 
 NOW = datetime(2026, 7, 13, tzinfo=timezone.utc)
 
@@ -32,21 +32,27 @@ def test_build_spec_composes_all_layers():
     commits = [_commit("2026-07-11T00:00:00Z", "ed1"), _commit("2026-07-01T00:00:00Z", "ed2")]
     wpt = {"all_engines_wpt": 74.0, "wpt_test_count": 612}
     support = InteropStatus(chrome="shipped", firefox="shipped", safari="partial")
+    horizontal = HorizontalReviews(a11y="requested", tag="resolved")
 
-    spec = build_spec(_meta(charter_target="CR Q1 2026"), SpecStatus(stage="WD"), issues, commits, wpt, support, NOW)
+    spec = build_spec(
+        _meta(charter_target="CR Q1 2026"), SpecStatus(stage="WD"), issues, commits, wpt, support, NOW, horizontal
+    )
 
     assert spec.stats.open_issues_count == 2  # PR excluded
     assert spec.stats.open_prs_count == 1
-    assert spec.milestones.horizontal.a11y == "open"
-    assert spec.milestones.cr_blocking_issues_open == 1
+    # Horizontal reviews come from the passed-in request-repo data, not repo labels.
+    assert spec.milestones.horizontal.a11y == "requested"
+    assert spec.milestones.horizontal.tag == "resolved"
+    assert spec.milestones.cr_blocking_issues_open == 1  # still from repo needs-resolution labels
     assert spec.interop.all_engines_wpt == 74.0
     assert spec.interop.safari == "partial"
     assert spec.health.days_since_activity == 2
     assert spec.health.charter_overdue is True  # CR Q1 2026 past, still WD
 
 
-def test_build_spec_handles_empty_fetches():
+def test_build_spec_horizontal_defaults_unknown_when_omitted():
     spec = build_spec(_meta(), SpecStatus(stage="unknown"), [], [], None, InteropStatus(), NOW)
     assert spec.stats.open_issues_count == 0
     assert spec.interop.all_engines_wpt is None
     assert spec.health.days_since_activity is None
+    assert spec.milestones.horizontal.a11y == "unknown"

@@ -9,7 +9,7 @@ from mediawg_dashboard.analysis import (
     registry_next_gate,
     registry_view,
 )
-from mediawg_dashboard.assemble import build_registry, registry_owns_repo
+from mediawg_dashboard.assemble import build_registry
 from mediawg_dashboard.config import load_registries
 from mediawg_dashboard.fetch.w3c import parse_registry_version
 from mediawg_dashboard.model import (
@@ -164,11 +164,7 @@ def test_parse_unknown_registry_status():
 # --- assemble ---
 
 
-def test_build_registry_derives_horizontal_from_labels():
-    issues = [
-        {"labels": [{"name": "security-needs-resolution"}], "created_at": "2026-01-01T00:00:00Z"},
-        {"labels": [{"name": "i18n-tracker"}], "created_at": "2026-01-01T00:00:00Z"},
-    ]
+def test_build_registry_carries_horizontal_and_status():
     meta = RegistryMeta(
         shortname="eme-hdcp-version-registry",
         title="EME HDCP Version",
@@ -176,43 +172,19 @@ def test_build_registry_derives_horizontal_from_labels():
         repo="w3c/encrypted-media",
         w3c_shortname="eme-hdcp-version-registry",
     )
-    reg = build_registry(meta, RegistryStatus(stage="Registry Draft"), issues)
-    assert reg.milestones.horizontal.security == "open"
+    hz = HorizontalReviews(security="resolved", i18n="requested")
+    reg = build_registry(meta, RegistryStatus(stage="Registry Draft"), hz)
+    assert reg.milestones.horizontal.security == "resolved"
     assert reg.milestones.horizontal.i18n == "requested"
-    # AC review can't be proven from open issues.
+    assert reg.status.stage == "Registry Draft"
+    # AC review can't be derived from public sources.
     assert reg.milestones.ac_review_done is None
 
 
-def test_build_registry_empty_issues():
-    meta = RegistryMeta(
-        shortname="r", title="R", parent="P", repo="w3c/r", w3c_shortname="r"
-    )
-    reg = build_registry(meta, RegistryStatus(stage="unknown"), [])
+def test_build_registry_horizontal_defaults_unknown():
+    meta = RegistryMeta(shortname="r", title="R", parent="P", repo="w3c/r", w3c_shortname="r")
+    reg = build_registry(meta, RegistryStatus(stage="unknown"))
     assert reg.milestones.horizontal.a11y == "unknown"
-
-
-def test_registry_owns_repo_true_for_dedicated_repo():
-    meta = RegistryMeta(
-        shortname="mse-byte-stream-format-registry",
-        title="MSE Byte Stream Format",
-        parent="MSE",
-        repo="w3c/mse-byte-stream-format-registry",
-        w3c_shortname="mse-byte-stream-format-registry",
-    )
-    assert registry_owns_repo(meta) is True
-
-
-def test_registry_owns_repo_false_for_shared_parent_repo():
-    # EME registries live in the parent spec's repo — its labels describe the
-    # spec, not the registry, so review must NOT be inferred from them.
-    meta = RegistryMeta(
-        shortname="eme-hdcp-version-registry",
-        title="EME HDCP Version",
-        parent="EME",
-        repo="w3c/encrypted-media",
-        w3c_shortname="eme-hdcp-version-registry",
-    )
-    assert registry_owns_repo(meta) is False
 
 
 # --- config ---

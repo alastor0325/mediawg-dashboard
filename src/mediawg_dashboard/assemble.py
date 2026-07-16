@@ -10,9 +10,9 @@ from mediawg_dashboard.fetch.github import (
     compute_repo_stats,
     days_since_last_commit,
     needs_resolution_stats,
-    parse_horizontal_reviews,
 )
 from mediawg_dashboard.model import (
+    HorizontalReviews,
     InteropStatus,
     Registry,
     RegistryMeta,
@@ -33,13 +33,18 @@ def build_spec(
     wpt_scores: dict | None,
     support: InteropStatus,
     now: datetime,
+    horizontal: HorizontalReviews | None = None,
 ) -> Spec:
-    """Assemble one Spec from already-fetched raw data (no I/O)."""
+    """Assemble one Spec from already-fetched raw data (no I/O).
+
+    ``horizontal`` comes from the request-repo search (see fetch/horizontal.py) —
+    not from the spec repo's own labels, which are usually empty.
+    """
     stats = compute_repo_stats(issues, now=now)
 
     nr_count, nr_oldest = needs_resolution_stats(issues, now=now)
     milestones = SpecMilestones(
-        horizontal=parse_horizontal_reviews(issues),
+        horizontal=horizontal or HorizontalReviews(),
         cr_blocking_issues_open=nr_count,
     )
 
@@ -63,29 +68,15 @@ def build_spec(
     return Spec(meta=meta, status=status, stats=stats, milestones=milestones, interop=interop, health=health)
 
 
-def registry_owns_repo(meta: RegistryMeta) -> bool:
-    """True if the registry has its own repo (vs sharing a parent spec's).
-
-    Only a registry-specific repo's horizontal-review labels describe the
-    *registry*; a shared parent repo's labels describe the parent spec, so
-    inferring registry review state from them would misattribute (e.g. show the
-    WebCodecs spec's privacy review on the codec registry). Heuristic: the repo
-    is named after the registry's own shortname.
-    """
-    return meta.repo == f"w3c/{meta.shortname}"
-
-
 def build_registry(
     meta: RegistryMeta,
     status: RegistryStatus,
-    issues: list[dict],
+    horizontal: HorizontalReviews | None = None,
 ) -> Registry:
-    """Assemble one Registry from already-fetched raw data (no I/O).
+    """Assemble one Registry (no I/O).
 
-    Horizontal-review state comes from the registry's own-repo labels (same
-    parser as specs); callers pass ``[]`` for a shared parent repo so review
-    stays 'unknown' rather than borrowing the parent's state. ``ac_review`` stays
-    unknown — it can't be proven from open issues alone.
+    ``horizontal`` comes from the request-repo search (see fetch/horizontal.py).
+    ``ac_review`` stays unknown — it can't be derived from public sources.
     """
-    milestones = SpecMilestones(horizontal=parse_horizontal_reviews(issues))
+    milestones = SpecMilestones(horizontal=horizontal or HorizontalReviews())
     return Registry(meta=meta, status=status, milestones=milestones)

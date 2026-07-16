@@ -25,8 +25,10 @@ model but drops the interop/WPT/pulse axes (a registry documents values, it
 isn't shipped or tested). The two tables are fully independent — sorting one
 never reorders the other.
 
-Data sources: W3C API (stage/dates, incl. registry status), GitHub API (issues,
-labels → horizontal reviews + agenda + blocking, commits → activity/editors),
+Data sources: W3C API (stage/dates, incl. registry status), GitHub API (repo
+issues → backlog/blocking, commits → activity; the horizontal groups' **request
+repos** — a11y/i18n/privacy/security-request + w3ctag/design-reviews — matched by
+spec title → the 5 horizontal-review states, closed=resolved / open=in-progress),
 wpt.fyi (interop test scores), webstatus.dev (per-engine support), and neutral
 config facts (charter targets + registry entry counts in `config/specs.yaml`).
 Any single source failing degrades that field to "unknown" rather than aborting

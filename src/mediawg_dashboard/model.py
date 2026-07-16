@@ -43,6 +43,7 @@ class SpecMeta(BaseModel):
     charter_target: str | None = None  # neutral config fact, e.g. "CR Q4 2025"
     bcd_path: str | None = None  # MDN browser-compat-data key, e.g. api.MediaSource
     hr_shortname: str | None = None  # horizontal-issue-tracker shortname (defaults to shortname)
+    hr_query: str | None = None  # title to match in the request repos (defaults to title)
 
 
 class SpecStatus(BaseModel):
@@ -207,6 +208,7 @@ class RegistryMeta(BaseModel):
     w3c_shortname: str
     tr_url: str | None = None
     hr_shortname: str | None = None  # horizontal-issue-tracker shortname (defaults to w3c_shortname)
+    hr_query: str | None = None  # title to match in the request repos (defaults to title)
     entries: list[RegistryEntry] = Field(default_factory=list)  # registered values (count = len)
 
 

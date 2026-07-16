@@ -18,6 +18,7 @@ def load_specs(path: Path) -> list[SpecMeta]:
             charter_target=entry.get("charter_target"),
             bcd_path=entry.get("bcd_path"),
             hr_shortname=entry.get("hr_shortname"),
+            hr_query=entry.get("hr_query"),
         )
         for entry in data["specs"]
     ]
@@ -35,6 +36,7 @@ def load_registries(path: Path) -> list[RegistryMeta]:
             w3c_shortname=entry.get("w3c_shortname") or entry["shortname"],
             tr_url=entry.get("tr"),
             hr_shortname=entry.get("hr_shortname"),
+            hr_query=entry.get("hr_query"),
             entries=[RegistryEntry(**e) for e in (entry.get("entries") or [])],
         )
         for entry in (data.get("registries") or [])
