@@ -605,6 +605,10 @@
     min-width: 0;
   }
   .entry-note { color: var(--muted); text-align: right; overflow-wrap: anywhere; }
+  /* Ungrouped value+note list: always stack the note UNDER the value so every
+     row is consistent (no note staying inline just because it happens to fit). */
+  .entry-list .entry-item { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 0; }
+  .entry-list .entry-note { text-align: left; }
   .entry-group {
     font-family: "IBM Plex Mono", monospace;
     font-size: 0.62rem;
@@ -1007,7 +1011,7 @@
       <th>Stage <span class="sort-glyph">⇅</span></th>
       <th>Next <span class="sort-glyph">⇅</span></th>
       <th>Review <span class="sort-glyph">⇅</span></th>
-      <th class="num">Entries <span class="sort-glyph">⇅</span></th>
+      <th>Entries <span class="sort-glyph">⇅</span></th>
     </tr>
   </thead>
   <tbody>
@@ -1038,7 +1042,7 @@
       <td class="review" data-label="Review">
         <span class="cell-value" title="{{ row.review_label }} horizontal reviews resolved ({{ row.review_state }})"><span class="review-count">{{ row.review_label }}</span><span class="review-mark mark-{{ row.review_state }}">{{ row.review_glyph }}</span></span>
       </td>
-      <td class="entries num" data-label="Entries">
+      <td class="entries" data-label="Entries">
         <span class="cell-value"><span class="entry-count">{% if reg.meta.entries %}{{ reg.meta.entries | length }}{% else %}<span class="dash">—</span>{% endif %}</span></span>
       </td>
     </tr>
