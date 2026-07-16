@@ -44,6 +44,7 @@ class SpecMeta(BaseModel):
     bcd_path: str | None = None  # MDN browser-compat-data key, e.g. api.MediaSource
     hr_shortname: str | None = None  # horizontal-issue-tracker shortname (defaults to shortname)
     hr_query: str | None = None  # title to match in the request repos (defaults to title)
+    published_rec: str | None = None  # ISO date of a prior REC (spec is now being revised)
 
 
 class SpecStatus(BaseModel):
@@ -173,6 +174,8 @@ class SpecView(BaseModel):
     stage_age_days: int | None
     stage_age_label: str
     pulse: Pulse | None
+    published_rec: str | None = None  # ISO date of a prior REC, if any
+    published_rec_href: str | None = None  # link to that REC
 
 
 # --- Registry Track (Process §6.5) — a separate, simpler lifecycle than the

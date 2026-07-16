@@ -44,3 +44,15 @@ def test_repo_issues_url():
 def test_wpt_url_none_when_no_path():
     assert wpt_url(None) is None
     assert wpt_url("/webcodecs/") == "https://wpt.fyi/results/webcodecs/"
+
+
+def test_rec_snapshot_url_builds_dated_tr_url():
+    from mediawg_dashboard.links import rec_snapshot_url
+
+    assert rec_snapshot_url("encrypted-media", "2017-09-18") == (
+        "https://www.w3.org/TR/2017/REC-encrypted-media-20170918/"
+    )
+    assert rec_snapshot_url("media-source", "2016-11-17") == (
+        "https://www.w3.org/TR/2016/REC-media-source-20161117/"
+    )
+    assert rec_snapshot_url("x", "not-a-date") is None

@@ -283,6 +283,28 @@ def test_render_no_charter_row_when_on_track():
     assert "behind charter" not in html
 
 
+def test_render_panel_shows_published_rec_when_set():
+    from mediawg_dashboard.model import SpecMeta
+
+    spec = _spec("encrypted-media", stage="WD")
+    spec.meta = SpecMeta(
+        shortname="encrypted-media",
+        title="Encrypted Media Extensions",
+        repo="w3c/encrypted-media",
+        w3c_shortname="encrypted-media-2",
+        tr_url="https://www.w3.org/TR/encrypted-media-2/",
+        published_rec="2017-09-18",
+    )
+    html = render_index([spec])
+    assert "Recommendation 2017-09-18" in html
+    assert "https://www.w3.org/TR/2017/REC-encrypted-media-20170918/" in html
+
+
+def test_render_panel_no_published_rec_when_absent():
+    html = render_index([_spec("webcodecs")])
+    assert ">Published</dt>" not in html
+
+
 def test_render_panel_shows_blocker_checklist():
     # A WD spec's next gate is CR; the panel lists its concrete blocker labels
     # (no broad "wide review" item).

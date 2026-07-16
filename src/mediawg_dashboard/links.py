@@ -54,3 +54,13 @@ def hr_review_url(hr_shortname: str) -> str:
 
 def wpt_url(wpt_path: str | None) -> str | None:
     return f"{WPT_FYI}{wpt_path}" if wpt_path else None
+
+
+def rec_snapshot_url(shortname: str, iso_date: str) -> str | None:
+    """The dated /TR/ URL of a published Recommendation, e.g.
+    ('encrypted-media', '2017-09-18') -> .../TR/2017/REC-encrypted-media-20170918/."""
+    parts = iso_date.split("-")
+    if len(parts) != 3 or not all(p.isdigit() for p in parts):
+        return None
+    y, m, d = parts
+    return f"https://www.w3.org/TR/{y}/REC-{shortname}-{y}{m}{d}/"

@@ -19,6 +19,7 @@ def load_specs(path: Path) -> list[SpecMeta]:
             bcd_path=entry.get("bcd_path"),
             hr_shortname=entry.get("hr_shortname"),
             hr_query=entry.get("hr_query"),
+            published_rec=entry.get("published_rec"),
         )
         for entry in data["specs"]
     ]

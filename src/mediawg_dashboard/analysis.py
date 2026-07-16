@@ -378,6 +378,12 @@ def spec_view(spec: Spec, today: date) -> SpecView:
         stage_age_days=stage_age_days,
         stage_age_label=format_duration_days(stage_age_days),
         pulse=pulse if has_health else None,
+        published_rec=spec.meta.published_rec,
+        published_rec_href=(
+            links.rec_snapshot_url(spec.meta.shortname, spec.meta.published_rec)
+            if spec.meta.published_rec
+            else None
+        ),
     )
 
 

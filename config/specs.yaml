@@ -29,6 +29,7 @@ specs:
     wpt_path: /encrypted-media/
     bcd_path: api.MediaKeys
     charter_target: CR Q4 2026
+    published_rec: "2017-09-18"  # 1st edition REC; now revising (2nd ed.)
 
   - shortname: media-capabilities
     title: Media Capabilities
@@ -62,6 +63,7 @@ specs:
     tr: https://www.w3.org/TR/media-source-2/
     wpt_path: /media-source/
     bcd_path: api.MediaSource
+    published_rec: "2016-11-17"  # 1st edition REC; now revising (2nd ed.)
     charter_target: CR Q4 2026
 
   - shortname: picture-in-picture
