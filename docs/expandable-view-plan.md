@@ -33,7 +33,87 @@ Plus a roll-up header line (e.g. `REC 0 · CR 0 · WD/FPWD 8 · ED 1 · shipping
 - **P2 — First-level UI:** render STAGE/NEXT/INTEROP/PULSE columns + roll-up header from the computed view; tests on HTML marks; keep mobile card layout working.
 - **P3 — Expand panel UI:** `<details>`-based progressive disclosure, the 3 groups; tests.
 - **P4 — Fetchers:** wpt.fyi + browser-support + GitHub label queries + config charter/process facts; unit tests mock I/O.
-- **P5 — Trends + wire-up:** daily snapshot persistence (backlog/WPT deltas), wire fetchers into `cmd_refresh`, update README.
+- **P5 — Trends + wire-up:** daily snapshot persistence (backlog/WPT deltas), wire fetchers into `cmd_refresh`, update README. *(P1–P5 shipped.)*
+- **P6 — Registries section** (registry track). *← proposed; see below.*
 
 Each task runs the full mediawg-dashboard Dev Loop (pure fns → tests → /simplify → commit+push).
+
+---
+
+## P6 — Registries section (Registry Track)
+
+**Why:** the WG maintains 6 registries on the **Registry Track** — a separate,
+simpler lifecycle than the Rec track, with a *different* gate and *no* interop
+axis. They don't fit the specs table. A dedicated section lets a co-chair track
+the wide-review push that advances Registry Draft → Candidate Registry Snapshot
+(the process François kicked off 2026-07-16). Vendor-neutral like the rest.
+
+### The 6 registries (all currently Registry Draft, verified)
+| Registry | Parent | shortname |
+|---|---|---|
+| MSE Byte Stream Format | MSE | mse-byte-stream-format-registry |
+| EME Initialization Data Format | EME | eme-initdata-registry |
+| EME Stream Format | EME | eme-stream-registry |
+| EME HDCP Version | EME | eme-hdcp-version-registry |
+| WebCodecs Codec | WebCodecs | webcodecs-codec-registry |
+| WebCodecs VideoFrame Metadata | WebCodecs | webcodecs-video-frame-metadata-registry |
+
+### Registry Track model (Process §6.5.2 — verified)
+Parallel to Rec track but simpler:
+`Registry Draft → Candidate Registry Snapshot (+ Candidate Registry Draft) → W3C Registry`.
+Gates: **Draft → Candidate Snapshot = wide/horizontal review** (the current one);
+**Candidate Snapshot → W3C Registry = AC review**. **No implementation /
+interop / WPT gate** — registries document values, they aren't shipped or tested.
+
+### What to show (and what NOT to)
+First-level row per registry: **Registry · Parent · Stage · Next-gate
+(→ Candidate Snapshot, ready/blocked) · Review (5-group horizontal status) ·
+Entries**. Expand → per-group review breakdown (linked to tracker/request repos),
+parent spec, last published, entry count + pending registrations, links.
+- **Shares with specs:** Stage chip, Next-gate readiness, horizontal-review
+  chips + `hr_review_url`/`horizontal_group_url` links, the aligned key/value
+  panel, and the neutral colour+icon system.
+- **Drops (N/A for registries):** Interop tri-dot, per-engine WPT, browser
+  support, shipping roll-up, Pulse.
+- **Adds:** a `RegistryStage` enum, and **Entries / Pending registrations** as
+  the registry-specific "living" signal (a Candidate Snapshot stabilises entry
+  *requirements*, not entries — the table keeps growing).
+
+### Data sources
+- **Stage + last-published:** W3C API (`/specifications/<shortname>/versions/latest`),
+  mapping registry statuses → `RegistryStage`.
+- **Horizontal review status:** same as specs — in-repo `*-tracker`/
+  `*-needs-resolution` labels and the per-spec `review.html?shortname=` tracker
+  (resolve each registry's tracker shortname; the EME/MSE ones share their
+  parent's repo, so labels may live on the parent repo — confirm per registry).
+- **Entry count:** parse the registry table (row count) from the TR/ED page.
+- **Pending registrations** (optional v1): open PRs/issues proposing new entries.
+- **Config:** new `registries:` list in `config/specs.yaml` (or a sibling file):
+  `shortname, title, parent, tr, repo, hr_shortname`.
+
+### Model / code shape
+- `model.py`: `RegistryStage` Literal; `RegistryMeta`, `RegistryStatus`,
+  `RegistryView` (stage, next_gate, readiness, horizontal_rows, entry_count,
+  pending_count, links). Reuse `HorizontalReviews`.
+- `analysis.py`: `registry_next_gate`, a small registry `GATE_REQUIREMENTS`
+  (Draft→Snapshot: wide review + horizontal resolved; Snapshot→W3C Registry:
+  AC review), `registry_view(...)` — all pure, tested. Reuse `_readiness`,
+  `horizontal_summary`, `readiness_glyph`.
+- `config.py`: parse `registries:`. `assemble.py`: `build_registry(...)` pure.
+- `render.py`: build registry rows; template: a **"Registries" section below the
+  specs ledger** (a second `<table class="ledger">` with a `col`-group sized for
+  its columns). *(Placement: second section on the same page — TBD vs a tab.)*
+- `fetch/`: registry stage (reuse `fetch_spec_status`), horizontal labels
+  (reuse), entry-count parser (new, pure + tested with a saved HTML fixture).
+
+### Sub-phases (each through the Dev Loop)
+- **P6a** — registry model + `analysis` (pure) + `config` for the 6 + tests.
+- **P6b** — fetchers (stage, horizontal, entry-count) + `build_registry` + tests.
+- **P6c** — render the Registries section + tests; refresh + deploy.
+
+### Open questions (for confirmation before P6a)
+1. **Placement:** second section on the same page (recommended) vs a Specs/Registries tab.
+2. **Review column:** full 5-group chips (consistent with specs) vs a single
+   "wide review: requested/in-progress/done" state.
+3. **Pending registrations:** include in v1, or defer (entry count only)?
 </content>
