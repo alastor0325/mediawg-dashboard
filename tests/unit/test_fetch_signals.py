@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 from mediawg_dashboard.fetch.github import (
     count_labeled,
+    count_recent_commits,
     days_since_last_commit,
     needs_resolution_stats,
 )
@@ -49,6 +50,19 @@ def test_days_since_last_commit():
 
 def test_days_since_last_commit_none():
     assert days_since_last_commit([], now=NOW) is None
+
+
+def test_count_recent_commits_within_window():
+    commits = [
+        _commit("2026-07-11T00:00:00Z"),  # 2d ago — in
+        _commit("2026-05-01T00:00:00Z"),  # ~73d ago — in
+        _commit("2026-01-01T00:00:00Z"),  # ~193d ago — out
+    ]
+    assert count_recent_commits(commits, now=NOW, days=90) == 2
+
+
+def test_count_recent_commits_empty_is_zero():
+    assert count_recent_commits([], now=NOW) == 0
 
 
 # ---------- wpt scoring ----------

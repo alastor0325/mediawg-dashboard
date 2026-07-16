@@ -1,7 +1,7 @@
 import os
 import sys
 from contextlib import nullcontext
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import httpx
 
@@ -76,6 +76,14 @@ def days_since_last_commit(commits: list[dict], now: datetime | None = None) -> 
     now = now or datetime.now(timezone.utc)
     latest = max(_parse_iso(c["commit"]["author"]["date"]) for c in commits)
     return (now - latest).days
+
+
+def count_recent_commits(commits: list[dict], now: datetime | None = None, days: int = 90) -> int:
+    """Number of commits within the last ``days`` — the recent editorial activity
+    level (a fuller signal than the pulse tier)."""
+    now = now or datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=days)
+    return sum(1 for c in commits if _parse_iso(c["commit"]["author"]["date"]) >= cutoff)
 
 
 def _auth_headers() -> dict[str, str]:

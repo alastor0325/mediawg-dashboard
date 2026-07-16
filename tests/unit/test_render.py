@@ -257,6 +257,19 @@ def test_render_panel_has_three_groups():
     assert "Activity" in html
 
 
+def test_render_activity_section_fields():
+    from mediawg_dashboard.model import SpecHealth
+
+    spec = _spec("webcodecs")
+    spec.health = SpecHealth(recent_commits_90d=7)
+    html = render_index([spec])
+    # Useful signals kept + the new recent-commits level; dropped ones gone.
+    assert "Recent commits" in html and "7" in html and "in 90d" in html
+    assert "Open issues" in html and "Open PRs" in html
+    assert "backlog" not in html
+    assert "Oldest blocking" not in html
+
+
 def test_render_panel_lists_engines():
     html = render_index([_spec("webcodecs")])
     assert "Chromium" in html and "Firefox" in html and "Safari" in html

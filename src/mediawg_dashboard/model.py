@@ -132,7 +132,7 @@ class SpecHealth(BaseModel):
     oldest_blocking_issue_days: int | None = None
     charter_target: str | None = None  # e.g. "CR Q1 2026"
     charter_overdue: bool = False
-    backlog_trend: str | None = None  # rising / falling / flat (from snapshots)
+    recent_commits_90d: int | None = None  # editorial activity level (last 90 days)
 
 
 class Blocker(BaseModel):
@@ -170,7 +170,6 @@ class SpecView(BaseModel):
     horizontal_rows: list[tuple[str, str, str]]  # (name, state, href) — nested under the horizontal blocker
     engine_rows: list[EngineRow]
     wpt_href: str | None
-    needs_resolution_href: str  # open *-needs-resolution issues for the repo
     stage_age_days: int | None
     stage_age_label: str
     pulse: Pulse | None

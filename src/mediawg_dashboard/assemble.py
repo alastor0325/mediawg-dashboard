@@ -8,6 +8,7 @@ from datetime import datetime
 from mediawg_dashboard.analysis import charter_overdue
 from mediawg_dashboard.fetch.github import (
     compute_repo_stats,
+    count_recent_commits,
     days_since_last_commit,
     needs_resolution_stats,
 )
@@ -68,6 +69,7 @@ def build_spec(
         oldest_blocking_issue_days=nr_oldest,
         charter_target=meta.charter_target,
         charter_overdue=charter_overdue(meta.charter_target, now.date(), status.stage),
+        recent_commits_90d=count_recent_commits(commits, now=now),
     )
 
     return Spec(meta=meta, status=status, stats=stats, milestones=milestones, interop=interop, health=health)

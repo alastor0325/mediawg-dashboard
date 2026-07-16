@@ -7,7 +7,6 @@ from typing import Callable, TypeVar
 
 import httpx
 
-from mediawg_dashboard.analysis import trend_direction
 from mediawg_dashboard.assemble import build_registry, build_spec
 from mediawg_dashboard.config import load_registries, load_specs
 from mediawg_dashboard.fetch.github import fetch_open_issues, fetch_recent_commits
@@ -26,7 +25,7 @@ from mediawg_dashboard.model import (
     SpecStatus,
 )
 from mediawg_dashboard.render import render_index
-from mediawg_dashboard.snapshots import issue_series, read_history, record_snapshot, write_history
+from mediawg_dashboard.snapshots import read_history, record_snapshot, write_history
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 CONFIG_PATH = REPO_ROOT / "config" / "specs.yaml"
@@ -121,14 +120,10 @@ def cmd_refresh() -> int:
             print(f" {time.time()-t0:.1f}s", file=sys.stderr)
 
     # Record today's snapshot (only for specs whose issue fetch succeeded, so a
-    # fetch outage never looks like a backlog crash) and derive the trend.
+    # fetch outage never looks like a backlog crash). History keeps accumulating
+    # for possible future trend features; the UI doesn't surface a trend today.
     history = read_history(HISTORY_PATH)
     record_snapshot(history, now.date().isoformat(), ok_counts)
-    for spec in specs:
-        series = issue_series(history, spec.meta.shortname)
-        # Only surface a trend once there are ≥2 daily points; otherwise it's
-        # a meaningless "flat".
-        spec.health.backlog_trend = trend_direction(series) if len(series) >= 2 else None
     write_history(HISTORY_PATH, history)
 
     html = render_index(specs, now, registries=registries)

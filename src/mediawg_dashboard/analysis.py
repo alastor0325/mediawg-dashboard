@@ -374,7 +374,6 @@ def spec_view(spec: Spec, today: date) -> SpecView:
         ],
         engine_rows=_engine_rows(interop),
         wpt_href=links.wpt_url(spec.meta.wpt_path),
-        needs_resolution_href=links.needs_resolution_url(spec.meta.repo),
         stage_age_days=stage_age_days,
         stage_age_label=format_duration_days(stage_age_days),
         pulse=pulse if has_health else None,

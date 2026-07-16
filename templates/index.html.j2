@@ -1028,9 +1028,9 @@
             <div class="panel-h">Activity &amp; health</div>
             <dl class="panel-kv">
               <dt>Pulse</dt><dd>{% if row.pulse %}<span class="pulse-{{ row.pulse.tier }}"><span class="hdot pulse-dot"></span>{{ row.pulse.reason }}</span>{% else %}—{% endif %}</dd>
-              <dt>Open issues</dt><dd><a href="https://github.com/{{ spec.meta.repo }}/issues">{{ spec.stats.open_issues_count }}</a>{% if spec.health.backlog_trend %} · backlog {{ spec.health.backlog_trend }}{% endif %}</dd>
+              <dt title="editorial commits in the last 90 days">Recent commits</dt><dd>{% if spec.health.recent_commits_90d is not none %}<a href="https://github.com/{{ spec.meta.repo }}/commits">{{ spec.health.recent_commits_90d }}</a> in 90d{% else %}—{% endif %}</dd>
+              <dt>Open issues</dt><dd><a href="https://github.com/{{ spec.meta.repo }}/issues">{{ spec.stats.open_issues_count }}</a></dd>
               <dt>Open PRs</dt><dd><a href="https://github.com/{{ spec.meta.repo }}/pulls">{{ spec.stats.open_prs_count }}</a></dd>
-              <dt title="age of the oldest open *-needs-resolution issue (horizontal blocker)">Oldest blocking</dt><dd>{% if spec.health.oldest_blocking_issue_days is not none %}<a href="{{ row.needs_resolution_href }}">{{ spec.health.oldest_blocking_issue_days }}d</a>{% else %}—{% endif %}</dd>
             </dl>
           </div>
         </div>
