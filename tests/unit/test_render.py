@@ -261,10 +261,15 @@ def test_render_activity_section_fields():
     from mediawg_dashboard.model import SpecHealth
 
     spec = _spec("webcodecs")
-    spec.health = SpecHealth(recent_commits_90d=7)
+    spec.health = SpecHealth(
+        commit_months=[("2026-02", 1), ("2026-03", 0), ("2026-04", 4),
+                       ("2026-05", 2), ("2026-06", 0), ("2026-07", 3)]
+    )
     html = render_index([spec])
-    # Useful signals kept + the new recent-commits level; dropped ones gone.
-    assert "Recent commits" in html and "7" in html and "in 90d" in html
+    # Commit sparkline (6 bars) + total, plus the kept signals; dropped ones gone.
+    assert 'class="spark"' in html
+    assert html.count('class="spark-bar"') == 6
+    assert "10 in 6mo" in html  # total commits
     assert "Open issues" in html and "Open PRs" in html
     assert "backlog" not in html
     assert "Oldest blocking" not in html

@@ -2,8 +2,8 @@ from datetime import datetime, timezone
 
 from mediawg_dashboard.fetch.github import (
     count_labeled,
-    count_recent_commits,
     days_since_last_commit,
+    monthly_commit_counts,
     needs_resolution_stats,
 )
 from mediawg_dashboard.fetch.support import bcd_file_url, parse_bcd_support
@@ -52,17 +52,26 @@ def test_days_since_last_commit_none():
     assert days_since_last_commit([], now=NOW) is None
 
 
-def test_count_recent_commits_within_window():
+def test_monthly_commit_counts_buckets_last_6_months():
+    # NOW = 2026-07-13 → buckets Feb..Jul 2026 (oldest→newest).
     commits = [
-        _commit("2026-07-11T00:00:00Z"),  # 2d ago — in
-        _commit("2026-05-01T00:00:00Z"),  # ~73d ago — in
-        _commit("2026-01-01T00:00:00Z"),  # ~193d ago — out
+        _commit("2026-07-11T00:00:00Z"),
+        _commit("2026-07-02T00:00:00Z"),
+        _commit("2026-05-20T00:00:00Z"),
+        _commit("2025-12-01T00:00:00Z"),  # older than 6mo — excluded
     ]
-    assert count_recent_commits(commits, now=NOW, days=90) == 2
+    result = monthly_commit_counts(commits, now=NOW, months=6)
+    assert [label for label, _ in result] == [
+        "2026-02", "2026-03", "2026-04", "2026-05", "2026-06", "2026-07"
+    ]
+    assert dict(result)["2026-07"] == 2
+    assert dict(result)["2026-05"] == 1
+    assert dict(result)["2026-02"] == 0
 
 
-def test_count_recent_commits_empty_is_zero():
-    assert count_recent_commits([], now=NOW) == 0
+def test_monthly_commit_counts_empty():
+    result = monthly_commit_counts([], now=NOW, months=6)
+    assert len(result) == 6 and all(c == 0 for _, c in result)
 
 
 # ---------- wpt scoring ----------

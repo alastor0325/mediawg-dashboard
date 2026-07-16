@@ -359,6 +359,25 @@
     cursor: help;
   }
 
+  /* Commit sparkline — 6 monthly bars, no chart lib. Neutral (data, not status);
+     brightens to accent on hover since the whole thing links to the commit log. */
+  .spark {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 1.5rem;
+    vertical-align: middle;
+    text-decoration: none;
+  }
+  .spark-bar {
+    width: 7px;
+    min-height: 2px;
+    background: color-mix(in srgb, var(--ink) 38%, transparent);
+    border-radius: 1px 1px 0 0;
+  }
+  .spark:hover .spark-bar { background: var(--accent); }
+  .spark-cap { color: var(--muted); font-size: 0.72rem; margin-left: 0.5rem; }
+
   /* Stage as typographic mark */
   .stage {
     font-family: "IBM Plex Mono", monospace;
@@ -997,7 +1016,10 @@
           <div class="panel-group">
             <div class="panel-h">Standardization &amp; next gate</div>
             <dl class="panel-kv">
-              <dt>Stage</dt><dd>{{ spec.status.stage }} · in stage {{ row.stage_age_label }}{% if spec.status.last_tr_publication %} · last /TR/ {% if spec.meta.tr_url %}<a href="{{ spec.meta.tr_url }}">{{ spec.status.last_tr_publication }}</a>{% else %}{{ spec.status.last_tr_publication }}{% endif %}{% endif %}</dd>
+              <dt>Stage</dt><dd>{{ spec.status.stage }}</dd>
+              {% if spec.status.last_tr_publication %}
+              <dt>Last published</dt><dd>{% if spec.meta.tr_url %}<a href="{{ spec.meta.tr_url }}">{{ spec.status.last_tr_publication }}</a>{% else %}{{ spec.status.last_tr_publication }}{% endif %}{% if row.stage_age_label != '—' %} ({{ row.stage_age_label }} ago){% endif %}</dd>
+              {% endif %}
               <dt>Next gate</dt><dd>{% if row.next_gate %}→ {{ row.next_gate }} <span class="tag tag-{{ row.readiness }}">{{ row.readiness }}</span>{% if spec.health.charter_overdue %} · <a class="tag tag-warn" href="{{ charter_url }}" title="charter target {{ spec.health.charter_target }} — overdue">behind charter</a>{% endif %}{% else %}terminal{% endif %}</dd>
               {% if row.published_rec %}
               <dt title="a Recommendation was already published; the current work is a revision">Published</dt><dd>{% if row.published_rec_href %}<a href="{{ row.published_rec_href }}">Recommendation {{ row.published_rec }}</a>{% else %}Recommendation {{ row.published_rec }}{% endif %}</dd>
@@ -1028,7 +1050,7 @@
             <div class="panel-h">Activity &amp; health</div>
             <dl class="panel-kv">
               <dt>Pulse</dt><dd>{% if row.pulse %}<span class="pulse-{{ row.pulse.tier }}"><span class="hdot pulse-dot"></span>{{ row.pulse.reason }}</span>{% else %}—{% endif %}</dd>
-              <dt title="editorial commits in the last 90 days">Recent commits</dt><dd>{% if spec.health.recent_commits_90d is not none %}<a href="https://github.com/{{ spec.meta.repo }}/commits">{{ spec.health.recent_commits_90d }}</a> in 90d{% else %}—{% endif %}</dd>
+              <dt title="commits per month, last 6 months">Commits</dt><dd>{% if row.commit_spark %}<a class="spark" href="https://github.com/{{ spec.meta.repo }}/commits" title="{{ row.commit_total }} commits in the last 6 months">{% for label, count, pct in row.commit_spark %}<span class="spark-bar" style="height:{{ pct }}%" title="{{ label }}: {{ count }}"></span>{% endfor %}</a><span class="spark-cap">{{ row.commit_total }} in 6mo</span>{% else %}—{% endif %}</dd>
               <dt>Open issues</dt><dd><a href="https://github.com/{{ spec.meta.repo }}/issues">{{ spec.stats.open_issues_count }}</a></dd>
               <dt>Open PRs</dt><dd><a href="https://github.com/{{ spec.meta.repo }}/pulls">{{ spec.stats.open_prs_count }}</a></dd>
             </dl>
@@ -1107,7 +1129,10 @@
           <div class="panel-group">
             <div class="panel-h">Registry &amp; next gate</div>
             <dl class="panel-kv">
-              <dt>Stage</dt><dd>{{ reg.status.stage }}{% if reg.status.last_published %} · last published {{ reg.status.last_published }}{% if row.stage_age_label != '—' %} · {{ row.stage_age_label }} in stage{% endif %}{% endif %}</dd>
+              <dt>Stage</dt><dd>{{ reg.status.stage }}</dd>
+              {% if reg.status.last_published %}
+              <dt>Last published</dt><dd>{{ reg.status.last_published }}{% if row.stage_age_label != '—' %} ({{ row.stage_age_label }} ago){% endif %}</dd>
+              {% endif %}
               <dt>Next gate</dt><dd>{% if row.next_gate %}→ {{ row.next_gate }} <span class="tag tag-{{ row.readiness }}">{{ row.readiness }}</span>{% else %}terminal{% endif %}</dd>
             </dl>
             {{ blocker_checklist(row) }}

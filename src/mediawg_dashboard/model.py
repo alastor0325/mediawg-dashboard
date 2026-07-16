@@ -132,7 +132,7 @@ class SpecHealth(BaseModel):
     oldest_blocking_issue_days: int | None = None
     charter_target: str | None = None  # e.g. "CR Q1 2026"
     charter_overdue: bool = False
-    recent_commits_90d: int | None = None  # editorial activity level (last 90 days)
+    commit_months: list[tuple[str, int]] = Field(default_factory=list)  # (YYYY-MM, count), last 6mo
 
 
 class Blocker(BaseModel):
@@ -175,6 +175,8 @@ class SpecView(BaseModel):
     pulse: Pulse | None
     published_rec: str | None = None  # ISO date of a prior REC, if any
     published_rec_href: str | None = None  # link to that REC
+    commit_spark: list[tuple[str, int, int]] = Field(default_factory=list)  # (label, count, height%)
+    commit_total: int = 0  # commits across the sparkline window
 
 
 # --- Registry Track (Process §6.5) — a separate, simpler lifecycle than the

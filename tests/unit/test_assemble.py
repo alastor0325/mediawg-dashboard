@@ -50,7 +50,9 @@ def test_build_spec_composes_all_layers():
     assert spec.interop.all_engines_wpt == 74.0
     assert spec.interop.safari == "partial"
     assert spec.health.days_since_activity == 2
-    assert spec.health.recent_commits_90d == 2  # both commits within 90 days
+    # Both commits (2026-07-11, 2026-07-01) fall in the July bucket.
+    assert dict(spec.health.commit_months)["2026-07"] == 2
+    assert len(spec.health.commit_months) == 6
     assert spec.health.charter_overdue is True  # CR Q1 2026 past, still WD
 
 

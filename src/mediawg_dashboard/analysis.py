@@ -357,6 +357,10 @@ def spec_view(spec: Spec, today: date) -> SpecView:
     hz = spec.milestones.horizontal
     hz_urls = spec.milestones.horizontal_urls
     hz_query = spec.meta.hr_query or spec.meta.title
+    cm = spec.health.commit_months
+    max_c = max((c for _, c in cm), default=0) or 1
+    commit_spark = [(label, count, round(count * 100 / max_c)) for label, count in cm]
+    commit_total = sum(c for _, c in cm)
     return SpecView(
         spec=spec,
         next_gate=gate,
@@ -383,6 +387,8 @@ def spec_view(spec: Spec, today: date) -> SpecView:
             if spec.meta.published_rec
             else None
         ),
+        commit_spark=commit_spark,
+        commit_total=commit_total,
     )
 
 

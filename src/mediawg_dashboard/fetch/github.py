@@ -1,7 +1,7 @@
 import os
 import sys
 from contextlib import nullcontext
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 import httpx
 
@@ -78,12 +78,32 @@ def days_since_last_commit(commits: list[dict], now: datetime | None = None) -> 
     return (now - latest).days
 
 
-def count_recent_commits(commits: list[dict], now: datetime | None = None, days: int = 90) -> int:
-    """Number of commits within the last ``days`` — the recent editorial activity
-    level (a fuller signal than the pulse tier)."""
+def monthly_commit_counts(
+    commits: list[dict], now: datetime | None = None, months: int = 6
+) -> list[tuple[str, int]]:
+    """Commit counts per calendar month for the last ``months`` (oldest→newest).
+
+    Returns ``[("2026-02", 5), …]`` — the data behind the activity sparkline.
+    (Bounded by the fetched commit window; very busy repos may undercount the
+    oldest buckets.)
+    """
     now = now or datetime.now(timezone.utc)
-    cutoff = now - timedelta(days=days)
-    return sum(1 for c in commits if _parse_iso(c["commit"]["author"]["date"]) >= cutoff)
+    buckets: list[tuple[int, int]] = []
+    y, m = now.year, now.month
+    for _ in range(months):
+        buckets.append((y, m))
+        m -= 1
+        if m == 0:
+            m, y = 12, y - 1
+    buckets.reverse()
+    index = {ym: i for i, ym in enumerate(buckets)}
+    counts = [0] * months
+    for c in commits:
+        d = _parse_iso(c["commit"]["author"]["date"])
+        i = index.get((d.year, d.month))
+        if i is not None:
+            counts[i] += 1
+    return [(f"{y:04d}-{m:02d}", counts[i]) for i, (y, m) in enumerate(buckets)]
 
 
 def _auth_headers() -> dict[str, str]:
