@@ -6,8 +6,6 @@ GITHUB = "https://github.com"
 WPT_FYI = "https://wpt.fyi/results"
 # Cross-group per-spec horizontal-review view (all 5 groups for one spec).
 HR_TRACKER = "https://w3c.github.io/horizontal-issue-tracker/review.html"
-# W3C Process Document definition of "wide review" (the gate the blocker checks).
-WIDE_REVIEW_DEF = "https://www.w3.org/policies/process/#wide-review"
 
 # The horizontal-review groups and the label suffixes W3C uses.
 _HGROUPS = ("a11y", "i18n", "privacy", "security", "tag")
@@ -42,8 +40,3 @@ def hr_review_url(hr_shortname: str) -> str:
 
 def wpt_url(wpt_path: str | None) -> str | None:
     return f"{WPT_FYI}{wpt_path}" if wpt_path else None
-
-
-def wide_review_url() -> str:
-    """The W3C Process definition of 'wide review' (what the blocker means)."""
-    return WIDE_REVIEW_DEF

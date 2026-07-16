@@ -278,10 +278,12 @@ def test_render_no_charter_row_when_on_track():
 
 
 def test_render_panel_shows_blocker_checklist():
-    # A WD spec's next gate is CR; the panel lists its blocker labels.
+    # A WD spec's next gate is CR; the panel lists its concrete blocker labels
+    # (no broad "wide review" item).
     html = render_index([_spec("webcodecs", stage="WD")])
-    assert "Wide review complete" in html
     assert "Horizontal reviews" in html
+    assert "CR-blocking issues" in html
+    assert "Wide review" not in html
 
 
 def test_render_summary_includes_totals():

@@ -179,10 +179,6 @@ def horizontal_summary(h: HorizontalReviews) -> tuple[str, int, int]:
 Requirement = Callable[[SpecMilestones], Blocker]
 
 
-def _wide_review_req(m: SpecMilestones) -> Blocker:
-    return Blocker(label="Wide review complete", state=_bool_state(m.wide_review_complete), kind="wide_review")
-
-
 def _horizontal_req(m: SpecMilestones) -> Blocker:
     state, resolved, total = horizontal_summary(m.horizontal)
     return Blocker(label=f"Horizontal reviews {resolved}/{total}", state=state, kind="horizontal")
@@ -205,8 +201,10 @@ def _ac_review_req(m: SpecMilestones) -> Blocker:
 
 GATE_REQUIREMENTS: dict[str, list[Requirement]] = {
     "FPWD": [],  # ED -> FPWD is a publication decision; no tracked process blockers.
-    # Horizontal is last so its nested per-group chips sit at the bottom of the list.
-    "CR": [_wide_review_req, _cr_issues_req, _horizontal_req],
+    # Only concrete, trackable blockers. "Wide review" is deliberately NOT listed:
+    # its actionable part is the horizontal reviews below (broad community review
+    # has no trackable instance). Horizontal is last so its chips sit at the bottom.
+    "CR": [_cr_issues_req, _horizontal_req],
     "PR": [_impl_report_req],
     "REC": [_ac_review_req],
 }
@@ -228,14 +226,10 @@ def _blocker_href(kind: str, meta) -> str | None:
     """Link each blocker to where its status actually lives (None if no venue).
 
     - horizontal → the cross-group horizontal-issue-tracker view for the spec
-    - wide_review → the W3C Process definition (there's no single tracking venue;
-      completion is a WG/chair judgment, set via config — see wide_review_complete)
     - cr_blocking → open ``*-needs-resolution`` issues (the must-resolve set)
     """
     if kind == "horizontal":
         return links.hr_review_url(meta.hr_shortname or meta.shortname)
-    if kind == "wide_review":
-        return links.wide_review_url()
     if kind == "cr_blocking":
         return links.needs_resolution_url(meta.repo)
     return None
@@ -407,7 +401,7 @@ def registry_next_gate(stage: RegistryStage) -> str | None:
 # The gate requirements reuse the same declarative Requirement functions the Rec
 # track uses (horizontal last so its nested chips sit at the bottom).
 REGISTRY_GATE_REQUIREMENTS: dict[str, list[Requirement]] = {
-    "Candidate Snapshot": [_wide_review_req, _horizontal_req],
+    "Candidate Snapshot": [_horizontal_req],
     "W3C Registry": [_ac_review_req],
 }
 

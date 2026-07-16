@@ -63,10 +63,12 @@ def test_registry_next_gate_terminal():
 # --- blockers / readiness ---
 
 
-def test_draft_blockers_are_wide_review_and_horizontal():
+def test_draft_blockers_are_horizontal_only():
+    # The Draft→Snapshot gate is tracked via the horizontal reviews — no broad
+    # "wide review" blocker.
     blockers = compute_registry_blockers("Registry Draft", SpecMilestones())
     kinds = [b.kind for b in blockers]
-    assert kinds == ["wide_review", "horizontal"]  # horizontal last (nested chips)
+    assert kinds == ["horizontal"]
 
 
 def test_snapshot_gate_needs_ac_review():
@@ -78,14 +80,13 @@ def test_terminal_registry_has_no_blockers():
     assert compute_registry_blockers("W3C Registry", SpecMilestones()) == []
 
 
-def test_readiness_blocked_when_reviews_unknown():
-    # Fresh Registry Draft: wide review unknown, horizontal unknown → not ready.
+def test_readiness_not_ready_when_reviews_unknown():
+    # Fresh Registry Draft: horizontal reviews unknown → not ready.
     assert registry_gate_readiness("Registry Draft", SpecMilestones()) != "ready"
 
 
-def test_readiness_ready_when_all_done():
+def test_readiness_ready_when_all_reviews_resolved():
     m = SpecMilestones(
-        wide_review_complete=True,
         horizontal=HorizontalReviews(
             a11y="resolved", i18n="resolved", privacy="resolved", security="resolved", tag="resolved"
         ),
@@ -94,10 +95,7 @@ def test_readiness_ready_when_all_done():
 
 
 def test_readiness_blocked_with_open_review():
-    m = SpecMilestones(
-        wide_review_complete=True,
-        horizontal=HorizontalReviews(security="open"),
-    )
+    m = SpecMilestones(horizontal=HorizontalReviews(security="open"))
     assert registry_gate_readiness("Registry Draft", m) == "blocked"
 
 
@@ -181,18 +179,8 @@ def test_build_registry_derives_horizontal_from_labels():
     reg = build_registry(meta, RegistryStatus(stage="Registry Draft"), issues)
     assert reg.milestones.horizontal.security == "open"
     assert reg.milestones.horizontal.i18n == "requested"
-    # Wide review defaults to unknown (config not set); AC review can't be proven.
-    assert reg.milestones.wide_review_complete is None
+    # AC review can't be proven from open issues.
     assert reg.milestones.ac_review_done is None
-
-
-def test_build_registry_propagates_wide_review_complete_from_config():
-    meta = RegistryMeta(
-        shortname="r", title="R", parent="P", repo="w3c/r", w3c_shortname="r",
-        wide_review_complete=True,
-    )
-    reg = build_registry(meta, RegistryStatus(stage="Registry Draft"), [])
-    assert reg.milestones.wide_review_complete is True
 
 
 def test_build_registry_empty_issues():
@@ -241,7 +229,6 @@ registries:
     parent: EME
     repo: w3c/encrypted-media
     tr: https://www.w3.org/TR/eme-hdcp-version-registry/
-    wide_review_complete: true
     entries:
       - { value: "1.0" }
       - { value: "2.3", note: "latest" }
@@ -253,7 +240,6 @@ registries:
     assert len(regs[0].entries) == 2
     assert regs[0].entries[0].value == "1.0"
     assert regs[0].entries[1].note == "latest"
-    assert regs[0].wide_review_complete is True
     assert regs[0].w3c_shortname == "eme-hdcp-version-registry"  # defaults to shortname
 
 

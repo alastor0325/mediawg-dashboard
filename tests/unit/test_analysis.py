@@ -132,9 +132,8 @@ def test_horizontal_summary_none_resolved_is_open():
 # ---------------- compute_blockers ----------------
 
 
-def test_blockers_for_cr_gate_lists_wide_review_and_horizontal():
+def test_blockers_for_cr_gate_lists_concrete_items_only():
     m = SpecMilestones(
-        wide_review_complete=False,
         horizontal=HorizontalReviews(
             security="resolved", privacy="resolved", tag="resolved",
             a11y="open", i18n="open",
@@ -142,12 +141,10 @@ def test_blockers_for_cr_gate_lists_wide_review_and_horizontal():
         cr_blocking_issues_open=2,
     )
     blockers = compute_blockers("WD", m)
-    labels = [b.label for b in blockers]
-    assert any("Wide review" in x for x in labels)
-    assert any("Horizontal reviews" in x for x in labels)
-    # wide review not complete -> open
-    wr = next(b for b in blockers if "Wide review" in b.label)
-    assert wr.state == "open"
+    kinds = [b.kind for b in blockers]
+    # Only concrete, trackable blockers — no broad "wide review" item.
+    assert kinds == ["cr_blocking", "horizontal"]
+    assert not any("Wide review" in b.label for b in blockers)
     # 3/5 resolved -> partial
     hr = next(b for b in blockers if "Horizontal reviews" in b.label)
     assert hr.state == "partial"
@@ -182,7 +179,7 @@ def test_blockers_terminal_stage_is_empty():
 def test_gate_requirements_table_driven():
     assert gate_requirements(None) == []
     assert gate_requirements("FPWD") == []
-    assert len(gate_requirements("CR")) == 3
+    assert len(gate_requirements("CR")) == 2  # cr_blocking + horizontal (no wide review)
     assert len(gate_requirements("PR")) == 1
     assert len(gate_requirements("REC")) == 1
 
@@ -331,13 +328,12 @@ def test_gate_readiness_ready_when_no_blockers():
 
 
 def test_gate_readiness_blocked_when_any_open():
-    m = SpecMilestones(wide_review_complete=False, cr_blocking_issues_open=3)
+    m = SpecMilestones(cr_blocking_issues_open=3)
     assert gate_readiness("WD", m) == "blocked"
 
 
 def test_gate_readiness_ready_when_all_done():
     m = SpecMilestones(
-        wide_review_complete=True,
         horizontal=HorizontalReviews(
             a11y="resolved", i18n="resolved", privacy="resolved",
             security="resolved", tag="resolved",
@@ -409,8 +405,9 @@ def test_spec_view_blocker_rows_include_horizontal_and_link_venues():
     kinds = {kind for *_, kind in v.blocker_rows}
     # Horizontal review IS a CR blocker (nested chips render under it).
     assert "horizontal" in kinds
-    # Wide review -> the W3C Process definition (no single tracking venue).
-    assert by_label["Wide review complete"] == "https://www.w3.org/policies/process/#wide-review"
+    # No broad "wide review" blocker — only concrete items.
+    assert "Wide review complete" not in by_label
+    assert "wide_review" not in kinds
     # Horizontal reviews -> the cross-group horizontal-issue-tracker view.
     hz = next(h for lbl, h in by_label.items() if lbl.startswith("Horizontal reviews"))
     assert "review.html?shortname=" in hz

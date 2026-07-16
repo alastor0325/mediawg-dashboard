@@ -12,7 +12,6 @@ specs:
     tr: https://www.w3.org/TR/webcodecs/
     charter_target: CR Q1 2026
     bcd_path: api.VideoDecoder
-    wide_review_complete: true
   - shortname: autoplay
     title: Autoplay Policy Detection
     repo: w3c/autoplay
@@ -53,12 +52,3 @@ def test_load_specs_parses_charter_and_bcd(tmp_path):
     # Absent fields default to None.
     assert specs[1].charter_target is None
     assert specs[1].bcd_path is None
-
-
-def test_load_specs_parses_wide_review_complete(tmp_path):
-    cfg = tmp_path / "specs.yaml"
-    cfg.write_text(SAMPLE_YAML)
-    specs = load_specs(cfg)
-    assert specs[0].wide_review_complete is True
-    # Absent → unknown (None), not False.
-    assert specs[1].wide_review_complete is None

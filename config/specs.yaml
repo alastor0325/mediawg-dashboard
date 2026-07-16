@@ -83,8 +83,6 @@ specs:
 # /TR/ tables); the first-level count is len(entries).
 # repo = where horizontal labels live (EME/WebCodecs registries share the parent
 # repo; MSE's registry has its own).
-# `wide_review_complete: true` — set per spec/registry once the WG records wide
-# review as done (no API for it; omit = unknown). Flips the gate blocker to ✔.
 registries:
   - shortname: mse-byte-stream-format-registry
     title: MSE Byte Stream Format

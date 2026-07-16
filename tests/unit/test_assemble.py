@@ -50,14 +50,3 @@ def test_build_spec_handles_empty_fetches():
     assert spec.stats.open_issues_count == 0
     assert spec.interop.all_engines_wpt is None
     assert spec.health.days_since_activity is None
-
-
-def test_build_spec_propagates_wide_review_complete_from_config():
-    # The chair-set config flag flows into milestones (there's no API for it).
-    spec = build_spec(
-        _meta(wide_review_complete=True), SpecStatus(stage="WD"), [], [], None, InteropStatus(), NOW
-    )
-    assert spec.milestones.wide_review_complete is True
-    # Default: unknown when the config doesn't assert it.
-    spec2 = build_spec(_meta(), SpecStatus(stage="WD"), [], [], None, InteropStatus(), NOW)
-    assert spec2.milestones.wide_review_complete is None

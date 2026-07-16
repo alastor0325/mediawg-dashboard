@@ -41,7 +41,6 @@ def build_spec(
     milestones = SpecMilestones(
         horizontal=parse_horizontal_reviews(issues),
         cr_blocking_issues_open=nr_count,
-        wide_review_complete=meta.wide_review_complete,
     )
 
     # support carries MDN per-engine states/versions/mdn_url; layer WPT on top.
@@ -85,12 +84,8 @@ def build_registry(
 
     Horizontal-review state comes from the registry's own-repo labels (same
     parser as specs); callers pass ``[]`` for a shared parent repo so review
-    stays 'unknown' rather than borrowing the parent's state. ``wide_review`` is
-    a config-set WG judgment (``meta.wide_review_complete``); ``ac_review`` stays
+    stays 'unknown' rather than borrowing the parent's state. ``ac_review`` stays
     unknown — it can't be proven from open issues alone.
     """
-    milestones = SpecMilestones(
-        horizontal=parse_horizontal_reviews(issues),
-        wide_review_complete=meta.wide_review_complete,
-    )
+    milestones = SpecMilestones(horizontal=parse_horizontal_reviews(issues))
     return Registry(meta=meta, status=status, milestones=milestones)

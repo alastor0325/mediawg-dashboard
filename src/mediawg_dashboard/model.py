@@ -43,9 +43,6 @@ class SpecMeta(BaseModel):
     charter_target: str | None = None  # neutral config fact, e.g. "CR Q4 2025"
     bcd_path: str | None = None  # MDN browser-compat-data key, e.g. api.MediaSource
     hr_shortname: str | None = None  # horizontal-issue-tracker shortname (defaults to shortname)
-    # Wide-review completion is a WG/chair judgment (no API) — set here once the
-    # group records it; None = unknown (not yet determined).
-    wide_review_complete: bool | None = None
 
 
 class SpecStatus(BaseModel):
@@ -84,7 +81,6 @@ class SpecMilestones(BaseModel):
     Fields are optional/unknown by default; fetchers or config populate them.
     """
 
-    wide_review_complete: bool | None = None
     horizontal: HorizontalReviews = Field(default_factory=HorizontalReviews)
     impl_report_ready: bool | None = None
     ac_review_done: bool | None = None
@@ -138,7 +134,7 @@ class SpecHealth(BaseModel):
 class Blocker(BaseModel):
     label: str
     state: BlockerState
-    kind: str = ""  # wide_review / horizontal / cr_blocking / impl_report / ac_review
+    kind: str = ""  # horizontal / cr_blocking / impl_report / ac_review
 
 
 class Pulse(BaseModel):
@@ -212,8 +208,6 @@ class RegistryMeta(BaseModel):
     tr_url: str | None = None
     hr_shortname: str | None = None  # horizontal-issue-tracker shortname (defaults to w3c_shortname)
     entries: list[RegistryEntry] = Field(default_factory=list)  # registered values (count = len)
-    # WG/chair judgment (no API) — set once wide review is recorded; None = unknown.
-    wide_review_complete: bool | None = None
 
 
 class RegistryStatus(BaseModel):
@@ -224,7 +218,7 @@ class RegistryStatus(BaseModel):
 class Registry(BaseModel):
     meta: RegistryMeta
     status: RegistryStatus
-    # Reuse SpecMilestones: the Draft→Snapshot gate needs wide review + the 5
+    # Reuse SpecMilestones: the Draft→Snapshot gate is tracked via the 5
     # horizontal reviews; Snapshot→W3C Registry needs AC review.
     milestones: SpecMilestones = Field(default_factory=SpecMilestones)
 

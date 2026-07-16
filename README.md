@@ -28,10 +28,9 @@ never reorders the other.
 Data sources: W3C API (stage/dates, incl. registry status), GitHub API (issues,
 labels → horizontal reviews + agenda + blocking, commits → activity/editors),
 wpt.fyi (interop test scores), webstatus.dev (per-engine support), and neutral
-config facts (charter targets, registry entry counts, and `wide_review_complete`
-in `config/specs.yaml` — wide-review completion is a WG/chair judgment with no
-API, so it's marked here once recorded). Any single source failing degrades that
-field to "unknown" rather than aborting the refresh.
+config facts (charter targets + registry entry counts in `config/specs.yaml`).
+Any single source failing degrades that field to "unknown" rather than aborting
+the refresh.
 
 Design notes and phase plan: `docs/expandable-view-plan.md`,
 `docs/spec-process-flow.md`, `docs/spec-inventory.md`.

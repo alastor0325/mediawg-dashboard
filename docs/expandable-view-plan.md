@@ -14,7 +14,7 @@ Name + 4 encoded columns (each a chip/dot/mini-bar, scannable vertically):
 Plus a roll-up header line (e.g. `REC 0 · CR 0 · WD/FPWD 8 · ED 1 · shipping cross-engine N/9`).
 
 ## Second level (expand panel) — 3 groups
-1. **Standardization & next gate:** time-in-stage, next-gate blocker checklist (wide review + 5 horizontal reviews matrix + impl report + CR-blocking issues), charter target vs slippage.
+1. **Standardization & next gate:** time-in-stage, next-gate blocker checklist (5 horizontal reviews matrix + impl report + CR-blocking issues), charter target vs slippage.
 2. **Interoperability:** per-engine WPT % + counts, test-coverage depth, versions shipped, Interop focus-area, top gaps.
 3. **Activity & health:** why-this-pulse, oldest unresolved blocking item, backlog trend, agenda count, editor count, links.
 
@@ -100,7 +100,7 @@ parent spec, last published, entry count + pending registrations, links.
   `RegistryView` (stage, next_gate, readiness, horizontal_rows, entry_count,
   pending_count, links). Reuse `HorizontalReviews`.
 - `analysis.py`: `registry_next_gate`, a small registry `GATE_REQUIREMENTS`
-  (Draft→Snapshot: wide review + horizontal resolved; Snapshot→W3C Registry:
+  (Draft→Snapshot: horizontal reviews resolved; Snapshot→W3C Registry:
   AC review), `registry_view(...)` — all pure, tested. Reuse `_readiness`,
   `horizontal_summary`, `readiness_glyph`.
 - `config.py`: parse `registries:`. `assemble.py`: `build_registry(...)` pure.
@@ -129,7 +129,9 @@ parent spec, last published, entry count + pending registrations, links.
 - **Entry counts** are config-maintained facts (`entry_count`, verified
   2026-07-16) rather than scraped live; a per-page table-row parser could
   automate them later.
-- **wide_review_complete / ac_review_done** stay unknown (can't be proven from
-  open issues); a manual/config or tracker signal could set them once the bulk
-  wide-review request resolves.
+- **"Wide review" is not shown as a blocker.** Its only trackable instance is the
+  horizontal reviews (already a blocker); "wide review complete" as a whole is a
+  broad WG judgment with no actionable instance, so it was dropped — blockers list
+  concrete, handleable items only. **ac_review_done** likewise stays unknown
+  (can't be proven from open issues).
 </content>
