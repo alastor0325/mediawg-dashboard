@@ -5,6 +5,7 @@
 data/annotations.yaml
 data/cache/
 data/history.json
+data/last_good.json
 
 output/
 

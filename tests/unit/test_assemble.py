@@ -1,7 +1,14 @@
 from datetime import datetime, timezone
 
-from mediawg_dashboard.assemble import build_spec
-from mediawg_dashboard.model import HorizontalReviews, InteropStatus, SpecMeta, SpecStatus
+from mediawg_dashboard.assemble import build_registry, build_spec, merge_registry, merge_spec
+from mediawg_dashboard.model import (
+    HorizontalReviews,
+    InteropStatus,
+    RegistryMeta,
+    RegistryStatus,
+    SpecMeta,
+    SpecStatus,
+)
 
 NOW = datetime(2026, 7, 13, tzinfo=timezone.utc)
 
@@ -70,3 +77,53 @@ def test_build_spec_issues_none_means_unknown_not_zero():
     assert spec.stats.open_issues_count is None
     assert spec.stats.open_prs_count is None
     assert spec.milestones.cr_blocking_issues_open is None
+
+
+# --- last-known-good merge ---
+
+
+def _good_spec():
+    """A fully-populated 'previous' spec to fall back to."""
+    return build_spec(
+        _meta(), SpecStatus(stage="WD"),
+        [_issue(["a11y-needs-resolution"])], [_commit("2026-07-10T00:00:00Z", "e")],
+        {"all_engines_wpt": 70.0}, InteropStatus(chrome="shipped"), NOW,
+        HorizontalReviews(a11y="resolved"),
+    )
+
+
+def test_merge_spec_restores_failed_fields_from_prev():
+    prev = _good_spec()
+    # This run: issues + horizontal failed (unknown), the rest fresh.
+    fresh = build_spec(_meta(), SpecStatus(stage="WD"), None, [], None, InteropStatus(), NOW)
+    merged = merge_spec(fresh, prev, failed={"issues", "horizontal", "support"})
+    assert merged.stats.open_issues_count == prev.stats.open_issues_count  # from prev
+    assert merged.milestones.horizontal.a11y == "resolved"  # from prev
+    assert merged.interop.chrome == "shipped"  # from prev (support failed)
+
+
+def test_merge_spec_keeps_fresh_when_nothing_failed():
+    prev = _good_spec()
+    fresh = build_spec(_meta(), SpecStatus(stage="CR"), [], [], None, InteropStatus(), NOW)
+    merged = merge_spec(fresh, prev, failed=set())
+    assert merged is fresh  # untouched
+    assert merged.status.stage == "CR"
+
+
+def test_merge_spec_no_prev_returns_fresh():
+    fresh = build_spec(_meta(), SpecStatus(stage="WD"), None, [], None, InteropStatus(), NOW)
+    merged = merge_spec(fresh, None, failed={"issues"})
+    assert merged.stats.open_issues_count is None  # nothing to fall back to
+
+
+def _rmeta():
+    return RegistryMeta(shortname="r", title="R", parent="P", repo="w3c/r", w3c_shortname="r")
+
+
+def test_merge_registry_restores_failed_horizontal_and_status():
+    prev = build_registry(_rmeta(), RegistryStatus(stage="Registry Draft"),
+                          HorizontalReviews(security="resolved"))
+    fresh = build_registry(_rmeta(), RegistryStatus(stage="unknown"), HorizontalReviews())
+    merged = merge_registry(fresh, prev, failed={"status", "horizontal"})
+    assert merged.status.stage == "Registry Draft"
+    assert merged.milestones.horizontal.security == "resolved"

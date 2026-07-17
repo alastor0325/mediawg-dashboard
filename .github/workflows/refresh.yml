@@ -41,16 +41,18 @@ jobs:
       - name: Run unit tests
         run: pytest tests/unit/ -q
 
-      # Carry the daily open-issue snapshots across runs so the backlog trend
-      # can accumulate. Rolling key: each run saves a new cache; restore-keys
-      # pulls the most recent previous one (runners are ephemeral + the file is
-      # gitignored, so without this the trend never has >=2 points).
-      - name: Restore snapshot history
+      # Carry the data dir across runs: the daily issue snapshots (history.json)
+      # and the last-known-good page state (last_good.json), so a source outage
+      # falls back to the previous values instead of blanking the page. Rolling
+      # key: each run saves a new cache; restore-keys pulls the most recent
+      # previous one (runners are ephemeral + the files are gitignored).
+      - name: Restore saved data (snapshots + last-known-good)
         uses: actions/cache@v4
         with:
-          path: data/history.json
-          key: history-${{ github.run_id }}
+          path: data
+          key: data-${{ github.run_id }}
           restore-keys: |
+            data-
             history-
 
       - name: Render dashboard

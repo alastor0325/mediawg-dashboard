@@ -31,7 +31,7 @@ def build_spec(
     meta: SpecMeta,
     status: SpecStatus,
     issues: list[dict] | None,
-    commits: list[dict],
+    commits: list[dict] | None,
     wpt_scores: dict | None,
     support: InteropStatus,
     now: datetime,
@@ -71,6 +71,7 @@ def build_spec(
         "wpt_safari": per.get("safari"),
     })
 
+    commits = commits or []
     health = SpecHealth(
         days_since_activity=days_since_last_commit(commits, now=now),
         oldest_blocking_issue_days=nr_oldest,
@@ -98,3 +99,50 @@ def build_registry(
         horizontal_urls=horizontal_urls or {},
     )
     return Registry(meta=meta, status=status, milestones=milestones)
+
+
+# --- Last-known-good fallback --------------------------------------------------
+#
+# When a source fetch fails, keep the previous value instead of showing unknown.
+# ``failed`` names which fetches failed this run; each maps to the assembled
+# fields it feeds, which we copy from the stored ``prev``. Pure + testable.
+
+
+def merge_spec(fresh: Spec, prev: Spec | None, failed: set[str]) -> Spec:
+    """Fill this run's failed fields from the last-good ``prev`` spec."""
+    if prev is None or not failed:
+        return fresh
+    s = fresh.model_copy(deep=True)
+    if "status" in failed and prev.status.stage != "unknown":
+        s.status = prev.status.model_copy(deep=True)
+    if "issues" in failed:
+        s.stats = prev.stats.model_copy(deep=True)
+        s.milestones.cr_blocking_issues_open = prev.milestones.cr_blocking_issues_open
+        s.health.oldest_blocking_issue_days = prev.health.oldest_blocking_issue_days
+    if "commits" in failed:
+        s.health.days_since_activity = prev.health.days_since_activity
+        s.health.commit_months = list(prev.health.commit_months)
+    if "support" in failed:
+        for f in ("chrome", "firefox", "safari", "chrome_version",
+                  "firefox_version", "safari_version", "mdn_url", "interop_focus_year"):
+            setattr(s.interop, f, getattr(prev.interop, f))
+    if "wpt" in failed:
+        for f in ("all_engines_wpt", "wpt_test_count", "wpt_chrome", "wpt_firefox", "wpt_safari"):
+            setattr(s.interop, f, getattr(prev.interop, f))
+    if "horizontal" in failed:
+        s.milestones.horizontal = prev.milestones.horizontal.model_copy(deep=True)
+        s.milestones.horizontal_urls = dict(prev.milestones.horizontal_urls)
+    return s
+
+
+def merge_registry(fresh: Registry, prev: Registry | None, failed: set[str]) -> Registry:
+    """Fill this run's failed fields from the last-good ``prev`` registry."""
+    if prev is None or not failed:
+        return fresh
+    r = fresh.model_copy(deep=True)
+    if "status" in failed and prev.status.stage != "unknown":
+        r.status = prev.status.model_copy(deep=True)
+    if "horizontal" in failed:
+        r.milestones.horizontal = prev.milestones.horizontal.model_copy(deep=True)
+        r.milestones.horizontal_urls = dict(prev.milestones.horizontal_urls)
+    return r
