@@ -36,7 +36,10 @@ colour-blindness and greyscale.
   initial (C/F/S). Read the column vertically = the WG's interop landscape.
 - **Pulse**: a solid coloured dot (`.hdot`, colour = tier) + the reason text
   (which differs per tier, e.g. "no activity 327d"). No tier word — the dot
-  colour + reason already carry severity + cause.
+  colour + reason already carry severity + cause. **"Activity" means commits *or*
+  discussion**, whichever is more recent — reading commits alone made a spec with
+  live issue traffic but a quiet ED say "no activity 272d" directly beside its own
+  new-activity badge. Pulse must never contradict the badge.
 - **Gate readiness**: a colour+glyph mark (✓/✗/·) at first level; a coloured
   text tag (ready/blocked) in the panel.
 - Tags (`ready` / `blocked` / `behind charter` / pulse tiers) are coloured text
@@ -168,6 +171,20 @@ logos, no "reference browser", no "outlier/laggard" language. (See the
   are `None` on failure; the all-repos totals show "—" when nothing is known.
 - **Blocker order:** simple booleans first, then the one with a nested breakdown
   (horizontal review) last, so its sub-chips sit at the bottom.
+
+## Sorting
+
+- **A column whose text doesn't sort meaningfully must carry `data-sort`.** The
+  ledger JS prefers it over cell text, so ordering is a property of the data, not
+  an accident of wording. Pulse text sorted alphabetically ("active" < "blocker
+  open 2309d" < "no activity 272d"); Interop sorted the string `C●F◐S○`; the
+  registries' Review sorted `"0/5"` → `parseFloat` → `0` for every row.
+- **Convention: ascending = "best/most recent first".** Pulse sorts by days since
+  activity (recency, *not* tier — a spec with an old blocker and three comments
+  this week is genuinely more current than a silent one). Interop and Review sort
+  by unresolved/unsupported count. Unknowns sink to the bottom.
+- **Every sortable header shows the `⇅` glyph.** All headers get a click handler,
+  so a header without the glyph is an affordance that lies.
 
 ## Affordance & interaction
 

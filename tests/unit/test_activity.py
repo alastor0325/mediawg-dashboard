@@ -6,6 +6,7 @@ from mediawg_dashboard.activity import (
     ACTIVITY_WINDOW_DAYS,
     MAX_THREADS,
     activity_digest,
+    combined_activity_days,
     format_ago,
     format_authors,
     group_activity,
@@ -234,3 +235,22 @@ def test_group_activity_breaks_same_day_ties_on_the_timestamp():
     evening.at = morning.at.replace(hour=23)
     digest = group_activity([morning, evening], since=TODAY - timedelta(days=7), today=TODAY)
     assert [t.number for t in digest.threads] == [200, 100]
+
+
+# --- combined activity signal (commits OR discussion) -------------------------
+
+
+def test_combined_activity_days_takes_the_more_recent_source():
+    """Regression: Pulse read commits only, so a spec with comments this week but
+    no commit for 272 days rendered "no activity 272d" beside its new badge."""
+    assert combined_activity_days(272, 1) == 1
+    assert combined_activity_days(1, 272) == 1
+
+
+def test_combined_activity_days_falls_back_to_whichever_is_known():
+    assert combined_activity_days(None, 5) == 5
+    assert combined_activity_days(5, None) == 5
+
+
+def test_combined_activity_days_unknown_when_neither_is_known():
+    assert combined_activity_days(None, None) is None

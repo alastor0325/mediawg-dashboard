@@ -129,7 +129,10 @@ class EngineRow(BaseModel):
 class SpecHealth(BaseModel):
     """Activity/health inputs for the Pulse signal (populated by fetchers)."""
 
-    days_since_activity: int | None = None
+    # Commits only. The Pulse signal combines this with discussion recency
+    # (SpecActivity.last_discussion_days) in the view layer — a spec can be very
+    # active in issues while its ED sees no commits for months.
+    days_since_commit: int | None = None
     oldest_blocking_issue_days: int | None = None
     charter_target: str | None = None  # e.g. "CR Q1 2026"
     charter_overdue: bool = False
@@ -180,6 +183,9 @@ class SpecActivity(BaseModel):
     window_days: int = ACTIVITY_WINDOW_DAYS
     events: list[ActivityEvent] = Field(default_factory=list)
     known: bool = False
+    # Days since the newest issue/PR update, NOT limited to the window — Pulse
+    # needs to know about discussion older than 7 days too.
+    last_discussion_days: int | None = None
 
 
 class ActivityThread(BaseModel):
@@ -254,6 +260,10 @@ class SpecView(BaseModel):
     # None = activity unknown (fetch failed, no last-good) → render "—", no badge.
     activity: ActivityDigest | None = None
     oldest_open_label: str = "—"  # age of the longest-open issue, e.g. "3y 2m"
+    # Numeric sort keys for columns whose rendered text sorts meaninglessly
+    # (emitted as data-sort; see analysis.activity_sort_key / interop_sort_key).
+    pulse_sort: int = 0
+    interop_sort: int = 0
 
 
 # --- Registry Track (Process §6.5) — a separate, simpler lifecycle than the
@@ -323,6 +333,9 @@ class RegistryView(BaseModel):
     review_label: str  # e.g. "0/5" (resolved / considered horizontal reviews)
     review_state: str  # done / partial / open / unknown (aggregate)
     review_glyph: str  # colour+shape mark for the aggregate review state
+    # Numeric sort key: "0/5" parses to 0 for every row, so the Review column
+    # sorted as a no-op. Unresolved count — most-complete first ascending.
+    review_sort: int = 0
     blocker_rows: list[tuple[str, str, str | None, str, str]]  # (glyph, label, href, state, kind)
     horizontal_rows: list[tuple[str, str, str]]  # (name, state, href)
     stage_age_days: int | None

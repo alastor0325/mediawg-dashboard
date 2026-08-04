@@ -368,7 +368,7 @@ def test_spec_view_pulse_none_without_health_data():
 
 
 def test_spec_view_pulse_present_with_health_data():
-    v = spec_view(_spec(health=SpecHealth(days_since_activity=200)), date(2026, 7, 13))
+    v = spec_view(_spec(health=SpecHealth(days_since_commit=200)), date(2026, 7, 13))
     assert v.pulse is not None
     assert v.pulse.tier == "at-risk"
 
@@ -480,3 +480,101 @@ def test_spec_view_activity_drops_stale_events_outside_the_window():
     activity = SpecActivity(known=True, events=[_activity_event(days_ago=40)])
     v = spec_view(_spec(activity=activity), date(2026, 7, 13))
     assert v.activity.event_count == 0
+
+
+# ---------------- Pulse must not contradict the activity badge ----------------
+
+
+def test_spec_view_pulse_counts_discussion_not_just_commits():
+    """The reported bug: 272 days without a commit but comments this week showed
+    "no activity 272d" right beside a "2 new" badge."""
+    v = spec_view(
+        _spec(
+            health=SpecHealth(days_since_commit=272),
+            activity=SpecActivity(known=True, last_discussion_days=1, events=[_activity_event()]),
+        ),
+        date(2026, 7, 13),
+    )
+    assert v.pulse.tier == "on-track"
+    assert "no activity" not in v.pulse.reason
+
+
+def test_spec_view_pulse_still_stale_when_both_sources_are_quiet():
+    v = spec_view(
+        _spec(
+            health=SpecHealth(days_since_commit=272),
+            activity=SpecActivity(known=True, last_discussion_days=300),
+        ),
+        date(2026, 7, 13),
+    )
+    assert v.pulse.tier == "at-risk"
+    assert "no activity 272d" in v.pulse.reason  # the more recent of the two
+
+
+def test_spec_view_pulse_uses_commits_when_discussion_unknown():
+    v = spec_view(_spec(health=SpecHealth(days_since_commit=200)), date(2026, 7, 13))
+    assert v.pulse.tier == "at-risk"
+
+
+def test_spec_view_pulse_uses_discussion_when_commits_unknown():
+    v = spec_view(
+        _spec(activity=SpecActivity(known=True, last_discussion_days=200)), date(2026, 7, 13)
+    )
+    assert v.pulse is not None
+    assert v.pulse.tier == "at-risk"
+
+
+def test_spec_view_badge_and_pulse_never_contradict_each_other():
+    """Invariant: if there are events in the window, activity is at most the
+    window length — so Pulse can never claim months of silence."""
+    v = spec_view(
+        _spec(
+            health=SpecHealth(days_since_commit=900),
+            activity=SpecActivity(known=True, last_discussion_days=2, events=[_activity_event()]),
+        ),
+        date(2026, 7, 13),
+    )
+    assert v.activity.event_count >= 1
+    assert v.pulse.tier != "at-risk" or "no activity" not in v.pulse.reason
+
+
+# ---------------- explicit sort keys ----------------
+
+
+def test_pulse_sort_key_orders_most_recent_activity_first():
+    from mediawg_dashboard.analysis import activity_sort_key
+
+    assert activity_sort_key(1) < activity_sort_key(272)
+
+
+def test_pulse_sort_key_sinks_unknown_activity():
+    from mediawg_dashboard.analysis import activity_sort_key
+
+    assert activity_sort_key(None) > activity_sort_key(10_000)
+
+
+def test_spec_view_pulse_sort_reflects_the_combined_signal():
+    """Regression: sorting used the cell text, so "active" < "blocker open 2309d"
+    < "no activity 272d" ordered alphabetically instead of by recency."""
+    recent = spec_view(
+        _spec(
+            health=SpecHealth(days_since_commit=272, oldest_blocking_issue_days=2309),
+            activity=SpecActivity(known=True, last_discussion_days=1),
+        ),
+        date(2026, 7, 13),
+    )
+    quiet = spec_view(_spec(health=SpecHealth(days_since_commit=272)), date(2026, 7, 13))
+    # The at-risk-with-recent-discussion spec sorts above the silent one.
+    assert recent.pulse_sort < quiet.pulse_sort
+
+
+def test_interop_sort_key_ranks_shipped_before_unknown():
+    from mediawg_dashboard.analysis import interop_sort_key
+
+    all_shipped = spec_view(
+        _spec(interop=InteropStatus(chrome="shipped", firefox="shipped", safari="shipped")),
+        date(2026, 7, 13),
+    )
+    none_known = spec_view(_spec(), date(2026, 7, 13))
+    assert all_shipped.interop_sort < none_known.interop_sort
+    assert interop_sort_key([]) == 0

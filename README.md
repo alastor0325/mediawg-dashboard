@@ -16,6 +16,12 @@ blocker checklist, horizontal-review matrix, charter target vs slippage),
 Interoperability (per-engine support, WPT, coverage), and Activity & health
 (new-this-week count, open issues/PRs, oldest open issue, commit sparkline).
 
+**Pulse** rolls each spec's health into one tier + reason. "Activity" means
+commits **or** discussion, whichever is more recent — a spec can be busy in
+issues while its ED sees no commits for months. Clicking **Pulse** sorts by
+recency (most recently active first); **Interop** and the registries' **Review**
+sort by support/review completeness.
+
 **New-activity notifications.** A spec whose repo saw discussion in the last
 **7 days** carries a rust count badge after its title — one per comment (issue,
 PR conversation, and inline PR review) plus each opened / closed / merged event.

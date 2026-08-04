@@ -236,3 +236,41 @@ def test_activity_fetchers_follow_pagination():
     with httpx.Client(transport=httpx.MockTransport(handler)) as client:
         items = fetch_issue_comments("w3c/x", SINCE, client=client)
     assert len(items) == 2
+
+
+# --- last discussion (unbounded — not limited to the activity window) ---------
+
+
+def test_days_since_last_discussion_uses_the_newest_updated_at():
+    items = [{"updated_at": _stamp(3)}, {"updated_at": _stamp(20)}]
+    from mediawg_dashboard.fetch.github import days_since_last_discussion
+
+    assert days_since_last_discussion(items, now=NOW) == 3
+
+
+def test_days_since_last_discussion_none_when_repo_has_no_threads():
+    from mediawg_dashboard.fetch.github import days_since_last_discussion
+
+    assert days_since_last_discussion([], now=NOW) is None
+
+
+def test_days_since_last_discussion_tolerates_missing_field():
+    from mediawg_dashboard.fetch.github import days_since_last_discussion
+
+    assert days_since_last_discussion([{"number": 1}], now=NOW) is None
+
+
+def test_fetch_last_discussion_asks_for_one_newest_thread_unfiltered():
+    """No `since`: the whole point is to see past the activity window, so a
+    comment 30 days ago still counts as activity."""
+    seen, transport = _capture()
+    from mediawg_dashboard.fetch.github import fetch_last_discussion
+
+    with httpx.Client(transport=transport) as client:
+        fetch_last_discussion("w3c/x", client=client)
+    url = seen[0].url
+    assert url.params["state"] == "all"
+    assert url.params["sort"] == "updated"
+    assert url.params["direction"] == "desc"
+    assert url.params["per_page"] == "1"
+    assert "since" not in url.params

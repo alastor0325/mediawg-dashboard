@@ -678,3 +678,35 @@ def test_render_panel_row_omits_thread_count_when_equal():
     html = _render_with(SpecActivity(known=True, events=[_event(1), _event(2)]))
     row = html.split(">New this week</dt>")[1].split("</dd>")[0]
     assert "thread" not in row
+
+
+# ---------------- sortable columns carry explicit keys ----------------
+
+
+def test_render_pulse_cell_carries_a_numeric_sort_key():
+    """Sorting on the cell text ordered Pulse alphabetically ("active" <
+    "blocker open 2309d" < "no activity 272d")."""
+    html = render_index([_spec()], NOW)
+    pulse_cell = html.split('class="pulse"')[1].split(">")[0]
+    assert "data-sort=" in pulse_cell
+
+
+def test_render_interop_cell_carries_a_numeric_sort_key():
+    html = render_index([_spec()], NOW)
+    cell = html.split('class="interop"')[1].split(">")[0]
+    assert "data-sort=" in cell
+
+
+def test_render_sort_js_prefers_data_sort_over_cell_text():
+    html = render_index([_spec()], NOW)
+    assert "dataset.sort" in html
+
+
+def test_render_interop_and_pulse_headers_show_a_sort_glyph():
+    """They were already sortable (every th gets a handler) but showed no glyph,
+    so the affordance lied."""
+    html = render_index([_spec()], NOW)
+    head = html.split("<thead>")[1].split("</thead>")[0]
+    for column in ("Interop", "Pulse"):
+        cell = head.split(column)[1].split("</th>")[0]
+        assert "sort-glyph" in cell, column

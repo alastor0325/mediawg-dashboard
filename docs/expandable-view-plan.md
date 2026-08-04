@@ -356,4 +356,29 @@ The five decisions above held. These came out of the review + responsive passes:
    that fail validation, so a required new field would have silently wiped the
    whole last-known-good store on the first refresh after deploy, exactly when
    the fallback matters most. Guarded by a test.
+
+### P7 follow-up — Pulse contradicted the badge
+
+Shipping P7 exposed a pre-existing definition bug: `days_since_activity` was
+**commits only**, so Media Source Extensions rendered "no activity 272d" next to
+a "2 new" badge. Three specs were mislabeled.
+
+- **"Activity" now means commits *or* discussion**, whichever is more recent
+  (`activity.combined_activity_days`). `SpecHealth.days_since_activity` was
+  renamed to **`days_since_commit`** so the field stops lying, and the two raw
+  facts stay separate — each restorable under its own last-good failure key —
+  with the combination derived in the pure view layer.
+- Discussion recency needs an **unbounded** signal (a comment 30 days ago is
+  still activity but produces no badge), so `fetch_last_discussion` asks for the
+  single most-recently-updated thread with **no `since`** — one extra call/repo.
+  It lands on `SpecActivity.last_discussion_days`, inside the existing `activity`
+  failure key, so last-known-good needed no new branch.
+- **Sorting was alphabetical.** Every `<th>` gets a handler, but the comparator
+  read cell *text*: Pulse ordered "active" < "blocker open 2309d" < "no activity
+  272d"; Interop sorted `C●F◐S○`; the registries' Review sorted `"0/5"` → `0` for
+  every row. Fixed generally with `data-sort` (preferred by the JS) rather than
+  per-column special cases — and Interop/Pulse gained the `⇅` glyph they'd been
+  missing while already being clickable.
+- Pulse sorts on **recency, not tier**: a spec with a decade-old blocker and
+  three comments this week is genuinely more current than a silent one.
 </content>

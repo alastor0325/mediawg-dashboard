@@ -1141,8 +1141,10 @@
       <th>Specification <span class="sort-glyph">⇅</span></th>
       <th>Stage <span class="sort-glyph">⇅</span></th>
       <th>Next <span class="sort-glyph">⇅</span></th>
-      <th>Interop</th>
-      <th>Pulse</th>
+      {# Both were already sortable (every th gets a handler) but showed no glyph,
+         so the affordance lied. They now sort on data-sort, not cell text. #}
+      <th title="sorts by engine support (best first)">Interop <span class="sort-glyph">⇅</span></th>
+      <th title="sorts by most recent activity — commits or discussion">Pulse <span class="sort-glyph">⇅</span></th>
     </tr>
   </thead>
   <tbody>
@@ -1170,10 +1172,10 @@
           <span class="dash">—</span>
         {% endif %}
       </td>
-      <td class="interop" data-label="Interop">
+      <td class="interop" data-label="Interop" data-sort="{{ row.interop_sort }}">
         <span class="cell-value">{% for e in row.engine_rows %}<span class="eng-cell" title="{{ e.name }}: {{ e.state }}"><span class="eng-init">{{ e.name[0] }}</span><span class="sup sup-{{ e.state }}">{{ e.glyph }}</span></span>{% endfor %}</span>
       </td>
-      <td class="pulse" data-label="Pulse">
+      <td class="pulse" data-label="Pulse" data-sort="{{ row.pulse_sort }}">
         {% if row.pulse %}
           <span class="cell-value pulse-{{ row.pulse.tier }}"><span class="hdot pulse-dot"></span><span class="pulse-reason">{{ row.pulse.reason }}</span></span>
         {% else %}
@@ -1294,7 +1296,7 @@
           <span class="dash">—</span>
         {% endif %}
       </td>
-      <td class="review center" data-label="Review">
+      <td class="review center" data-label="Review" data-sort="{{ row.review_sort }}">
         <span class="cell-value" title="{{ row.review_label }} horizontal reviews resolved ({{ row.review_state }})"><span class="review-count">{{ row.review_label }}</span><span class="review-mark mark-{{ row.review_state }}">{{ row.review_glyph }}</span></span>
       </td>
       <td class="entries center" data-label="Entries">
@@ -1406,8 +1408,15 @@
       th.addEventListener("click", () => {
         const rows = Array.from(tbody.querySelectorAll("tr.spec-row"));
         rows.sort((a, b) => {
-          const av = a.cells[idx].textContent.trim();
-          const bv = b.cells[idx].textContent.trim();
+          const ac = a.cells[idx], bc = b.cells[idx];
+          // An explicit data-sort wins: cells like Pulse ("no activity 272d") and
+          // Interop ("C●F◐S○") don't sort meaningfully as text.
+          const ak = ac.dataset.sort, bk = bc.dataset.sort;
+          if (ak !== undefined && bk !== undefined) {
+            return asc ? ak - bk : bk - ak;
+          }
+          const av = ac.textContent.trim();
+          const bv = bc.textContent.trim();
           const an = parseFloat(av.replace(/,/g, ""));
           const bn = parseFloat(bv.replace(/,/g, ""));
           if (!isNaN(an) && !isNaN(bn)) return asc ? an - bn : bn - an;

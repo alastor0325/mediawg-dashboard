@@ -275,6 +275,36 @@ def fetch_review_comments(
     return _fetch_since(repo, "pulls/comments", since, client)
 
 
+def fetch_last_discussion(repo: str, client: httpx.Client | None = None) -> list[dict]:
+    """The single most-recently-updated issue/PR — deliberately **not** filtered
+    by ``since``.
+
+    Feeds the Pulse "days since activity" signal, which must see past the
+    activity window: a comment 30 days ago is still activity, even though it
+    produces no "new this week" badge.
+    """
+    with _client_ctx(client) as c:
+        response = github_get(
+            c,
+            f"{GITHUB_API_BASE}/repos/{repo}/issues",
+            params={"state": "all", "sort": "updated", "direction": "desc", "per_page": 1},
+        )
+        return response.json()
+
+
+def days_since_last_discussion(items: list[dict], now: datetime | None = None) -> int | None:
+    """Days since the newest ``updated_at`` across ``items`` (None if unknown).
+
+    ``updated_at`` also moves on label/edit activity, not just comments — for a
+    "is anyone touching this spec" signal that is a feature, not noise.
+    """
+    now = now or datetime.now(timezone.utc)
+    stamps = [_parse_iso(i["updated_at"]) for i in items if i.get("updated_at")]
+    if not stamps:
+        return None
+    return (now - max(stamps)).days
+
+
 def _auth_headers() -> dict[str, str]:
     headers = {"Accept": "application/vnd.github+json"}
     token = os.environ.get("GITHUB_TOKEN")

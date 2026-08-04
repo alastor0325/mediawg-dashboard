@@ -234,3 +234,31 @@ def test_repo_config_has_six_registries():
     codec = next(r for r in regs if r.shortname == "webcodecs-codec-registry")
     assert len(codec.entries) == 13
     assert any(e.group == "Video" for e in codec.entries)
+
+
+def test_registry_review_column_has_a_numeric_sort_key():
+    """"0/5" parses to 0 for every row, so sorting Review did nothing."""
+    from datetime import date
+
+    from mediawg_dashboard.analysis import registry_view
+    from mediawg_dashboard.model import (
+        HorizontalReviews,
+        Registry,
+        RegistryMeta,
+        RegistryStatus,
+        SpecMilestones,
+    )
+
+    def _view(**hz):
+        reg = Registry(
+            meta=RegistryMeta(shortname="r", title="R", parent="P", repo="w3c/r", w3c_shortname="r"),
+            status=RegistryStatus(stage="Registry Draft"),
+            milestones=SpecMilestones(horizontal=HorizontalReviews(**hz)),
+        )
+        return registry_view(reg, date(2026, 8, 4))
+
+    done = _view(a11y="resolved", i18n="resolved", privacy="resolved",
+                 security="resolved", tag="resolved")
+    none_done = _view()
+    assert done.review_sort < none_done.review_sort
+    assert done.review_sort == 0

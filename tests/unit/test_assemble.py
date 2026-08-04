@@ -57,7 +57,7 @@ def test_build_spec_composes_all_layers():
     assert spec.milestones.cr_blocking_issues_open == 1
     assert spec.interop.all_engines_wpt == 74.0
     assert spec.interop.safari == "partial"
-    assert spec.health.days_since_activity == 2
+    assert spec.health.days_since_commit == 2
     # Both commits (2026-07-11, 2026-07-01) fall in the July bucket.
     assert dict(spec.health.commit_months)["2026-07"] == 2
     assert len(spec.health.commit_months) == 6
@@ -68,7 +68,7 @@ def test_build_spec_horizontal_defaults_unknown_when_omitted():
     spec = build_spec(_meta(), SpecStatus(stage="unknown"), [], [], None, InteropStatus(), NOW)
     assert spec.stats.open_issues_count == 0
     assert spec.interop.all_engines_wpt is None
-    assert spec.health.days_since_activity is None
+    assert spec.health.days_since_commit is None
     assert spec.milestones.horizontal.a11y == "unknown"
 
 

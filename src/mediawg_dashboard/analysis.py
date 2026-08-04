@@ -11,7 +11,7 @@ from collections.abc import Callable
 from datetime import date
 
 from mediawg_dashboard import links
-from mediawg_dashboard.activity import activity_digest
+from mediawg_dashboard.activity import activity_digest, combined_activity_days
 from mediawg_dashboard.model import (
     Blocker,
     EngineRow,
@@ -125,6 +125,35 @@ _BLOCKER_GLYPHS = {"done": "✔", "open": "✘", "partial": "◐", "unknown": "�
 def blocker_glyph(state: str) -> str:
     """Checklist mark for a blocker state (done/open/partial/unknown)."""
     return _BLOCKER_GLYPHS.get(state, "·")
+
+
+# Sort keys for columns whose *text* doesn't sort meaningfully. The ledger's JS
+# reads `data-sort` when present, so ordering is a property of the data rather
+# than an accident of the rendered wording ("active" < "blocker open …" < "no
+# activity …" is alphabetical, not health order).
+_UNKNOWN_SORT = 10**6  # sinks unknowns to the bottom ascending, either way last
+
+
+def activity_sort_key(days_since_activity: int | None) -> int:
+    """Sort value for the Pulse column: days since activity, most recent first.
+
+    Recency (not tier) is the key, so "what moved lately" rises to the top —
+    a spec with a decade-old blocking issue and three comments this week is
+    genuinely more current than a silent one.
+    """
+    return _UNKNOWN_SORT if days_since_activity is None else days_since_activity
+
+
+_SUPPORT_RANK = {"shipped": 0, "partial": 1, "none": 2, "unknown": 3}
+
+
+def interop_sort_key(rows: list[EngineRow]) -> int:
+    """Sort value for the Interop column: best-supported first.
+
+    The cell renders as "C●F◐S○", which alphabetises into nonsense; rank the
+    engine states instead (all-shipped sorts first, all-unknown last).
+    """
+    return sum(_SUPPORT_RANK.get(row.state, 3) for row in rows)
 
 
 _READINESS_GLYPHS = {"ready": "✓", "blocked": "✗", "unknown": "·"}
@@ -341,15 +370,21 @@ def spec_view(spec: Spec, today: date) -> SpecView:
     readiness = _readiness(gate, blockers)
     stage_age_days = compute_stage_age_days(spec.status.last_tr_publication, today)
     h = spec.health
+    # "Activity" = commits OR discussion, whichever is more recent. Commits alone
+    # made a spec with live issue traffic but a quiet ED read "no activity 272d"
+    # beside its own new-activity badge.
+    days_since_activity = combined_activity_days(
+        h.days_since_commit, spec.activity.last_discussion_days
+    )
     has_health = any(
         (
             h.charter_overdue,
-            h.days_since_activity is not None,
+            days_since_activity is not None,
             h.oldest_blocking_issue_days is not None,
         )
     )
     pulse = compute_pulse(
-        days_since_activity=h.days_since_activity,
+        days_since_activity=days_since_activity,
         oldest_blocker_days=h.oldest_blocking_issue_days,
         charter_overdue=h.charter_overdue,
         stage_before_cr=stage in PRE_CR_STAGES,
@@ -362,6 +397,7 @@ def spec_view(spec: Spec, today: date) -> SpecView:
     max_c = max((c for _, c in cm), default=0) or 1
     commit_spark = [(label, count, round(count * 100 / max_c)) for label, count in cm]
     commit_total = sum(c for _, c in cm)
+    engine_rows = _engine_rows(interop)
     return SpecView(
         spec=spec,
         next_gate=gate,
@@ -377,7 +413,7 @@ def spec_view(spec: Spec, today: date) -> SpecView:
             (name, getattr(hz, attr), hz_urls.get(attr) or links.horizontal_request_url(attr, hz_query))
             for name, attr in HORIZONTAL_FIELDS
         ],
-        engine_rows=_engine_rows(interop),
+        engine_rows=engine_rows,
         wpt_href=links.wpt_url(spec.meta.wpt_path),
         stage_age_days=stage_age_days,
         stage_age_label=format_duration_days(stage_age_days),
@@ -394,6 +430,8 @@ def spec_view(spec: Spec, today: date) -> SpecView:
         # shows "—" and no badge, never a false "0 new".
         activity=activity_digest(spec.activity, today),
         oldest_open_label=format_duration_days(spec.stats.oldest_open_issue_age_days),
+        pulse_sort=activity_sort_key(days_since_activity),
+        interop_sort=interop_sort_key(engine_rows),
     )
 
 
@@ -464,6 +502,7 @@ def registry_view(registry: Registry, today: date) -> RegistryView:
         review_label=f"{resolved}/{total}",
         review_state=review_state,
         review_glyph=blocker_glyph(review_state),
+        review_sort=total - resolved,
         blocker_rows=[
             (blocker_glyph(b.state), b.label, _blocker_href(b.kind, registry.meta), b.state, b.kind)
             for b in blockers

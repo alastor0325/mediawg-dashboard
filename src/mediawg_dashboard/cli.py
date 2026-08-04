@@ -12,6 +12,7 @@ from mediawg_dashboard.assemble import build_registry, build_spec, merge_registr
 from mediawg_dashboard.config import load_registries, load_specs
 from mediawg_dashboard.fetch.github import (
     fetch_issue_comments,
+    fetch_last_discussion,
     fetch_open_issues,
     fetch_recent_commits,
     fetch_review_comments,
@@ -101,9 +102,13 @@ def _fetch_one(
                      None, failed, "activity")
     reviews = _safe("activity-reviews", lambda: fetch_review_comments(meta.repo, since, client=client),
                     None, failed, "activity")
+    # Unbounded (no `since`): Pulse must see discussion older than the window too.
+    last_discussion = _safe("last-discussion", lambda: fetch_last_discussion(meta.repo, client=client),
+                            None, failed, "activity")
     spec = build_spec(
         meta, status, raw_issues, commits, wpt, support, now, hz.reviews, hz.urls,
         updated_issues=updated, comments=comments, review_comments=reviews,
+        last_discussion=last_discussion,
     )
     return spec, failed
 

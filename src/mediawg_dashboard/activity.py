@@ -29,6 +29,7 @@ __all__ = [
     "ACTIVITY_WINDOW_DAYS",
     "MAX_THREADS",
     "activity_digest",
+    "combined_activity_days",
     "format_ago",
     "format_authors",
     "group_activity",
@@ -47,6 +48,20 @@ _STATE_RANK = ("merged", "closed", "opened")
 def window_start(now: datetime, days: int = ACTIVITY_WINDOW_DAYS) -> datetime:
     """The inclusive lower bound of the activity window (the fetchers' `since`)."""
     return now - timedelta(days=days)
+
+
+def combined_activity_days(
+    days_since_commit: int | None, days_since_discussion: int | None
+) -> int | None:
+    """Days since **any** repo activity — whichever of commit / discussion is
+    more recent (None only when neither is known).
+
+    Pulse used to read commits alone, which made a spec with live issue
+    discussion but a quiet ED render "no activity 272d" right next to its
+    new-activity badge. Spec work happens in issues as much as in commits.
+    """
+    known = [d for d in (days_since_commit, days_since_discussion) if d is not None]
+    return min(known) if known else None
 
 
 def format_ago(days: int) -> str:
