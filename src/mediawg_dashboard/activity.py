@@ -109,24 +109,29 @@ def group_activity(
         total += 1
         by_thread.setdefault((event.kind, event.number), []).append(event)
 
-    threads: list[ActivityThread] = []
+    # (newest event timestamp, thread) — sorting on the timestamp rather than the
+    # day-granular days_ago keeps same-day threads in true newest-first order.
+    dated: list[tuple[datetime, ActivityThread]] = []
     for group in by_thread.values():
         group.sort(key=lambda e: e.at)
         newest = group[-1]  # titles get edited — the latest one is current
-        threads.append(
+        days_ago = (today - newest.at.date()).days
+        dated.append((
+            newest.at,
             ActivityThread(
                 number=newest.number,
                 kind=newest.kind,
                 title=newest.title,
                 url=newest.url,
-                state=newest.state,
                 event_count=len(group),
                 summary=thread_summary(group),
                 authors=format_authors(group),
-                days_ago=(today - newest.at.date()).days,
-            )
-        )
-    threads.sort(key=lambda t: (t.days_ago, t.number))
+                days_ago=days_ago,
+                ago=format_ago(days_ago),
+            ),
+        ))
+    dated.sort(key=lambda pair: pair[0], reverse=True)
+    threads = [thread for _, thread in dated]
 
     return ActivityDigest(
         threads=threads[:limit],

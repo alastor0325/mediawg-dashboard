@@ -1,6 +1,7 @@
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 
 from mediawg_dashboard.model import (
+    ActivityEvent,
     HorizontalReviews,
     InteropStatus,
     Registry,
@@ -9,6 +10,7 @@ from mediawg_dashboard.model import (
     RegistryStatus,
     RepoStats,
     Spec,
+    SpecActivity,
     SpecMeta,
     SpecMilestones,
     SpecStatus,
@@ -47,6 +49,7 @@ def _spec(
     stage: str = "WD",
     wpt_path: str | None = "/webcodecs/",
     interop: InteropStatus | None = None,
+    activity: SpecActivity | None = None,
 ) -> Spec:
     return Spec(
         meta=SpecMeta(
@@ -64,6 +67,7 @@ def _spec(
         ),
         stats=RepoStats(open_issues_count=42, open_prs_count=5, oldest_open_issue_age_days=180),
         interop=interop or InteropStatus(),
+        activity=activity or SpecActivity(),
     )
 
 
@@ -494,3 +498,183 @@ def test_summarize_registries_counts_advanced():
 
 def test_summarize_registries_empty():
     assert summarize_registries([]) == {"total": 0, "at_snapshot": 0}
+
+
+# ---------------- "new this week" activity (P7) ----------------
+
+NOW = datetime(2026, 8, 4, 12, 0, tzinfo=timezone.utc)
+
+
+def _event(number=1, event="comment", days_ago=1, author="alice", kind="issue", title=None):
+    return ActivityEvent(
+        number=number,
+        kind=kind,
+        title=title or f"thread {number}",
+        url=f"https://github.com/w3c/webcodecs/issues/{number}",
+        state="open",
+        event=event,
+        author=author,
+        at=NOW - timedelta(days=days_ago),
+    )
+
+
+def _render_with(activity: SpecActivity) -> str:
+    return render_index([_spec(activity=activity)], NOW)
+
+
+def test_render_shows_the_new_activity_badge_with_the_event_count():
+    html = _render_with(SpecActivity(known=True, events=[_event(), _event(number=2)]))
+    assert 'class="new-badge"' in html
+    assert ">2<" in html
+
+
+def test_render_badge_absent_when_nothing_is_new():
+    """Meaningful-only: a quiet week shows no pill, not a "0" pill."""
+    html = _render_with(SpecActivity(known=True, events=[]))
+    assert 'class="new-badge"' not in html  # the CSS rule always exists; the markup must not
+
+
+def test_render_badge_absent_when_activity_unknown():
+    html = _render_with(SpecActivity(known=False))
+    assert 'class="new-badge"' not in html
+
+
+def test_render_badge_uses_accent_not_a_status_colour():
+    """The badge is interactive (it opens the panel), so it must not borrow
+    --signal-rose, which means bad/blocked/at-risk."""
+    html = _render_with(SpecActivity(known=True, events=[_event()]))
+    badge_css = html.split(".new-badge {")[1].split("}")[0]
+    assert "var(--accent)" in badge_css
+    assert "signal-rose" not in badge_css
+
+
+def test_render_activity_strip_lists_threads_with_links():
+    html = _render_with(
+        SpecActivity(known=True, events=[_event(number=812, title="Clarify colorSpace")])
+    )
+    assert 'class="actstrip"' in html
+    assert "Clarify colorSpace" in html
+    assert "https://github.com/w3c/webcodecs/issues/812" in html
+    assert "#812" in html
+
+
+def test_render_activity_strip_dedupes_multiple_events_on_one_thread():
+    events = [_event(number=5), _event(number=5, days_ago=2), _event(number=5, days_ago=3)]
+    html = _render_with(SpecActivity(known=True, events=events))
+    assert html.count('class="act-title"') == 1
+    assert "3 comments" in html
+
+
+def test_render_activity_strip_states_the_window_boundary():
+    html = _render_with(SpecActivity(known=True, events=[_event()]))
+    # "this week" alone is ambiguous on a daily rebuild — the date must be shown.
+    assert "since 2026-07-28" in html
+
+
+def test_render_activity_strip_marks_prs_and_issues_by_shape():
+    html = _render_with(
+        SpecActivity(known=True, events=[_event(number=1, kind="pr"), _event(number=2)])
+    )
+    assert "◆" in html and "◇" in html
+
+
+def test_render_activity_strip_shows_authors():
+    html = _render_with(SpecActivity(known=True, events=[_event(author="alice")]))
+    assert "alice" in html
+
+
+def test_render_activity_strip_overflow_link_is_explicit():
+    events = [_event(number=n) for n in range(1, 12)]
+    html = _render_with(SpecActivity(known=True, events=events))
+    assert "+ 3 more threads" in html  # never a silent truncation
+
+
+def test_render_activity_strip_absent_when_nothing_new():
+    assert 'class="actstrip"' not in _render_with(SpecActivity(known=True, events=[]))
+
+
+def test_render_panel_new_this_week_row_is_zero_when_known_and_empty():
+    html = _render_with(SpecActivity(known=True, events=[]))
+    assert "New this week" in html
+
+
+def test_render_panel_new_this_week_row_is_dash_when_unknown():
+    """Unknown ≠ zero: a failed fetch must not read as a quiet week."""
+    html = _render_with(SpecActivity(known=False))
+    row = html.split(">New this week</dt>")[1].split("</dd>")[0]
+    assert "—" in row
+    assert ">0<" not in row
+
+
+def test_render_panel_drops_the_duplicate_pulse_row():
+    """Regression guard: Pulse lives in the first-level column only — the panel
+    row repeated the same dot and reason text verbatim."""
+    html = render_index([_spec()], NOW)
+    panel = html.split('class="panel"')[1]
+    assert "<dt>Pulse</dt>" not in panel
+
+
+def test_render_panel_shows_oldest_open_issue_age():
+    """oldest_open_issue_age_days was computed but rendered nowhere before P7."""
+    html = render_index([_spec()], NOW)
+    assert "Oldest open" in html
+    assert "6mo" in html  # 180 days
+
+
+def test_render_panel_oldest_open_dash_when_unknown():
+    spec = _spec()
+    spec.stats.oldest_open_issue_age_days = None
+    html = render_index([spec], NOW)
+    row = html.split(">Oldest open</dt>")[1].split("</dd>")[0]
+    assert "—" in row
+
+
+# --- responsive invariants (docs/ux-visual-rules.md § Responsive layout) -------
+
+
+def test_activity_list_uses_overflow_safe_grid_tracks():
+    """A bare 1fr around a long title lets the row force horizontal scroll."""
+    html = render_index([_spec()], NOW)
+    rule = html.split(".actlist li {")[1].split("}")[0]
+    assert "minmax(0, 1fr)" in rule
+
+
+def test_activity_titles_are_allowed_to_wrap():
+    html = render_index([_spec()], NOW)
+    rule = html.split(".act-title {")[1].split("}")[0]
+    assert "overflow-wrap: anywhere" in rule
+    assert "nowrap" not in rule
+
+
+def test_activity_strip_header_wraps_at_narrow_widths():
+    html = render_index([_spec()], NOW)
+    rule = html.split(".actstrip-head {")[1].split("}")[0]
+    assert "flex-wrap: wrap" in rule
+
+
+def test_activity_strip_stacks_and_left_aligns_in_the_card_layout():
+    html = render_index([_spec()], NOW)
+    narrow = html.split("@media (max-width: 900px)")[1]
+    assert ".actlist li { grid-template-columns: 1.2rem minmax(0, 1fr)" in narrow
+    assert ".actstrip-more { text-align: left; }" in narrow
+
+
+def test_render_strip_omits_thread_count_when_it_adds_nothing():
+    """"2 updates in 2 threads" repeats the first number — meaningful-only."""
+    html = _render_with(SpecActivity(known=True, events=[_event(1), _event(2)]))
+    head = html.split('class="actstrip-head"')[1].split("</div>")[0]
+    assert "2 updates" in head
+    assert "in 2 threads" not in head
+
+
+def test_render_strip_shows_thread_count_when_it_differs():
+    events = [_event(1), _event(1, days_ago=2), _event(2)]
+    html = _render_with(SpecActivity(known=True, events=events))
+    head = html.split('class="actstrip-head"')[1].split("</div>")[0]
+    assert "3 updates" in head and "in 2 threads" in head
+
+
+def test_render_panel_row_omits_thread_count_when_equal():
+    html = _render_with(SpecActivity(known=True, events=[_event(1), _event(2)]))
+    row = html.split(">New this week</dt>")[1].split("</dd>")[0]
+    assert "thread" not in row

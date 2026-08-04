@@ -183,17 +183,22 @@ class SpecActivity(BaseModel):
 
 
 class ActivityThread(BaseModel):
-    """One issue/PR with all its window events folded into one display row."""
+    """One issue/PR with all its window events folded into one display row.
+
+    No ``state`` field: what the row shows is ``summary`` (the events that
+    happened in the window), so the thread's current open/closed state would be
+    a stored-but-unrendered field.
+    """
 
     number: int
     kind: ActivityKind
     title: str
     url: str
-    state: str
     event_count: int
     summary: str  # e.g. "opened · 3 comments"
     authors: str  # e.g. "alice, bob +1" ("" when unknown)
     days_ago: int
+    ago: str = ""  # rendered recency, e.g. "2d ago"
 
 
 class ActivityDigest(BaseModel):
@@ -248,6 +253,7 @@ class SpecView(BaseModel):
     commit_total: int = 0  # commits across the sparkline window
     # None = activity unknown (fetch failed, no last-good) → render "—", no badge.
     activity: ActivityDigest | None = None
+    oldest_open_label: str = "—"  # age of the longest-open issue, e.g. "3y 2m"
 
 
 # --- Registry Track (Process §6.5) — a separate, simpler lifecycle than the

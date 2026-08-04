@@ -4,6 +4,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from mediawg_dashboard.activity import ACTIVITY_WINDOW_DAYS
 from mediawg_dashboard.analysis import registry_view, shipping_cross_engine, spec_view
 from mediawg_dashboard.model import (
     REGISTRY_STAGE_DESCRIPTIONS,
@@ -74,4 +75,5 @@ def render_index(
         registry_stage_descriptions=REGISTRY_STAGE_DESCRIPTIONS,
         wpt_fyi_base=WPT_FYI_BASE,
         charter_url=CHARTER_URL,
+        activity_window_days=ACTIVITY_WINDOW_DAYS,
     )

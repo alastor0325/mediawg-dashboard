@@ -134,4 +134,226 @@ parent spec, last published, entry count + pending registrations, links.
   broad WG judgment with no actionable instance, so it was dropped — blockers list
   concrete, handleable items only. **ac_review_done** likewise stays unknown
   (can't be proven from open issues).
+
+---
+
+## P7 — "New this week" activity notifications
+
+**Why:** the dashboard answers *where each spec stands* but not *what just
+happened*. Spec work moves slowly, so a single comment is real signal — a chair
+needs "what came in since last week" without opening 10 repos. Vendor-neutral
+like the rest: no affiliation, no ranking of participants.
+
+### Decisions taken (locked before build)
+
+1. **Badge colour = `--accent` (rust), not rose.** Rose is reserved for
+   *bad* (open/blocked/at-risk/overdue) — new discussion is not bad. Accent is
+   already defined as *the interactive colour*, and the badge is a click target
+   (it expands the row). No new token, no change to the colour contract.
+2. **Window = 7 days, computed at build time.** Deterministic, identical for
+   every viewer, unit-testable, no client state. Length is one constant
+   (`ACTIVITY_WINDOW_DAYS = 7`). The strip states the boundary date explicitly
+   ("since 2026-07-28") so "this week" is never ambiguous on a daily-rebuilt page.
+   *(Deferred: per-user "since your last visit" via localStorage.)*
+3. **Badge counts events; the list dedups to threads.** Each comment = 1, each
+   state change = 1 — so the badge is 7 while the list shows 4 rows, each with
+   its own count. The strip header reconciles them: "7 updates in 4 threads".
+   Same convention as an unread-count over threaded mail.
+4. **Panel rows:** drop `Pulse` (verbatim duplicate of the first-level Pulse
+   column — the clearest dedup win in the panel); add `New this week` and
+   `Oldest open` (`oldest_open_issue_age_days` has been fetched and computed
+   since P1 but rendered nowhere); include PR **review** comments; **show comment
+   authors**.
+5. **Specs only — no badges on registries.** The EME ×3 and WebCodecs ×2
+   registries share their parent spec's repo, so repo activity attributed to a
+   registry would misattribute — the same reasoning that keeps horizontal-review
+   labels off shared-repo registries (P6 above).
+
+**Authors, kept neutral:** GitHub handles only — no avatars, no affiliation, no
+"most active" ranking. Muted ink (they're data, not status), capped at 2 + `+N`,
+ordered by *first comment in the window* (deterministic and unranked).
+
+### First level — the badge
+
+A filled rust pill with the count, immediately after the title, before the `REC`
+badge. Tooltip: `7 updates since 2026-07-28`. Inside the row's click target, so
+clicking it expands the panel. **Absent entirely when nothing is new** (per the
+meaningful-only rule) — not a `0` pill.
+
+```
+    Specification                       Stage   Next     Interop      Pulse
+  ─────────────────────────────────────────────────────────────────────────────
+  ▸ Media Source Extensions   ❨3❩       CR      →PR ✓    C● F● S●     ● active
+    w3c/media-source
+  ▸ WebCodecs                 ❨7❩ REC   WD      →CR ✗    C● F◐ S◐     ● quiet 96d
+    w3c/webcodecs
+  ▸ Autoplay Policy Detection            WD      →CR ·    C○ F○ S○     ● no activity 1913d
+    w3c/autoplay                └── no badge: nothing new in the window
+```
+
+The count carries the meaning as text, so the signal survives greyscale and
+colour-blindness (colour + shape rule).
+
+### Second level — a full-width "New this week" strip
+
+The deduped list needs horizontal room for titles, so it is **not** a
+`dl.panel-kv` row inside the 1/3-width Activity group. It spans the panel
+(`grid-column: 1 / -1`) above the three existing groups: you clicked the badge,
+this is the answer, it comes first. The three groups keep their structure.
+
+```
+ ▾ WebCodecs  ❨7❩                       WD      →CR ✗    C● F◐ S◐     ● quiet 12d
+ ┌──────────────────────────────────────────────────────────────────────────────────────┐
+ │ New this week · 7 updates in 4 threads · since 2026-07-28          all activity ↗    │
+ │ ──────────────────────────────────────────────────────────────────────────────────── │
+ │  ◇ #812  Clarify VideoFrame colorSpace defaults   3 comments · alice,bob    2d ago   │
+ │  ◆ #809  Editorial: fix IDL for AudioDecoderConfig  opened · 1 comment · cd  3d ago  │
+ │  ◇ #798  Support for AV1 film grain synthesis     closed                    5d ago   │
+ │  ◆ #791  Add codec string for VP9 profile 3       merged · 2 comments · ef   6d ago  │
+ │                                                            + 2 more threads ↗        │
+ ├──────────────────────────┬──────────────────────────┬────────────────────────────────┤
+ │ Standardization & next   │ Interoperability         │ Activity & health              │
+ │ Stage          WD        │ Chromium  ● shipped 94   │ New this week  7 (4 threads)   │
+ │ Last published 2026-03…  │ Firefox   ◐ partial 130  │ Open issues    42              │
+ │ Next gate      → CR  ✗   │ Safari    ◐ partial 16   │ Open PRs       3               │
+ │ Blockers to CR           │ All-engines WPT ↗        │ Oldest open    3y 2m    ← new  │
+ │  ✘ CR-blocking (2 open)  │ Chromium  118/140        │ Commits  ▁▃▂▅█▂  38 in 6mo     │
+ │  ◐ Horizontal 3/5        │ Firefox    92/140        │                                │
+ │    a11y ✔resolved  …     │ Safari     74/140        │  (Pulse row dropped — dup)     │
+ └──────────────────────────┴──────────────────────────┴────────────────────────────────┘
+```
+
+- `◇` issue / `◆` PR, and the state word ("closed"/"merged") — all **muted ink,
+  no status colour**. An open issue isn't "bad", so this follows the "registered
+  entries are data, not status" precedent rather than inventing issue-state colours.
+- Newest first, capped at **8 threads** with an explicit `+ N more ↗` — never a
+  silent truncation.
+- Title links to the issue/PR; `all activity ↗` →
+  `github.com/<repo>/issues?q=sort:updated-desc`.
+
+### Narrow view (designed, not derived)
+
+Below 900px the ledger is already labeled cards and the panel collapses to one
+column, so the strip must be authored for that width — see
+`docs/ux-visual-rules.md` § Responsive layout.
+
+```
+  ≤900px — collapsed card                ≤900px — expanded (panel = 1 column)
+  ┌────────────────────────────────┐     ┌────────────────────────────────┐
+  │ ▸ WebCodecs ❨7❩          WD    │     │ New this week · 7 updates in   │
+  │   w3c/webcodecs                │     │ 4 threads · since 2026-07-28   │
+  │   NEXT GATE   →CR ✗            │     │ all activity ↗                 │ ← link wraps
+  │   INTEROP     C● F◐ S◐         │     │ ────────────────────────────── │   to own line
+  │   PULSE       ● quiet 12d      │     │ ◇ #812 Clarify VideoFrame      │
+  └────────────────────────────────┘     │        colorSpace defaults     │ ← title wraps
+    badge stays inline with the title,   │        3 comments · alice,bob  │ ← meta drops
+    nowrap on the pill itself so it      │        · 2d ago                │   below, left
+    wraps *with* the last word, never    │ ◆ #809 Editorial: fix IDL for  │
+    alone; never shrinks the title       │        AudioDecoderConfig      │
+    column (col 2 is minmax(0,1fr))      │        opened · 1 comment      │
+                                         │ + 2 more threads ↗             │ ← left, not right
+                                         └────────────────────────────────┘
+```
+
+Concrete narrow requirements:
+
+- Strip row is a grid: `minmax(0, 1fr) max-content max-content` wide →
+  **single column** narrow, with `summary · authors · ago` as a muted meta line
+  beneath the title. `minmax(0, …)`, never a bare `1fr`, so a long title cannot
+  force horizontal scroll.
+- Issue titles get `overflow-wrap: anywhere` (IDL names and long identifiers are
+  common) and **never** `white-space: nowrap`. `nowrap` applies only to the count
+  pill, `#812`, and `2d ago`.
+- Strip header `flex-wrap: wrap` so `all activity ↗` drops to its own line
+  instead of squeezing the title (same pattern as `.section-head`).
+- `+ N more ↗` is right-aligned wide, **left-aligned** in the stacked layout.
+- Authors are the lowest-signal element: capped at 2 + `+N` at every width, and
+  allowed to wrap onto the meta line rather than being hidden (hiding facts by
+  viewport would make narrow lie).
+- Verified at all six tiers with a panel expanded, per the Dev Loop's Step 4.
+
+### Data sources (2 extra calls per repo, +1 for PR review comments)
+
+~10 distinct repos × 3 calls/day is negligible against the daily refresh.
+
+| Call | Gives |
+|---|---|
+| `issues?state=all&sort=updated&direction=desc&since=T` | threads touched in the window + **titles**, state, issue-vs-PR, `created_at`, `closed_at`, `pull_request.merged_at` |
+| `issues/comments?since=T` | one entry per comment on issues **and PR conversations**, with `issue_url` + `user.login` + `created_at` |
+| `pulls/comments?since=T` | inline PR **review** comments (decision 4) |
+
+- The comments endpoints carry no title, which is why the issues listing is also
+  needed. Any commented thread necessarily appears there — a comment bumps
+  `updated_at`. Both use `state=all`; the default `state=open` would silently
+  drop closed-this-week threads.
+- Events counted: `comment` (1 each), `opened`, `closed`, `merged`.
+  **`reopened` is not detectable** without the events API — a documented
+  limitation, not worth a per-issue call.
+- **Fetch failure** follows the existing policy: `activity` becomes a
+  `merge_spec` last-known-good key. Events are stored **with timestamps**, so a
+  stale list self-decays when re-filtered against the fresh window. Failure with
+  no last-good ⇒ no badge and `—` in the panel, never `0` (unknown ≠ zero).
+
+### Code shape
+
+```
+model.py      + ActivityKind = Literal["issue", "pr"]
+              + ActivityEvent(number, kind, title, url, state, event, author, at)
+              + SpecActivity(window_days, events, known: bool)   → Spec.activity
+              + ActivityThread(number, kind, title, url, state, event_count,
+                               summary, authors, days_ago)
+              + SpecView.activity_threads / activity_count / activity_overflow
+activity.py   NEW, pure: group_activity(events, since, now, limit) -> threads
+                        thread_summary(events) -> "opened · 3 comments"
+                        format_authors(events, cap=2) -> "alice, bob +1"
+                        format_ago(days) -> "2d ago"
+fetch/github.py  I/O:   fetch_updated_issues / fetch_issue_comments /
+                        fetch_review_comments  (reuse _fetch_all_pages + github_get)
+                 pure:  extract_state_events(issues, since)
+                        extract_comment_events(comments, title_index, since)
+assemble.py   build_spec(…, updated_issues, comments, review_comments) -> SpecActivity
+              merge_spec: new "activity" failure key
+render.py     ACTIVITY_WINDOW_DAYS; pass the window boundary date to the template
+template      badge macro · activity_strip macro · reworked Activity & health group
+              · CSS incl. the narrow rules above
+```
+
+### Sub-phases (each a full Dev Loop pass)
+
+- **P7a** — model types + `activity.py` + the pure extractors + full unit tests.
+  No network, no UI.
+- **P7b** — the three fetchers, `build_spec`/`merge_spec` wiring, last-good
+  fallback, mocked-I/O tests.
+- **P7c** — badge + strip + Activity & health rework + CSS (wide **and** narrow),
+  render tests, Step 4 responsive check at all six tiers,
+  `/mediawg-dashboard-ux-review`, then update `docs/ux-visual-rules.md` (badge
+  row: accent pill = new-activity count, interactive) and `README.md`.
+
+### Adjustments made during the build (P7 shipped)
+
+The five decisions above held. These came out of the review + responsive passes:
+
+1. **`+ N more threads` is non-interactive text**, not a link — it would have
+   pointed at exactly the same URL as `all activity ↗` in the strip header, and
+   each link appears once. Still always shown (no silent truncation). Follows the
+   `REC` tail badge's precedent.
+2. **The thread breakdown lives only in the strip header.** The Activity & health
+   row carries the bare count; "New this week 24 in 12 threads" beside
+   "24 updates in 12 threads" was the same fact twice in one panel. Aggregate
+   here / detail there — the horizontal-blocker-vs-chips split.
+3. **The strip header drops "in N threads" when it equals the update count** —
+   "2 updates in 2 threads" repeats the first number (meaningful-only).
+4. **`ActivityThread.state` was dropped.** Nothing rendered it: the row shows
+   `summary` (what happened *in the window*), so a thread's current open/closed
+   state was a stored-but-unrendered field.
+5. **Threads sort on the newest event's timestamp**, not `days_ago` — the latter
+   is day-granular, so same-day threads were tie-breaking on issue number and
+   listing the older thread first.
+6. **`ACTIVITY_WINDOW_DAYS` lives in `model.py`** (re-exported by `activity.py`)
+   so the stored `SpecActivity.window_days` default can't drift from the window
+   the fetchers and view actually use.
+7. **`Spec.activity` is defaulted, not required** — `laststate.py` drops entries
+   that fail validation, so a required new field would have silently wiped the
+   whole last-known-good store on the first refresh after deploy, exactly when
+   the fallback matters most. Guarded by a test.
 </content>

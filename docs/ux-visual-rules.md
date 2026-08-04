@@ -13,7 +13,7 @@ by the `mediawg-dashboard-ux-review` skill.
 | `--signal-rose` | red | bad / none / open / blocked / at-risk / overdue | support none, blocker open, gate blocked, pulse at-risk, "behind charter", horizontal open |
 | `--signal-mute` | grey | unknown / no data / N/A | any "unknown" state |
 | `--signal-blue` | blue | neutral intermediate-stage marker | CR stage pip + Candidate-Snapshot registry pip |
-| `--accent` | rust | **interactive only** — links, hover, brand | never a status colour |
+| `--accent` | rust | **interactive only** — links, hover, brand, the new-activity badge | never a status colour |
 
 **Rule:** `--accent` is for interactivity (links/hover/wordmark), never to encode
 status. "Bad" is always `--signal-rose`, not accent.
@@ -41,6 +41,19 @@ colour-blindness and greyscale.
   text tag (ready/blocked) in the panel.
 - Tags (`ready` / `blocked` / `behind charter` / pulse tiers) are coloured text
   per the table above.
+- **New-activity badge**: a filled **`--accent`** pill after a spec's title
+  holding the number of updates in the activity window. The one place accent
+  carries meaning beyond a link — and it does so *as interactivity*: the badge is
+  inside the row's click target and clicking it opens the panel where the list
+  lives. It is **not** `--signal-rose`; new discussion is not "bad", and rose
+  must keep its single meaning. The count is text, so the signal survives
+  greyscale. Rendered **only when non-zero**, and never when activity is unknown
+  (a failed fetch must not read as a quiet week).
+- **Issue / PR glyphs** (`◇` issue, `◆` pull request, in the activity list) are
+  **data, not status** — muted ink, never a signal colour. The absence of colour
+  is what marks them as a category rather than a judgment, so the filled/hollow
+  pair must not be read as the support tri-dot's good/bad. Same principle as
+  registered registry entries.
 - **`REC` tail badge**: a small green (the REC/PR stage colour) `REC` pill after
   a spec's title when it already published a Recommendation and is now being
   revised. A **non-interactive marker** (tooltip only) — the link to the REC
@@ -75,6 +88,41 @@ colour-blindness and greyscale.
 - The registry's `/TR/` is linked **once** (the title); don't repeat it on the
   publication date or the entries header.
 
+## Responsive layout
+
+Narrow is a **first-class layout**, not a degraded one. Below 900px the ledger
+stops being a table and becomes labeled cards, so a change that only reads well
+wide is unfinished. Five tiers, defined in the stylesheet:
+
+| Width | Tier | Layout |
+|---|---|---|
+| > 1100px | desktop | full ledger; panel 3-up |
+| ≤ 1100px | laptop | tightened padding, smaller type; same structure |
+| ≤ 900px | tablet | **`thead` hidden; each row a labeled card**; panel collapses to 1 column |
+| ≤ 640px | phone | tighter padding/type; entry lists single-column |
+| ≤ 420px | very narrow | summary collapses to one column |
+| ≤ 500px tall | landscape phone | compressed masthead |
+
+Invariants (enforced by `mediawg-dashboard-ux-review`; verified per the Dev Loop's
+responsive step):
+
+- **No horizontal overflow, ever** — `document.documentElement.scrollWidth` must
+  never exceed `window.innerWidth` at any tier. Grid tracks around text use
+  `minmax(min(Xrem, 100%), 1fr)` or `minmax(0, 1fr)`, never a bare `1fr` or a
+  fixed width.
+- **No `white-space: nowrap` on user-length text** (titles, notes, registered
+  values, issue titles). Reserve it for short atomic tokens — a count pill, a date.
+- **Long unbroken tokens** (URLs, IDL names) get `overflow-wrap: anywhere`.
+- **Every first-level `<td>` carries `data-label`** — the card layout renders it
+  as the row's label via `::before`. A new column without one renders unlabeled.
+- **Right-aligned wide → left-aligned narrow.** A right-aligned value beside a
+  stacked label reads as ragged; in the card layout values sit immediately after
+  their fixed-width label, all starting at the same x.
+- **Headers and meta strips `flex-wrap: wrap`** so a two-end layout stacks
+  instead of squeezing (see `.section-head`).
+- Anything added to the panel must survive the `grid-template-columns: 1fr`
+  collapse at ≤900px.
+
 ## Neutrality
 
 Engines are always listed alphabetically with identical weight/size; no vendor
@@ -85,6 +133,17 @@ logos, no "reference browser", no "outlier/laggard" language. (See the
 
 - Each fact and each link appears **once**. (repo ← spec path; ED ← title; /TR/ ←
   publication date; wpt.fyi ← WPT section; issues/PRs ← their own rows.)
+- **Activity strip** (the "New this week" list behind the badge): a full-width
+  band **above** the three groups — it answers the badge you just clicked, and
+  thread titles need width a 1/3 column can't give. One row per issue/PR however
+  many events it saw. `all activity ↗` is the strip's single link, so the
+  `+ N more threads` overflow marker is **non-interactive text** (it would point
+  at the same URL) — but it is always shown, never a silent truncation.
+  Aggregate-vs-detail: the `New this week` count sits in Activity & health, the
+  thread breakdown only in the strip header — the same split as the horizontal
+  blocker line versus its nested chips.
+- **Pulse is first-level only.** It is deliberately *not* repeated in the panel:
+  the column already renders the same dot and the same reason text.
 - **Horizontal review is a CR blocker** — render it as one line *inside* the
   "Blockers to <gate>" checklist (with its aggregate state mark), and nest the 5
   per-group chips directly beneath it as a sub-level. Never a separate top-level

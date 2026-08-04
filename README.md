@@ -10,11 +10,23 @@ panel per spec.
 Expandable per-spec view implemented (`make refresh` fetches live data and
 renders `output/index.html`). Each row shows **Stage · Next-gate · Interop
 (neutral C/F/S tri-dot + all-engines WPT %) · Pulse**, plus a roll-up of how
-many specs ship cross-engine. Clicking a spec expands three groups:
-Standardization & next gate (stage age, blocker checklist, horizontal-review
-matrix, charter target vs slippage), Interoperability (per-engine support, WPT,
-coverage), and Activity & health (pulse, oldest blocking issue, issues/PRs,
-agenda/editors, backlog trend, links).
+many specs ship cross-engine. Clicking a spec expands the **New this week**
+activity strip (below) and three groups: Standardization & next gate (stage age,
+blocker checklist, horizontal-review matrix, charter target vs slippage),
+Interoperability (per-engine support, WPT, coverage), and Activity & health
+(new-this-week count, open issues/PRs, oldest open issue, commit sparkline).
+
+**New-activity notifications.** A spec whose repo saw discussion in the last
+**7 days** carries a rust count badge after its title — one per comment (issue,
+PR conversation, and inline PR review) plus each opened / closed / merged event.
+Expanding the row leads with a **New this week** strip listing those updates
+**deduped to one row per issue/PR**, each linking to the thread with what
+happened, who took part, and how long ago. The window is computed at build time,
+so the strip states its boundary date explicitly. A quiet week shows no badge; a
+*failed* fetch shows "—" rather than a false "0" (unknown ≠ zero). Not detected:
+reopens and PR review submissions (both need extra per-issue API calls).
+Registries carry no badge — most share their parent spec's repo, so repo activity
+attributed to a registry would misattribute.
 
 A second **Registries** ledger (registry track, Process §6.5) sits below the
 specs table: each of the 6 MediaWG registries shows **Stage · Next-gate
@@ -26,8 +38,9 @@ isn't shipped or tested). The two tables are fully independent — sorting one
 never reorders the other.
 
 Data sources: W3C API (stage/dates, incl. registry status), GitHub API (repo
-issues → backlog/blocking, commits → activity; the horizontal groups' **request
-repos** — a11y/i18n/privacy/security-request + w3ctag/design-reviews — matched by
+issues → backlog/blocking, commits → activity; `issues?since` +
+`issues/comments?since` + `pulls/comments?since` → the new-activity window; the
+horizontal groups' **request repos** — a11y/i18n/privacy/security-request + w3ctag/design-reviews — matched by
 spec title → the 5 horizontal-review states, closed=resolved / open=in-progress),
 wpt.fyi (interop test scores), webstatus.dev (per-engine support), and neutral
 config facts (charter targets + registry entry counts in `config/specs.yaml`).
@@ -41,7 +54,7 @@ Design notes and phase plan: `docs/expandable-view-plan.md`,
 
 ```sh
 make install       # creates .venv and installs deps via uv
-make refresh       # fetches data and renders the dashboard (no-op in Phase 0)
+make refresh       # fetches data and renders the dashboard
 make brief         # prints the morning brief (no-op in Phase 0)
 make test          # runs unit tests
 make clean         # removes generated output and caches
@@ -52,7 +65,7 @@ make clean         # removes generated output and caches
 ```
 src/mediawg_dashboard/   Python package
 config/specs.yaml        The 9 MediaWG specs + 6 registries tracked
-templates/               Jinja2 templates (empty in Phase 0)
+templates/               Jinja2 templates
 tests/unit/              Unit tests, mock all I/O
 tests/integration/       Integration tests (real I/O), if any
 output/                  Rendered HTML (gitignored)

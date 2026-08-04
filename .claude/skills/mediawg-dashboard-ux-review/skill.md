@@ -32,7 +32,9 @@ issues templates hide). The visual-rule summary you're enforcing:
 - **Meaningful-only:** don't show a signal that can't mean anything yet (e.g.
   backlog trend with <2 snapshots; "behind charter" only when overdue).
 - **Aligned & responsive:** panel groups are aligned key/value grids that read
-  wide (3-up) and narrow (stacked).
+  wide (3-up) and narrow (stacked). The full tier table + invariants are in
+  `docs/ux-visual-rules.md` § **Responsive layout** — narrow is a first-class
+  layout (below 900px the ledger becomes labeled cards), never an afterthought.
 
 ## Step 2 — Review dimensions
 
@@ -47,8 +49,12 @@ Go through each and note file:line + the concrete rule broken:
    sub-level shown as a sibling section (or vice-versa).
 5. **Hierarchy** — is it clear what is a blocker vs a detail? Blockers at one
    level, breakdowns nested.
-6. **Responsive** — will it read both wide and narrow? Any fixed-width or
-   right-aligned value that will look ragged.
+6. **Responsive** — check against every tier in `docs/ux-visual-rules.md`
+   § Responsive layout, not just "does it look narrow-friendly". Concretely: any
+   bare `1fr`/fixed track around text that can overflow; `white-space: nowrap` on
+   user-length text; a new first-level cell missing `data-label` (renders
+   unlabeled as a card); a right-aligned value that goes ragged when stacked; a
+   two-end header that doesn't `flex-wrap`.
 7. **Noise** — low-signal rows that don't earn their place.
 
 For a thorough pass, spawn one review agent per dimension in parallel (like

@@ -16,6 +16,47 @@
 </ul>
 {% endif %}
 {% endmacro %}
+{# Unread-style count of updates in the activity window. Rendered only when
+   something is actually new: no badge for 0, and none when activity is unknown
+   (a failed fetch must not look like a quiet week). #}
+{% macro new_badge(row) %}
+{% if row.activity and row.activity.event_count %}
+<span class="new-badge" aria-label="{{ row.activity.event_count }} updates since {{ row.activity.since }}" title="{{ row.activity.event_count }} update{{ '' if row.activity.event_count == 1 else 's' }} in {{ row.activity.thread_count }} thread{{ '' if row.activity.thread_count == 1 else 's' }} since {{ row.activity.since }} — click the row for the list">{{ row.activity.event_count }}</span>
+{% endif %}
+{% endmacro %}
+{# The list behind the badge: one row per issue/PR however many events it saw,
+   so a 5-comment thread doesn't crowd out four other threads. #}
+{% macro activity_strip(row, repo) %}
+{% if row.activity and row.activity.threads %}
+{% set act = row.activity %}
+<div class="actstrip">
+  <div class="actstrip-head">
+    {# The thread count only earns its place when it differs from the update
+       count — "2 updates in 2 threads" says nothing the first number didn't. #}
+    <span>New this week <span class="actstrip-count">· {{ act.event_count }} update{{ '' if act.event_count == 1 else 's' }}{% if act.thread_count != act.event_count %} in {{ act.thread_count }} thread{{ '' if act.thread_count == 1 else 's' }}{% endif %} · since {{ act.since }}</span></span>
+    <a class="actstrip-all" href="https://github.com/{{ repo }}/issues?q=sort%3Aupdated-desc">all activity ↗</a>
+  </div>
+  <ul class="actlist">
+    {% for t in act.threads %}
+    <li>
+      <span class="act-kind" aria-hidden="true" title="{{ 'pull request' if t.kind == 'pr' else 'issue' }}">{{ '◆' if t.kind == 'pr' else '◇' }}</span>
+      <div class="act-main">
+        <span class="act-num">#{{ t.number }}</span><a class="act-title" href="{{ t.url }}">{{ t.title }}</a>
+        <div class="act-meta">{{ t.summary }}{% if t.authors %} · {{ t.authors }}{% endif %}</div>
+      </div>
+      <span class="act-ago">{{ t.ago }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {# A non-interactive marker, not a second link: it would point at exactly the
+     same place as "all activity ↗" above, and each link appears once (same rule
+     the REC tail badge follows). Still explicit — never a silent truncation. #}
+  {% if act.overflow %}
+  <span class="actstrip-more">+ {{ act.overflow }} more thread{{ '' if act.overflow == 1 else 's' }} — see all activity above</span>
+  {% endif %}
+</div>
+{% endif %}
+{% endmacro %}
 <!doctype html>
 <html lang="en">
 <head>
@@ -361,6 +402,124 @@
     cursor: help;
   }
 
+  /* New-activity badge after a title: how many updates landed in the window.
+     Filled --accent because the badge is INTERACTIVE (it's inside the row's
+     click target, and clicking it opens the panel where the list lives) — not
+     --signal-rose, which means bad/blocked/at-risk. New discussion isn't bad.
+     The count is text, so the signal survives greyscale (colour + shape rule). */
+  .new-badge {
+    display: inline-block;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.6rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--paper);
+    background: var(--accent);
+    border-radius: 999px;
+    padding: 0.24em 0.5em;
+    margin-left: 0.5rem;
+    vertical-align: 0.16em;
+    font-variant-numeric: tabular-nums;
+    /* Atomic token: nowrap keeps "12" intact, and the inline-block wraps WITH
+       the last word of the title rather than stranding itself on its own line. */
+    white-space: nowrap;
+  }
+  tr.spec-row:hover .new-badge { background: var(--ink); }
+
+  /* "New this week" strip — spans the whole panel above the three groups: it's
+     the answer to the badge you just clicked, and thread titles need the width
+     that a 1/3 column can't give. */
+  .actstrip {
+    grid-column: 1 / -1;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 0.9rem;
+    margin-bottom: 0.2rem;
+  }
+  .actstrip-head {
+    display: flex;
+    /* wrap so the trailing link drops to its own line instead of squeezing
+       the heading at narrow widths (same pattern as .section-head) */
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.4rem 1rem;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-soft);
+    margin-bottom: 0.6rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .actstrip-count { color: var(--muted); font-weight: 400; letter-spacing: 0.08em; }
+  .actstrip-all {
+    font-size: 0.64rem;
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--rule-strong);
+  }
+  .actstrip-all:hover { color: var(--accent); border-color: var(--accent); }
+  ul.actlist { list-style: none; margin: 0; padding: 0; }
+  /* minmax(0,…) not 1fr: a long thread title must wrap, never widen the row
+     and force the page to scroll sideways. */
+  .actlist li {
+    display: grid;
+    grid-template-columns: 1.2rem minmax(0, 1fr) max-content;
+    column-gap: 0.6rem;
+    align-items: baseline;
+    padding: 0.22rem 0;
+  }
+  /* Issue vs PR is DATA, not status — muted ink, no signal colour (an open
+     issue isn't "bad"). Same rule as registered registry entries. */
+  .act-kind {
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-align: center;
+  }
+  .act-main { min-width: 0; }
+  .act-num {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-right: 0.4rem;
+    white-space: nowrap;   /* atomic token */
+    font-variant-numeric: tabular-nums;
+  }
+  .act-title {
+    font-size: 0.82rem;
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--rule-strong);
+    /* long IDL names / URLs in titles must break rather than overflow */
+    overflow-wrap: anywhere;
+  }
+  .act-title:hover { color: var(--accent); border-color: var(--accent); }
+  .act-meta {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin-top: 0.1rem;
+    overflow-wrap: anywhere;
+  }
+  .act-ago {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+    white-space: nowrap;   /* atomic token */
+    font-variant-numeric: tabular-nums;
+  }
+  .actstrip-more {
+    display: block;
+    text-align: right;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin-top: 0.35rem;
+  }
+
   /* Commit sparkline — 6 monthly bars, no chart lib. Neutral (data, not status);
      brightens to accent on hover since the whole thing links to the commit log. */
   .spark {
@@ -379,6 +538,8 @@
   }
   .spark:hover .spark-bar { background: var(--accent); }
   .spark-cap { color: var(--muted); font-size: 0.72rem; margin-left: 0.5rem; }
+  /* Muted qualifier after a panel value (e.g. "2 in 2 threads"). */
+  .kv-note { color: var(--muted); font-size: 0.72rem; }
 
   /* Stage as typographic mark */
   .stage {
@@ -714,6 +875,13 @@
     .ledger tbody tr.panel-row:not([hidden]) { display: block; }
     .ledger tbody tr.panel-row > td { display: block; padding: 0 0 1rem; }
     .panel, .panel.panel-two { grid-template-columns: 1fr; gap: 1rem; }
+
+    /* Activity strip: drop the third column and stack the recency under the
+       title (left-aligned — a right-aligned value beside a stacked label reads
+       ragged). Two columns keep the glyph gutter, so rows stay aligned. */
+    .actlist li { grid-template-columns: 1.2rem minmax(0, 1fr); row-gap: 0.05rem; }
+    .act-ago { grid-column: 2; }
+    .actstrip-more { text-align: left; }
   }
 
   .dash { color: var(--rule-strong); }
@@ -988,6 +1156,7 @@
         {% else %}
           <span class="spec-title">{{ spec.meta.title }}</span>
         {% endif %}
+        {{ new_badge(row) }}
         {% if row.published_rec %}<span class="rec-badge" title="Published as a W3C Recommendation {{ row.published_rec }} — now being revised (see the panel for the link)">REC</span>{% endif %}
         <div class="spec-sub"><a href="https://github.com/{{ spec.meta.repo }}" onclick="event.stopPropagation()">{{ spec.meta.repo }}</a></div>
       </td>
@@ -1015,6 +1184,7 @@
     <tr class="panel-row" id="panel-{{ spec.meta.shortname }}" hidden>
       <td colspan="6">
         <div class="panel">
+          {{ activity_strip(row, spec.meta.repo) }}
           <div class="panel-group">
             <div class="panel-h">Standardization &amp; next gate</div>
             <dl class="panel-kv">
@@ -1050,10 +1220,16 @@
           </div>
           <div class="panel-group">
             <div class="panel-h">Activity &amp; health</div>
+            {# No Pulse row: the first-level Pulse column already shows the same
+               dot and the same reason text (each fact appears once). #}
             <dl class="panel-kv">
-              <dt>Pulse</dt><dd>{% if row.pulse %}<span class="pulse-{{ row.pulse.tier }}"><span class="hdot pulse-dot"></span>{{ row.pulse.reason }}</span>{% else %}—{% endif %}</dd>
+              {# Count only. The thread breakdown lives once, in the strip header
+                 above (aggregate here, detail there — same as the horizontal
+                 blocker line vs its nested chips). #}
+              <dt title="comments and state changes in the last {{ activity_window_days }} days">New this week</dt><dd>{% if row.activity %}{{ row.activity.event_count }}{% else %}<span class="dash">—</span>{% endif %}</dd>
               <dt>Open issues</dt><dd>{% if spec.stats.open_issues_count is not none %}<a href="https://github.com/{{ spec.meta.repo }}/issues">{{ spec.stats.open_issues_count }}</a>{% else %}<span class="dash">—</span>{% endif %}</dd>
               <dt>Open PRs</dt><dd>{% if spec.stats.open_prs_count is not none %}<a href="https://github.com/{{ spec.meta.repo }}/pulls">{{ spec.stats.open_prs_count }}</a>{% else %}<span class="dash">—</span>{% endif %}</dd>
+              <dt title="age of the longest-open issue">Oldest open</dt><dd>{% if spec.stats.oldest_open_issue_age_days is not none %}<a href="https://github.com/{{ spec.meta.repo }}/issues?q=is%3Aissue+is%3Aopen+sort%3Acreated-asc">{{ row.oldest_open_label }}</a>{% else %}<span class="dash">—</span>{% endif %}</dd>
               <dt title="commits per month, last 6 months">Commits</dt><dd>{% if row.commit_spark %}<a class="spark" href="https://github.com/{{ spec.meta.repo }}/commits" title="{{ row.commit_total }} commits in the last 6 months">{% for label, count, pct in row.commit_spark %}<span class="spark-bar" style="height:{{ pct }}%" title="{{ label }}: {{ count }}"></span>{% endfor %}</a><span class="spark-cap">{{ row.commit_total }} in 6mo</span>{% else %}—{% endif %}</dd>
             </dl>
           </div>

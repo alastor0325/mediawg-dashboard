@@ -171,9 +171,15 @@ def test_group_activity_thread_carries_title_url_kind_and_days_ago():
     thread = digest.threads[0]
     assert thread.title == "Fix IDL"
     assert thread.kind == "pr"
-    assert thread.state == "merged"
     assert thread.days_ago == 2
     assert thread.url.endswith("/9")
+
+
+def test_activity_thread_has_no_unrendered_state_field():
+    """Regression guard: `state` was dropped because nothing rendered it —
+    `summary` is what the row shows."""
+    digest = group_activity([_event()], since=TODAY - timedelta(days=7), today=TODAY)
+    assert not hasattr(digest.threads[0], "state")
 
 
 def test_group_activity_uses_the_newest_events_title():
@@ -218,3 +224,13 @@ def test_activity_digest_default_cap_is_max_threads():
     digest = activity_digest(SpecActivity(known=True, events=events), TODAY)
     assert len(digest.threads) == MAX_THREADS
     assert digest.overflow == 3
+
+
+def test_group_activity_breaks_same_day_ties_on_the_timestamp():
+    """days_ago is day-granular; ties must fall back to the real time, not the
+    issue number (which would sort the older thread first)."""
+    morning = _event(number=100, days_ago=1)
+    evening = _event(number=200, days_ago=1)
+    evening.at = morning.at.replace(hour=23)
+    digest = group_activity([morning, evening], since=TODAY - timedelta(days=7), today=TODAY)
+    assert [t.number for t in digest.threads] == [200, 100]

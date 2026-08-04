@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 
 from mediawg_dashboard.analysis import (
     blocker_glyph,
@@ -17,10 +17,12 @@ from mediawg_dashboard.analysis import (
     support_glyph,
 )
 from mediawg_dashboard.model import (
+    ActivityEvent,
     HorizontalReviews,
     InteropStatus,
     RepoStats,
     Spec,
+    SpecActivity,
     SpecHealth,
     SpecMeta,
     SpecMilestones,
@@ -34,6 +36,7 @@ def _spec(
     interop=None,
     health=None,
     last_tr=date(2026, 1, 1),
+    activity=None,
 ) -> Spec:
     return Spec(
         meta=SpecMeta(shortname="x", title="X", repo="w3c/x", w3c_shortname="x", wpt_path="/x/"),
@@ -42,6 +45,7 @@ def _spec(
         milestones=milestones or SpecMilestones(),
         interop=interop or InteropStatus(),
         health=health or SpecHealth(),
+        activity=activity or SpecActivity(),
     )
 
 # ---------------- next_gate ----------------
@@ -425,3 +429,54 @@ def test_spec_view_blocker_rows_include_horizontal_and_link_venues():
     # CR-blocking issues -> the open needs-resolution filter.
     cr = next(h for lbl, h in by_label.items() if lbl.startswith("CR-blocking"))
     assert cr is not None and "needs-resolution" in cr
+
+
+# ---------------- spec_view: activity digest ----------------
+
+
+def _activity_event(number=1, event="comment", days_ago=1, author="alice"):
+    return ActivityEvent(
+        number=number,
+        kind="issue",
+        title=f"thread {number}",
+        url=f"https://github.com/w3c/x/issues/{number}",
+        state="open",
+        event=event,
+        author=author,
+        at=datetime(2026, 7, 13, 12, 0, tzinfo=timezone.utc) - timedelta(days=days_ago),
+    )
+
+
+def test_spec_view_activity_none_when_unknown():
+    """A failed activity fetch must render '—' and suppress the badge."""
+    v = spec_view(_spec(activity=SpecActivity(known=False)), date(2026, 7, 13))
+    assert v.activity is None
+
+
+def test_spec_view_activity_zero_when_known_and_empty():
+    v = spec_view(_spec(activity=SpecActivity(known=True)), date(2026, 7, 13))
+    assert v.activity is not None
+    assert v.activity.event_count == 0
+    assert v.activity.threads == []
+
+
+def test_spec_view_activity_counts_events_and_threads():
+    activity = SpecActivity(
+        known=True,
+        events=[
+            _activity_event(number=1, event="opened", days_ago=3),
+            _activity_event(number=1, days_ago=2),
+            _activity_event(number=2, days_ago=1),
+        ],
+    )
+    v = spec_view(_spec(activity=activity), date(2026, 7, 13))
+    assert v.activity.event_count == 3
+    assert v.activity.thread_count == 2
+    assert [t.number for t in v.activity.threads] == [2, 1]
+    assert v.activity.since == date(2026, 7, 6)
+
+
+def test_spec_view_activity_drops_stale_events_outside_the_window():
+    activity = SpecActivity(known=True, events=[_activity_event(days_ago=40)])
+    v = spec_view(_spec(activity=activity), date(2026, 7, 13))
+    assert v.activity.event_count == 0

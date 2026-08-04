@@ -11,6 +11,7 @@ from collections.abc import Callable
 from datetime import date
 
 from mediawg_dashboard import links
+from mediawg_dashboard.activity import activity_digest
 from mediawg_dashboard.model import (
     Blocker,
     EngineRow,
@@ -389,6 +390,10 @@ def spec_view(spec: Spec, today: date) -> SpecView:
         ),
         commit_spark=commit_spark,
         commit_total=commit_total,
+        # None when the activity fetch failed with no last-good: the UI then
+        # shows "—" and no badge, never a false "0 new".
+        activity=activity_digest(spec.activity, today),
+        oldest_open_label=format_duration_days(spec.stats.oldest_open_issue_age_days),
     )
 
 
