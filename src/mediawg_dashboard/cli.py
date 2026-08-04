@@ -7,9 +7,16 @@ from typing import Callable, TypeVar
 
 import httpx
 
+from mediawg_dashboard.activity import window_start
 from mediawg_dashboard.assemble import build_registry, build_spec, merge_registry, merge_spec
 from mediawg_dashboard.config import load_registries, load_specs
-from mediawg_dashboard.fetch.github import fetch_open_issues, fetch_recent_commits
+from mediawg_dashboard.fetch.github import (
+    fetch_issue_comments,
+    fetch_open_issues,
+    fetch_recent_commits,
+    fetch_review_comments,
+    fetch_updated_issues,
+)
 from mediawg_dashboard.fetch.horizontal import HorizontalResult, fetch_horizontal_reviews
 from mediawg_dashboard.fetch.support import fetch_support
 from mediawg_dashboard.fetch.w3c import fetch_registry_status, fetch_spec_status
@@ -85,7 +92,19 @@ def _fetch_one(
                     InteropStatus(), failed, "support")
     hz = _safe("horizontal", lambda: fetch_horizontal_reviews(meta.hr_query or meta.title, client=client),
                HorizontalResult(HorizontalReviews(), {}), failed, "horizontal")
-    spec = build_spec(meta, status, raw_issues, commits, wpt, support, now, hz.reviews, hz.urls)
+    # Recent activity: three calls sharing one failure key, so a partial outage
+    # marks the axis unknown rather than under-reporting the count.
+    since = window_start(now)
+    updated = _safe("activity-issues", lambda: fetch_updated_issues(meta.repo, since, client=client),
+                    None, failed, "activity")
+    comments = _safe("activity-comments", lambda: fetch_issue_comments(meta.repo, since, client=client),
+                     None, failed, "activity")
+    reviews = _safe("activity-reviews", lambda: fetch_review_comments(meta.repo, since, client=client),
+                    None, failed, "activity")
+    spec = build_spec(
+        meta, status, raw_issues, commits, wpt, support, now, hz.reviews, hz.urls,
+        updated_issues=updated, comments=comments, review_comments=reviews,
+    )
     return spec, failed
 
 

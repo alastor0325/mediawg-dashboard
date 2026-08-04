@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -142,6 +142,71 @@ class Blocker(BaseModel):
     kind: str = ""  # horizontal / cr_blocking / impl_report / ac_review
 
 
+# --- Recent activity ("new this week") ---------------------------------------
+#
+# One ActivityEvent per counted thing: each comment, and each state change. The
+# UI dedupes them into one ActivityThread per issue/PR, so the badge (events)
+# and the list (threads) can legitimately differ — see docs/expandable-view-plan.md.
+
+ActivityKind = Literal["issue", "pr"]
+ActivityEventKind = Literal["comment", "opened", "closed", "merged"]
+
+# How far back counts as "new". Lives here (the leaf module) so the stored
+# default and the fetch/view window can't drift apart; re-exported by activity.py.
+ACTIVITY_WINDOW_DAYS = 7
+
+
+class ActivityEvent(BaseModel):
+    """One counted event on an issue/PR, carrying its thread's identity.
+
+    ``at`` is stored so a last-known-good list re-filters (and decays) correctly
+    against a fresh window instead of freezing at its original one.
+    """
+
+    number: int
+    kind: ActivityKind
+    title: str
+    url: str
+    state: str = ""  # open / closed / merged — the thread's state, not the event's
+    event: ActivityEventKind
+    author: str | None = None  # None when the actor isn't in the payload
+    at: datetime
+
+
+class SpecActivity(BaseModel):
+    """A spec's recent-activity events. ``known=False`` = the fetch failed, so
+    the UI must render "—" rather than a false "0"."""
+
+    window_days: int = ACTIVITY_WINDOW_DAYS
+    events: list[ActivityEvent] = Field(default_factory=list)
+    known: bool = False
+
+
+class ActivityThread(BaseModel):
+    """One issue/PR with all its window events folded into one display row."""
+
+    number: int
+    kind: ActivityKind
+    title: str
+    url: str
+    state: str
+    event_count: int
+    summary: str  # e.g. "opened · 3 comments"
+    authors: str  # e.g. "alice, bob +1" ("" when unknown)
+    days_ago: int
+
+
+class ActivityDigest(BaseModel):
+    """The rendered view of a spec's window: threads + the counts that reconcile
+    the badge with the list."""
+
+    threads: list[ActivityThread] = Field(default_factory=list)
+    event_count: int = 0
+    thread_count: int = 0
+    overflow: int = 0  # threads beyond the display cap
+    since: date | None = None
+
+
 class Pulse(BaseModel):
     tier: PulseTier
     reason: str = ""
@@ -154,6 +219,9 @@ class Spec(BaseModel):
     milestones: SpecMilestones = Field(default_factory=SpecMilestones)
     interop: InteropStatus = Field(default_factory=InteropStatus)
     health: SpecHealth = Field(default_factory=SpecHealth)
+    # Defaulted (not required) so a last_good.json written before this field
+    # existed still validates — laststate.py drops entries that don't.
+    activity: SpecActivity = Field(default_factory=SpecActivity)
 
 
 class SpecView(BaseModel):
@@ -178,6 +246,8 @@ class SpecView(BaseModel):
     published_rec_href: str | None = None  # link to that REC
     commit_spark: list[tuple[str, int, int]] = Field(default_factory=list)  # (label, count, height%)
     commit_total: int = 0  # commits across the sparkline window
+    # None = activity unknown (fetch failed, no last-good) → render "—", no badge.
+    activity: ActivityDigest | None = None
 
 
 # --- Registry Track (Process §6.5) — a separate, simpler lifecycle than the

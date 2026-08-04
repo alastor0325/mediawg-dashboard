@@ -1,5 +1,6 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
+from mediawg_dashboard.activity import ACTIVITY_WINDOW_DAYS
 from mediawg_dashboard.assemble import build_registry, build_spec, merge_registry, merge_spec
 from mediawg_dashboard.model import (
     HorizontalReviews,
@@ -114,6 +115,94 @@ def test_merge_spec_no_prev_returns_fresh():
     fresh = build_spec(_meta(), SpecStatus(stage="WD"), None, [], None, InteropStatus(), NOW)
     merged = merge_spec(fresh, None, failed={"issues"})
     assert merged.stats.open_issues_count is None  # nothing to fall back to
+
+
+# --- activity (P7) ------------------------------------------------------------
+
+
+def _updated_issue(number=1, days_ago=2, title="Recent thread"):
+    created = NOW - timedelta(days=days_ago)
+    return {
+        "number": number,
+        "title": title,
+        "html_url": f"https://github.com/w3c/webcodecs/issues/{number}",
+        "created_at": created.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "closed_at": None,
+        "state": "open",
+        "user": {"login": "alice"},
+    }
+
+
+def _activity_comment(number=1, days_ago=1):
+    at = NOW - timedelta(days=days_ago)
+    return {
+        "issue_url": f"https://api.github.com/repos/w3c/webcodecs/issues/{number}",
+        "created_at": at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "user": {"login": "bob"},
+    }
+
+
+def _spec_with_activity(**kw):
+    args = dict(updated_issues=[_updated_issue()], comments=[_activity_comment()], review_comments=[])
+    args.update(kw)
+    return build_spec(
+        _meta(), SpecStatus(stage="WD"), [], [], None, InteropStatus(), NOW, **args
+    )
+
+
+def test_build_spec_collects_activity_events():
+    spec = _spec_with_activity()
+    assert spec.activity.known is True
+    # one "opened" + one comment
+    assert len(spec.activity.events) == 2
+    assert {e.event for e in spec.activity.events} == {"opened", "comment"}
+
+
+def test_build_spec_activity_sorted_oldest_first():
+    spec = _spec_with_activity(
+        comments=[_activity_comment(days_ago=1), _activity_comment(days_ago=3)]
+    )
+    stamps = [e.at for e in spec.activity.events]
+    assert stamps == sorted(stamps)
+
+
+def test_build_spec_activity_unknown_when_any_source_failed():
+    """All three calls share one failure key, so one outage marks the axis unknown
+    rather than reporting a falsely low count."""
+    for missing in ("updated_issues", "comments", "review_comments"):
+        spec = _spec_with_activity(**{missing: None})
+        assert spec.activity.known is False, missing
+        assert spec.activity.events == []
+
+
+def test_build_spec_activity_known_and_empty_is_a_real_zero():
+    spec = _spec_with_activity(updated_issues=[], comments=[], review_comments=[])
+    assert spec.activity.known is True
+    assert spec.activity.events == []
+
+
+def test_build_spec_activity_records_the_window_length():
+    assert _spec_with_activity().activity.window_days == ACTIVITY_WINDOW_DAYS
+
+
+def test_build_spec_without_activity_args_is_unknown_not_zero():
+    """Callers that don't pass activity (e.g. old tests) must not claim 0 new."""
+    spec = build_spec(_meta(), SpecStatus(stage="WD"), [], [], None, InteropStatus(), NOW)
+    assert spec.activity.known is False
+
+
+def test_merge_spec_restores_activity_from_prev():
+    prev = _spec_with_activity()
+    fresh = _spec_with_activity(updated_issues=None)
+    merged = merge_spec(fresh, prev, failed={"activity"})
+    assert merged.activity.known is True
+    assert len(merged.activity.events) == 2
+
+
+def test_merge_spec_activity_stays_unknown_without_prev():
+    fresh = _spec_with_activity(updated_issues=None)
+    merged = merge_spec(fresh, None, failed={"activity"})
+    assert merged.activity.known is False
 
 
 def _rmeta():

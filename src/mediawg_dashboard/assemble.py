@@ -5,10 +5,14 @@ The CLI does the I/O (calling the fetchers) and hands the raw payloads here.
 
 from datetime import datetime
 
+from mediawg_dashboard.activity import ACTIVITY_WINDOW_DAYS, window_start
 from mediawg_dashboard.analysis import charter_overdue
 from mediawg_dashboard.fetch.github import (
+    build_thread_index,
     compute_repo_stats,
     days_since_last_commit,
+    extract_comment_events,
+    extract_state_events,
     monthly_commit_counts,
     needs_resolution_stats,
 )
@@ -20,11 +24,35 @@ from mediawg_dashboard.model import (
     RegistryStatus,
     RepoStats,
     Spec,
+    SpecActivity,
     SpecHealth,
     SpecMeta,
     SpecMilestones,
     SpecStatus,
 )
+
+
+def build_activity(
+    updated_issues: list[dict] | None,
+    comments: list[dict] | None,
+    review_comments: list[dict] | None,
+    now: datetime,
+) -> SpecActivity:
+    """Fold the three raw activity payloads into one event list (no I/O).
+
+    All three share a single failure key, so **any** of them being ``None``
+    marks the whole axis unknown. Reporting a partial count would be worse than
+    saying nothing: a comments outage would render as a confident "0 new".
+    """
+    if updated_issues is None or comments is None or review_comments is None:
+        return SpecActivity(window_days=ACTIVITY_WINDOW_DAYS, known=False)
+    since = window_start(now)
+    index = build_thread_index(updated_issues)
+    events = extract_state_events(updated_issues, since) + extract_comment_events(
+        comments + review_comments, index, since
+    )
+    events.sort(key=lambda e: e.at)
+    return SpecActivity(window_days=ACTIVITY_WINDOW_DAYS, events=events, known=True)
 
 
 def build_spec(
@@ -37,6 +65,9 @@ def build_spec(
     now: datetime,
     horizontal: HorizontalReviews | None = None,
     horizontal_urls: dict[str, str] | None = None,
+    updated_issues: list[dict] | None = None,
+    comments: list[dict] | None = None,
+    review_comments: list[dict] | None = None,
 ) -> Spec:
     """Assemble one Spec from already-fetched raw data (no I/O).
 
@@ -80,7 +111,15 @@ def build_spec(
         commit_months=monthly_commit_counts(commits, now=now),
     )
 
-    return Spec(meta=meta, status=status, stats=stats, milestones=milestones, interop=interop, health=health)
+    return Spec(
+        meta=meta,
+        status=status,
+        stats=stats,
+        milestones=milestones,
+        interop=interop,
+        health=health,
+        activity=build_activity(updated_issues, comments, review_comments, now),
+    )
 
 
 def build_registry(
@@ -132,6 +171,10 @@ def merge_spec(fresh: Spec, prev: Spec | None, failed: set[str]) -> Spec:
     if "horizontal" in failed:
         s.milestones.horizontal = prev.milestones.horizontal.model_copy(deep=True)
         s.milestones.horizontal_urls = dict(prev.milestones.horizontal_urls)
+    if "activity" in failed:
+        # Events carry their own timestamps, so a kept list re-filters against
+        # this run's window and decays naturally instead of freezing.
+        s.activity = prev.activity.model_copy(deep=True)
     return s
 
 

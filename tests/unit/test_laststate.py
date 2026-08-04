@@ -1,3 +1,4 @@
+import json
 from datetime import date
 
 from mediawg_dashboard.laststate import load_last_good, save_last_good
@@ -55,3 +56,21 @@ def test_stale_schema_entry_is_skipped(tmp_path):
     path.write_text('{"specs": {"x": {"garbage": true}}, "registries": {}}')
     specs, registries = load_last_good(path)
     assert specs == {} and registries == {}  # invalid entry dropped, no crash
+
+
+def test_store_written_before_activity_existed_still_loads(tmp_path):
+    """Adding a Spec field must not invalidate every stored entry.
+
+    `load_last_good` drops anything failing validation, so a required new field
+    would silently wipe the whole last-known-good store on the first refresh
+    after deploy — exactly when the fallback matters most.
+    """
+    path = tmp_path / "last_good.json"
+    save_last_good(path, [_spec()], [_registry()])
+    data = json.loads(path.read_text())
+    del data["specs"]["webcodecs"]["activity"]  # simulate a pre-P7 store
+    path.write_text(json.dumps(data))
+
+    specs, _ = load_last_good(path)
+    assert "webcodecs" in specs
+    assert specs["webcodecs"].activity.known is False  # unknown, not a false 0
